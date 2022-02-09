@@ -55,10 +55,86 @@ namespace CK.BinarySerialization
                 _writer.WriteNonNegativeSmallInt32( info.Idx );
                 return false;
             }
+
+            void RegisterAndWriteIndex( Type t, ITypeSerializationDriver? d )
+            {
+                var i = (_types.Count, d);
+                _types.Add( t, i );
+                _writer.WriteNonNegativeSmallInt32( i.Item1 );
+            }
+
+            bool WriteElementTypeInfo( Type t, bool mustExist )
+            {
+                Type? e = t.GetElementType();
+                if( e == null || e.IsGenericParameter )
+                {
+                    if( mustExist ) throw new ArgumentException( $"Type '{t}' is not supported. Its ElementType must be not null and must not be IsGenericParameter." );
+                    _writer.Write( false );
+                    return false;
+                }
+                if( !mustExist )_writer.Write( true );
+                WriteTypeInfo( e );
+                return true;
+            }
+
+            static string GetNotSoSimpleName( Type t )
+            {
+                var decl = t.DeclaringType;
+                return decl != null ? GetNotSoSimpleName( decl ) + '+' + t.Name : t.Name;
+            }
+
+            // Handles special types that have no drivers nor base types.
+            if( t.IsPointer )
+            {
+                RegisterAndWriteIndex( t, null );
+                _writer.Write( (byte)4 );
+                WriteElementTypeInfo( t, true );
+                return true;
+            }
+            if( t.IsByRef )
+            {
+                RegisterAndWriteIndex( t, null );
+                _writer.Write( (byte)3 );
+                WriteElementTypeInfo( t, true );
+                return true;
+            }
+            // Now we may have a driver names.
             var d = knownDriver ?? _resolver.TryFindDriver( t );
-            info = (_types.Count, d);
-            _types.Add( t, info );
-            _writer.WriteNonNegativeSmallInt32( info.Idx );
+            RegisterAndWriteIndex( t, d );
+            if( t.IsArray )
+            {
+                _writer.Write( (byte)2 );
+                _writer.WriteSmallInt32( t.GetArrayRank(), 1 );
+                if( WriteElementTypeInfo( t, false ) )
+                {
+                    _writer.WriteSharedString( d?.DriverName );
+                }
+                return true;
+            }
+            if( t.IsGenericType )
+            {
+                _writer.Write( (byte)1 );
+                // For Generics we consider only Opened vs. Closed ones.
+                if( t.ContainsGenericParameters )
+                {
+                    // There's at least one free parameter T: it's not closed.
+                    _writer.WriteNonNegativeSmallInt32( 0 );
+                }
+                else
+                {
+                    var args = t.GetGenericArguments();
+                    _writer.WriteNonNegativeSmallInt32( args.Length );
+                    foreach( var p in args )
+                    {
+                        WriteTypeInfo( p );
+                    }
+                }
+            }
+            else
+            {
+                _writer.Write( (byte)0 );
+            }
+            // Write Names.
             if( d != null )
             {
                 _writer.WriteSharedString( d.DriverName );
@@ -67,11 +143,10 @@ namespace CK.BinarySerialization
             else
             {
                 _writer.WriteSharedString( null );
-                _writer.WriteSmallInt32( -1 );
             }
-            _writer.WriteSharedString( t.FullName );
-            _writer.WriteSharedString( t.Name );
-            _writer.WriteSharedString( t.Assembly.FullName );
+            _writer.WriteSharedString( t.Namespace );
+            _writer.Write( GetNotSoSimpleName( t ) );
+            _writer.WriteSharedString( t.Assembly.GetName().Name );
             // Write base types recursively.
             var b = t.BaseType;
             if( b != null && b != typeof( object ) && b != typeof( ValueType ) )
@@ -80,51 +155,36 @@ namespace CK.BinarySerialization
                 WriteTypeInfo( b );
             }
             else _writer.Write( false );
-            // Writes generic parameter types if any and if the type is a closed generic.
-            if( t.IsConstructedGenericType )
-            {
-                var args = t.GetGenericArguments();
-                _writer.WriteNonNegativeSmallInt32( args.Length );
-                foreach( var p in t.GetGenericArguments() )
-                {
-                    WriteTypeInfo( p );
-                }
-            }
-            else _writer.WriteNonNegativeSmallInt32( 0 );
+
             return true;
         }
 
-        bool WriteNullableObject<T>( T? o ) where T : class;
-        
-        public bool WriteObject<T>( T o ) where T : class
-        {
-            if( o == null ) throw new ArgumentNullException( "o" );
-            if( !TrackObject( o ) ) return false;
-            var d = _resolver.FindDriver<T>();
-            WriteTypeInfo( typeof( T ) );
-            d.WriteData( this, value );
+        public bool WriteObject<T>( T o ) where T : class => WriteAny( o );
 
-        }
+        public bool WriteNullableObject<T>( T? o ) where T : class => WriteAnyNullable( o );
 
-
-        public void WriteNullableValue<T>( T? value ) where T : struct
+        public void WriteNullableValue<T>( in T? value ) where T : struct
         {
             if( value.HasValue )
             {
-                _writer.Write( true );
-                WriteValue(value.Value);
+                WriteValue( value.Value );
             }
-            else _writer.Write( false );
+            else
+            {
+                _writer.Write( (byte)SerializationMarker.Null );
+            }
         }
 
-        public void WriteValue<T>( T value ) where T : struct
+        public void WriteValue<T>( in T value ) where T : struct
         {
             var d = _resolver.FindDriver<T>();
+            // Writing the Struct marker enables this to be read as any object.
+            _writer.Write( (byte)SerializationMarker.Struct );
             WriteTypeInfo( typeof( T ) );
             d.WriteData( this, value );
         }
 
-        public bool WriteNullableObject( object? o )
+        public bool WriteAnyNullable( object? o )
         {
             if( o == null )
             {
@@ -134,7 +194,7 @@ namespace CK.BinarySerialization
             return DoWriteObject( o );
         }
 
-        public bool WriteObject( object o )
+        public bool WriteAny( object o )
         {
             if( o == null ) throw new ArgumentNullException( nameof(o) );
             return DoWriteObject( o );

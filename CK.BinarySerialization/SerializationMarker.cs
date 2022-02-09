@@ -12,6 +12,6 @@ namespace CK.BinarySerialization
         ObjectRef,
         Type,
         DeferredObject,
-        EmptyObject
+        EmptyObject,
     }
 }

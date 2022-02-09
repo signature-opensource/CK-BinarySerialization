@@ -26,6 +26,7 @@ namespace CK.BinarySerialization
                                                 ISerializerResolver? resolver = null,
                                                 Action<IDestroyable>? destroyedTracker = null )
         {
+            writer.WriteSmallInt32( SerializerVersion );
             return new BinarySerializerImpl( writer, leaveOpen, resolver ?? DefaultResolver, destroyedTracker );
         }
     }

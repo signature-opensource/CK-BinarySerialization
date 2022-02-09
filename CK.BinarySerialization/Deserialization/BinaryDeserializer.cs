@@ -24,7 +24,12 @@ namespace CK.BinarySerialization
                                                   IDeserializerResolver? resolver = null, 
                                                   IServiceProvider? services = null )
         {
-            return new BinaryDeserializerImpl( reader, leaveOpen, resolver ?? DefaultResolver, services );
+            var v = reader.ReadSmallInt32();
+            if( v < 10 || v > BinarySerializer.SerializerVersion )
+            {
+                throw new InvalidDataException( $"Invalid deserializer version: {v}. Minimal is 10 and current is {BinarySerializer.SerializerVersion}." );
+            }
+            return new BinaryDeserializerImpl( v, reader, leaveOpen, resolver ?? DefaultResolver, services );
         }
     }
 }

@@ -1,49 +1,52 @@
-﻿using System;
+﻿using CK.Core;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 
 namespace CK.BinarySerialization
 {
+    /// <summary>
+    /// Thread safe composite implementation for <see cref="ISerializerResolver"/>.
+    /// </summary>
     public class SerializerRegistry : ISerializerResolver
     {
-        readonly ConcurrentDictionary<Type, ITypeSerializationDriver?> _types;
-        static readonly KeyValuePair<Type, ITypeSerializationDriver>[] _basic = new []
-        {
-            KeyValuePair.Create( typeof( bool ), Serialization.DBool.Instance ),
-            KeyValuePair.Create( typeof( int ), Serialization.DInt32.Instance ),
-            KeyValuePair.Create( typeof( uint ), Serialization.DUInt32.Instance ),
-            KeyValuePair.Create( typeof( sbyte ), Serialization.DInt8.Instance ),
-            KeyValuePair.Create( typeof( byte ), Serialization.DUInt8.Instance ),
-            KeyValuePair.Create( typeof( short ), Serialization.DInt16.Instance ),
-            KeyValuePair.Create( typeof( ushort ), Serialization.DUInt16.Instance ),
-            KeyValuePair.Create( typeof( long ), Serialization.DInt16.Instance ),
-            KeyValuePair.Create( typeof( ulong ), Serialization.DUInt32.Instance ),
-        };
+        ISerializerResolver[] _resolvers;
 
+        /// <summary>
+        /// Initializes a new registry with the <see cref="BasicTypeSerializerRegistry.Default"/> and
+        /// <see cref="SimpleBinarySerializableRegistry.Default"/>.
+        /// </summary>
         public SerializerRegistry()
         {
-#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
-            _types = new ConcurrentDictionary<Type, ITypeSerializationDriver?>( _basic );
-#pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+            _resolvers = new ISerializerResolver[] { BasicTypeSerializerRegistry.Default, SimpleBinarySerializableRegistry.Default };
         }
 
         /// <inheritdoc />
         public ITypeSerializationDriver<T>? TryFindDriver<T>() where T : notnull
         {
-            return (ITypeSerializationDriver<T>?)_types.GetOrAdd( typeof( T ), TryCreate );
+            return (ITypeSerializationDriver<T>?)TryFindDriver( typeof( T ) );
         }
 
         /// <inheritdoc />
         public ITypeSerializationDriver? TryFindDriver( Type t )
         {
-            return _types.GetOrAdd( t, TryCreate );
-        }
-
-        ITypeSerializationDriver? TryCreate( Type t )
-        {
+            foreach( var resolver in _resolvers )
+            {
+                var r = resolver.TryFindDriver( t );
+                if( r != null ) return r;
+            }
             return null;
         }
 
+        /// <summary>
+        /// Ensures that a resolver is registered.
+        /// When new, the resolver is appended after the existing ones.
+        /// </summary>
+        /// <param name="resolver">The resolver that must be found or added.</param>
+        public void Register( ISerializerResolver resolver )
+        {
+            Util.InterlockedAddUnique( ref _resolvers, resolver );
+        }
     }
 }

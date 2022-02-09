@@ -14,10 +14,9 @@ namespace CK.BinarySerialization
         ICKBinaryReader Reader { get; }
 
         /// <summary>
-        /// Reads a <see cref="TypeReadInfo"/> from a <see cref="IBinarySerializer.WriteTypeInfo(Type)"/>.
+        /// Gets the version of the serializer used to serialize this data.
         /// </summary>
-        /// <returns>The type information.</returns>
-        TypeReadInfo ReadTypeInfo();
+        int SerializationVersion { get; }
 
         /// <summary>
         /// Gets a configurable container of services available for constructor
@@ -26,16 +25,53 @@ namespace CK.BinarySerialization
         IServiceProvider Services { get; }
 
         /// <summary>
-        /// Reads an object previously written by <see cref="IBinarySerializer.WriteObject(object)"/>.
+        /// Reads a non null object or value type previously written by <see cref="IBinarySerializer.WriteAnyNullable(object?)"/>
+        /// or <see cref="IBinarySerializer.WriteAny(object)"/>.
         /// </summary>
-        /// <returns>The object read, possibly in an intermediate state.</returns>
-        object ReadObject();
+        /// <returns>The object or value type (possibly in an intermediate state) or null.</returns>
+        object? ReadAnyNullable();
 
         /// <summary>
-        /// Reads an object previously written by <see cref="IBinarySerializer.WriteNullableObject(object?)"/>.
+        /// Reads a non null object or value type previously written by <see cref="IBinarySerializer.WriteAny(object)"/>.
         /// </summary>
-        /// <returns>The object read (possibly in an intermediate state) or null.</returns>
-        object? ReadNullableObject();
+        /// <returns>The object read, possibly in an intermediate state.</returns>
+        object ReadAny();
+
+        /// <summary>
+        /// Reads a <see cref="TypeReadInfo"/> written by <see cref="IBinarySerializer.WriteTypeInfo(Type)"/>.
+        /// </summary>
+        /// <returns>The type information.</returns>
+        TypeReadInfo ReadTypeInfo();
+
+        /// <summary>
+        /// Reads a non null object reference written by <see cref="IBinarySerializer.WriteObject{T}(T)"/> 
+        /// or <see cref="IBinarySerializer.WriteAny(object)"/>.
+        /// </summary>
+        /// <typeparam name="T">The object's expected type.</typeparam>
+        /// <returns>The object read, possibly in an intermediate state.</returns>
+        T ReadObject<T>() where T : class;
+
+        /// <summary>
+        /// Reads a nullable object reference.
+        /// </summary>
+        /// <typeparam name="T">The object's expected type.</typeparam>
+        /// <returns>
+        /// <returns>The object or value type (possibly in an intermediate state) or null.</returns>
+        T? ReadNullableObject<T>() where T : class;
+
+        /// <summary>
+        /// Reads a non null value type written by <see cref="IBinarySerializer.WriteValue{T}(in T)"/>.
+        /// </summary>
+        /// <typeparam name="T">The value's expected type.</typeparam>
+        /// <returns>The value read. If this value has references to objects, these objects may be in an intermediate state.</returns>
+        T ReadValue<T>() where T : struct;
+
+        /// <summary>
+        /// Reads a nullable value type.
+        /// </summary>
+        /// <typeparam name="T">The value's expected type.</typeparam>
+        /// <returns>The value read or null. If this value has references to objects, these objects may be in an intermediate state.</returns>
+        T? ReadNullableValue<T>() where T : struct;
 
         /// <summary>
         /// Gets whether this deserializer is currently in debug mode.

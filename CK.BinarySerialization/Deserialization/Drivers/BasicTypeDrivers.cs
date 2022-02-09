@@ -67,5 +67,12 @@ namespace CK.BinarySerialization.Deserialization
         public ulong ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadUInt64();
     }
 
+    sealed class DString : IDeserializationDriver<string>
+    {
+        public static object Instance = new DString();
+
+        public string ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadString();
+    }
+
 
 }

@@ -4,7 +4,7 @@
     public interface ITypeSerializationDriver
     {
         /// <summary>
-        /// Gets the name that will be serialized.
+        /// Gets the driver's name that will be serialized.
         /// </summary>
         string DriverName { get; }
 

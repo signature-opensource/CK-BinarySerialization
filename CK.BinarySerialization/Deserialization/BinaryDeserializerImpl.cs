@@ -27,8 +27,9 @@ namespace CK.BinarySerialization
 
         bool _leaveOpen;
 
-        public BinaryDeserializerImpl( ICKBinaryReader reader, bool leaveOpen, IDeserializerResolver resolver, IServiceProvider? services )
+        internal BinaryDeserializerImpl( int version, ICKBinaryReader reader, bool leaveOpen, IDeserializerResolver resolver, IServiceProvider? services )
         {
+            SerializationVersion = version;
             _reader = reader;
             _leaveOpen = leaveOpen;
             _resolver = resolver;
@@ -48,26 +49,18 @@ namespace CK.BinarySerialization
 
         public ICKBinaryReader Reader => _reader;
 
-        public TypeReadInfo ReadTypeInfo()
-        {
-            int idx = _reader.ReadNonNegativeSmallInt32();
-            if( idx < _types.Count ) return _types[idx];
-            var t = new TypeReadInfo( _reader );
-            _types.Add( t );
-            t.ConcludeRead( this );
-            return t;
-        }
-
         public IServiceProvider Services { get; }
 
-        public object ReadObject()
+        public int SerializationVersion { get; }
+
+        public object ReadAny()
         {
-            var o = ReadNullableObject();
-            if( o == null ) ThrowInvalidDataException( "Expected non null object." );
+            var o = ReadAnyNullable();
+            if( o == null ) ThrowInvalidDataException( "Expected non null object or value type." );
             return o!;
         }
 
-        public object? ReadNullableObject()
+        public object? ReadAnyNullable()
         {
             var b = (SerializationMarker)_reader.ReadByte();
             if( b == SerializationMarker.Null ) return null;
@@ -127,6 +120,85 @@ namespace CK.BinarySerialization
             }
             Debug.Assert( result.GetType().IsClass == !(result is ValueType) );
             return result;
+        }
+
+        public TypeReadInfo ReadTypeInfo()
+        {
+            int idx = _reader.ReadNonNegativeSmallInt32();
+            if( idx < _types.Count ) return _types[idx];
+            var k = _reader.ReadByte();
+            switch( k )
+            {
+                case 0: 
+                    {
+                        var t = new TypeReadInfo( TypeReadInfo.TypeKind.Regular );
+                        _types.Add( t );
+                        t.ReadNames( _reader );
+                        t.ReadBaseType( this );
+                        return t;
+                    }
+                case 1:
+                    {
+                        var args = _reader.ReadNonNegativeSmallInt32();
+                        TypeReadInfo t;
+                        t = new TypeReadInfo( args == 0 ? TypeReadInfo.TypeKind.OpenGeneric : TypeReadInfo.TypeKind.Generic );
+                        _types.Add( t );
+                        if( args != 0 ) t.ReadGenericParameters( this, args );
+                        t.ReadNames( _reader );
+                        t.ReadBaseType( this );
+                        return t;
+                    }
+                case 2:
+                    {
+                        var t = new TypeReadInfo( TypeReadInfo.TypeKind.Array );
+                        _types.Add( t );
+                        t.ReadArray( this );
+                        return t;
+                    }
+                case 3:
+                    {
+                        var t = new TypeReadInfo( TypeReadInfo.TypeKind.Ref );
+                        _types.Add( t );
+                        t.ReadRefOrPointerInfo( this );
+                        return t;
+                    }
+                case 4:
+                    {
+                        var t = new TypeReadInfo( TypeReadInfo.TypeKind.Pointer );
+                        _types.Add( t );
+                        t.ReadRefOrPointerInfo( this );
+                        return t;
+                    }
+                default: throw new NotSupportedException();
+            }
+        }
+
+        public T ReadObject<T>() where T : class => (T)ReadAny();
+
+        public T? ReadNullableObject<T>() where T : class => (T?)ReadAnyNullable();
+
+        public T ReadValue<T>() where T : struct
+        {
+            var b = (SerializationMarker)_reader.ReadByte();
+            return DoReadValue<T>( b );
+        }
+
+        public T? ReadNullableValue<T>() where T : struct
+        {
+            var b = (SerializationMarker)_reader.ReadByte();
+            if( b == SerializationMarker.Null ) return default;
+            return DoReadValue<T>( b );
+        }
+
+        T DoReadValue<T>( SerializationMarker b ) where T : struct
+        {
+            if( b != SerializationMarker.Struct )
+            {
+                ThrowInvalidDataException( $"Unexpected '{b}' marker while reading non nullable '{typeof( T )}'." );
+            }
+            var info = ReadTypeInfo();
+            var d = (IDeserializationDriver<T>)info.GetDeserializationDriver( _resolver );
+            return d.ReadInstance( this, info );
         }
 
         #region DebugMode methods

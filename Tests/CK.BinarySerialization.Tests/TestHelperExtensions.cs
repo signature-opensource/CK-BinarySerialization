@@ -3,6 +3,7 @@ using CK.Testing;
 using FluentAssertions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 
@@ -11,12 +12,13 @@ namespace CK.Core
     static class TestHelperExtensions
     {
 
+        [return: NotNullIfNotNull("o")]
         public static object? SaveAndLoadObject( this IBasicTestHelper @this, object? o, 
                                                                               IServiceProvider? serviceProvider = null, 
                                                                               ISerializerResolver? serializers = null, 
                                                                               IDeserializerResolver? deserializers = null )
         {
-            return SaveAndLoadObject( @this, o, ( x, w ) => w.WriteNullableObject( x ), r => r.ReadObject(), serializers, deserializers );
+            return SaveAndLoadObject( @this, o, ( x, w ) => w.WriteAnyNullable( x ), r => r.ReadAnyNullable(), serializers, deserializers );
         }
 
         public static T SaveAndLoadObject<T>( this IBasicTestHelper @this, T o, 
