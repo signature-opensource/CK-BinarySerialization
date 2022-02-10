@@ -14,19 +14,19 @@ namespace CK.BinarySerialization
         /// </summary>
         /// <typeparam name="T">The type for which a driver must be found.</typeparam>
         /// <returns>The driver or null.</returns>
-        ITypeSerializationDriver<T>? TryFindDriver<T>() where T : notnull;
+        ISerializationDriver<T>? TryFindDriver<T>();
 
         /// <summary>
         /// Finds a serialization driver for a Type.
         /// </summary>
         /// <param name="t">The type for which a driver must be found.</param>
         /// <returns>The driver or null.</returns>
-        ITypeSerializationDriver? TryFindDriver( Type t );
+        IUntypedSerializationDriver? TryFindDriver( Type t );
     }
 
     public static class SerializerResolverExtensions
     {
-        public static ITypeSerializationDriver<T> FindDriver<T>( this ISerializerResolver r ) where T : notnull
+        public static ISerializationDriver<T> FindDriver<T>( this ISerializerResolver r )
         {
             var d = r.TryFindDriver<T>();
             if( d == null )
@@ -36,7 +36,7 @@ namespace CK.BinarySerialization
             return d;
         }
 
-        public static ITypeSerializationDriver FindDriver( this ISerializerResolver r, Type t )
+        public static IUntypedSerializationDriver FindDriver( this ISerializerResolver r, Type t )
         {
             var d = r.TryFindDriver( t );
             if( d == null )

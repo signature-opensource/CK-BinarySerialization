@@ -14,7 +14,7 @@ namespace CK.BinarySerialization
     /// since this is used to break too deep recursion when a long linked list of objects is serialized.
     /// </para>
     /// <para>
-    /// The <see cref="ITypeSerializationDriverAllowDeferredRead"/> marker interface should be used
+    /// The <see cref="ISerializationDriverAllowDeferredRead"/> marker interface should be used
     /// on the serialization driver to allow this behavior.
     /// </para>
     /// </summary>

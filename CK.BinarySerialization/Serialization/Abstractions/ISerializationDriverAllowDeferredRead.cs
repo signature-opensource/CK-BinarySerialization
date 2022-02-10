@@ -6,7 +6,7 @@
     /// This can be supported only for reference types.
     /// </para>
     /// </summary>
-    public interface ITypeSerializationDriverAllowDeferredRead
+    public interface ISerializationDriverAllowDeferredRead
     {
     }
 }

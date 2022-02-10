@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CK.BinarySerialization
 {
     /// <summary>
-    /// Handles deserialization from a type's assembly qualified name.
+    /// Typed deserialization driver that knows how to instantiate an instance of a <typeparamref name="T"/> 
+    /// that cannot be null and initializes it from a <see cref="IBinaryDeserializer"/>.
     /// </summary>
-    public interface IDeserializationDriver<out T> where T : notnull
+    public interface INonNullableDeserializationDriver<out T> : IDeserializationDriver<T>, INonNullableDeserializationDriver where T : notnull
     {
         /// <summary>
         /// Reads the data and instantiates a new object.
@@ -16,6 +15,5 @@ namespace CK.BinarySerialization
         /// <param name="readInfo">The type information read.</param>
         /// <returns>The new instance.</returns>
         T ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo );
-
     }
 }

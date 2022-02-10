@@ -4,10 +4,17 @@ using System.Text;
 
 namespace CK.BinarySerialization.Serialization
 {
-    sealed class DBool : ITypeSerializationDriver<bool>
+    sealed class DString : INonNullableSerializationDriver<string>
     {
-        public static readonly ITypeSerializationDriver Instance = new DBool();
+        public string DriverName => "string";
 
+        public int SerializationVersion => -1;
+
+        public void WriteData( IBinarySerializer w, in string o ) => w.Writer.Write( o );
+    }
+
+    sealed class DBool : INonNullableSerializationDriver<bool>
+    {
         public string DriverName => "bool";
 
         public int SerializationVersion => -1;
@@ -15,10 +22,8 @@ namespace CK.BinarySerialization.Serialization
         public void WriteData( IBinarySerializer w, in bool o ) => w.Writer.Write( o );
     }
 
-    sealed class DInt32 : ITypeSerializationDriver<int>
+    sealed class DInt32 : INonNullableSerializationDriver<int>
     {
-        public static ITypeSerializationDriver Instance = new DInt32();
-
         public string DriverName => "int";
 
         public int SerializationVersion => -1;
@@ -26,10 +31,8 @@ namespace CK.BinarySerialization.Serialization
         public void WriteData( IBinarySerializer w, in int o ) => w.Writer.Write( o );
     }
 
-    sealed class DUInt32 : ITypeSerializationDriver<uint>
+    sealed class DUInt32 : INonNullableSerializationDriver<uint>
     {
-        public static ITypeSerializationDriver Instance = new DUInt32();
-
         public string DriverName => "uint";
 
         public int SerializationVersion => -1;
@@ -37,10 +40,8 @@ namespace CK.BinarySerialization.Serialization
         public void WriteData( IBinarySerializer w, in uint o ) => w.Writer.Write( o );
     }
 
-    sealed class DInt8 : ITypeSerializationDriver<sbyte>
+    sealed class DInt8 : INonNullableSerializationDriver<sbyte>
     {
-        public static ITypeSerializationDriver Instance = new DInt8();
-
         public string DriverName => "sbyte";
 
         public int SerializationVersion => -1;
@@ -48,10 +49,8 @@ namespace CK.BinarySerialization.Serialization
         public void WriteData( IBinarySerializer w, in sbyte o ) => w.Writer.Write( o );
     }
 
-    sealed class DUInt8 : ITypeSerializationDriver<byte>
+    sealed class DUInt8 : INonNullableSerializationDriver<byte>
     {
-        public static ITypeSerializationDriver Instance = new DUInt8();
-
         public string DriverName => "byte";
 
         public int SerializationVersion => -1;
@@ -59,10 +58,8 @@ namespace CK.BinarySerialization.Serialization
         public void WriteData( IBinarySerializer w, in byte o ) => w.Writer.Write( o );
     }
 
-    sealed class DInt16 : ITypeSerializationDriver<short>
+    sealed class DInt16 : INonNullableSerializationDriver<short>
     {
-        public static ITypeSerializationDriver Instance = new DInt16();
-
         public string DriverName => "short";
 
         public int SerializationVersion => -1;
@@ -70,10 +67,8 @@ namespace CK.BinarySerialization.Serialization
         public void WriteData( IBinarySerializer w, in short o ) => w.Writer.Write( o );
     }
 
-    sealed class DUInt16 : ITypeSerializationDriver<ushort>
+    sealed class DUInt16 : INonNullableSerializationDriver<ushort>
     {
-        public static ITypeSerializationDriver Instance = new DUInt16();
-
         public string DriverName => "ushort";
 
         public int SerializationVersion => -1;
@@ -81,10 +76,8 @@ namespace CK.BinarySerialization.Serialization
         public void WriteData( IBinarySerializer w, in ushort o ) => w.Writer.Write( o );
     }
 
-    sealed class DInt64 : ITypeSerializationDriver<long>
+    sealed class DInt64 : INonNullableSerializationDriver<long>
     {
-        public static ITypeSerializationDriver Instance = new DInt64();
-
         public string DriverName => "long";
 
         public int SerializationVersion => -1;
@@ -92,10 +85,8 @@ namespace CK.BinarySerialization.Serialization
         public void WriteData( IBinarySerializer w, in long o ) => w.Writer.Write( o );
     }
 
-    sealed class DUInt64 : ITypeSerializationDriver<ulong>
+    sealed class DUInt64 : INonNullableSerializationDriver<ulong>
     {
-        public static ITypeSerializationDriver Instance = new DUInt64();
-
         public string DriverName => "ulong";
 
         public int SerializationVersion => -1;
@@ -103,14 +94,48 @@ namespace CK.BinarySerialization.Serialization
         public void WriteData( IBinarySerializer w, in ulong o ) => w.Writer.Write( o );
     }
 
-    sealed class DString : ITypeSerializationDriver<string>
+    sealed class DSingle : INonNullableSerializationDriver<float>
     {
-        public static ITypeSerializationDriver Instance = new DString();
-
-        public string DriverName => "string";
+        public string DriverName => "float";
 
         public int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in string o ) => w.Writer.Write( o );
+        public void WriteData( IBinarySerializer w, in float o ) => w.Writer.Write( o );
+    }
+
+    sealed class DDouble : INonNullableSerializationDriver<double>
+    {
+        public string DriverName => "double";
+
+        public int SerializationVersion => -1;
+
+        public void WriteData( IBinarySerializer w, in double o ) => w.Writer.Write( o );
+    }
+
+    sealed class DChar : INonNullableSerializationDriver<char>
+    {
+        public string DriverName => "char";
+
+        public int SerializationVersion => -1;
+
+        public void WriteData( IBinarySerializer w, in char o ) => w.Writer.Write( o );
+    }
+
+    sealed class DDateTime : INonNullableSerializationDriver<DateTime>
+    {
+        public string DriverName => "DateTime";
+
+        public int SerializationVersion => -1;
+
+        public void WriteData( IBinarySerializer w, in DateTime o ) => w.Writer.Write( o );
+    }
+
+    sealed class DDateTimeOffset : INonNullableSerializationDriver<DateTimeOffset>
+    {
+        public string DriverName => "DateTimeOffset";
+
+        public int SerializationVersion => -1;
+
+        public void WriteData( IBinarySerializer w, in DateTimeOffset o ) => w.Writer.Write( o );
     }
 }

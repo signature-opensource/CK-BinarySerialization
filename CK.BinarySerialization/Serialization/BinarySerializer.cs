@@ -10,7 +10,13 @@ namespace CK.BinarySerialization
     {
         public const int SerializerVersion = 10;
 
-        public static readonly SerializerRegistry DefaultResolver = new SerializerRegistry();
+        public static readonly SerializerRegistry DefaultResolver;
+
+        static BinarySerializer()
+        {
+            DefaultResolver = new SerializerRegistry( true );
+            DefaultResolver.Register( CollectionSerializerRegistry.Default );
+        }
 
         public static IBinarySerializer Create( Stream s,
                                                 bool leaveOpen,

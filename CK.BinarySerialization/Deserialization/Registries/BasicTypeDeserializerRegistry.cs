@@ -7,7 +7,7 @@ namespace CK.BinarySerialization
 {
     public class BasicTypeDeserializerRegistry : IDeserializerResolver
     {
-        static readonly Dictionary<string, object> _byName;
+        static readonly Dictionary<string, IDeserializationDriver> _byName;
 
         /// <summary>
         /// Gets the default registry.
@@ -16,24 +16,29 @@ namespace CK.BinarySerialization
 
         static BasicTypeDeserializerRegistry()
         {
-            _byName = new Dictionary<string, object>()
+            _byName = new Dictionary<string, IDeserializationDriver>()
             {
-                { "bool", Deserialization.DBool.Instance },
-                { "int", Deserialization.DInt32.Instance },
-                { "uint", Deserialization.DUInt32.Instance },
-                { "sbyte", Deserialization.DInt8.Instance },
-                { "byte", Deserialization.DUInt8.Instance },
-                { "short", Deserialization.DInt16.Instance },
-                { "ushort", Deserialization.DUInt16.Instance },
-                { "long", Deserialization.DInt16.Instance },
-                { "ulong", Deserialization.DUInt32.Instance },
-                { "string", Deserialization.DString.Instance },
+                { "bool", new Deserialization.DBool() },
+                { "int", new Deserialization.DInt32() },
+                { "uint", new Deserialization.DUInt32() },
+                { "sbyte", new Deserialization.DInt8() },
+                { "byte", new Deserialization.DUInt8() },
+                { "short", new Deserialization.DInt16() },
+                { "ushort", new Deserialization.DUInt16() },
+                { "long", new Deserialization.DInt64() },
+                { "ulong", new Deserialization.DUInt64() },
+                { "string", new Deserialization.DString() },
+                { "float", new Deserialization.DSingle() },
+                { "double", new Deserialization.DDouble() },
+                { "char", new Deserialization.DChar() },
+                { "DateTime", new Deserialization.DDateTime() },
+                { "DateTimeOffset", new Deserialization.DDateTimeOffset() },
             };
         }
 
         BasicTypeDeserializerRegistry() { }
 
-        public object? TryFindDriver( TypeReadInfo info )
+        public IDeserializationDriver? TryFindDriver( TypeReadInfo info )
         {
             return info.DriverName != null ? _byName.GetValueOrDefault( info.DriverName ) : null;
         }

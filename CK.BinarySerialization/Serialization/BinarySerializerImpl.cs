@@ -9,13 +9,13 @@ namespace CK.BinarySerialization
     {
         readonly ICKBinaryWriter _writer;
         readonly ISerializerResolver _resolver;
-        readonly Dictionary<Type, (int Idx, ITypeSerializationDriver? D)> _types;
+        readonly Dictionary<Type, (int Idx, IUntypedSerializationDriver? D)> _types;
         readonly Action<IDestroyable>? _destroyedTracker;
         readonly Dictionary<object, int> _seen;
 
         public const int MaxRecurse = 50;
         int _recurseCount;
-        Stack<(ITypeSerializationDriver D, object O)>? _deferred;
+        Stack<(IUntypedSerializationDriver D, object O)>? _deferred;
 
         int _debugModeCounter;
         int _debugSentinel;
@@ -27,7 +27,7 @@ namespace CK.BinarySerialization
             _leaveOpen = leaveOpen;
             _resolver = resolver;
             _destroyedTracker = destroyedTracker;
-            _types = new Dictionary<Type, (int, ITypeSerializationDriver?)>();
+            _types = new Dictionary<Type, (int, IUntypedSerializationDriver?)>();
             _seen = new Dictionary<object, int>( PureObjectRefEqualityComparer<object>.Default );
         }
 
@@ -48,7 +48,7 @@ namespace CK.BinarySerialization
             return WriteTypeInfo( t, null );
         }
 
-        bool WriteTypeInfo( Type t, ITypeSerializationDriver? knownDriver )
+        bool WriteTypeInfo( Type t, IUntypedSerializationDriver? knownDriver )
         {
             if( _types.TryGetValue( t, out var info ) )
             {
@@ -56,7 +56,7 @@ namespace CK.BinarySerialization
                 return false;
             }
 
-            void RegisterAndWriteIndex( Type t, ITypeSerializationDriver? d )
+            void RegisterAndWriteIndex( Type t, IUntypedSerializationDriver? d )
             {
                 var i = (_types.Count, d);
                 _types.Add( t, i );
@@ -235,12 +235,12 @@ namespace CK.BinarySerialization
             {
                 marker = SerializationMarker.Struct;
             }
-            ITypeSerializationDriver driver = _resolver.FindDriver( t );
+            IUntypedSerializationDriver driver = _resolver.FindDriver( t );
             if( _recurseCount > MaxRecurse 
                 && marker == SerializationMarker.Object
-                && driver is ITypeSerializationDriverAllowDeferredRead )
+                && driver is ISerializationDriverAllowDeferredRead )
             {
-                if( _deferred == null ) _deferred = new Stack<(ITypeSerializationDriver D, object O)>( 200 );
+                if( _deferred == null ) _deferred = new Stack<(IUntypedSerializationDriver D, object O)>( 200 );
                 _deferred.Push( (driver, o) );
                 _writer.Write( (byte)SerializationMarker.DeferredObject );
                 WriteTypeInfo( t, driver );

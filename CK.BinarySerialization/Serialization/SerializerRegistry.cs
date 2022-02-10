@@ -14,22 +14,43 @@ namespace CK.BinarySerialization
         ISerializerResolver[] _resolvers;
 
         /// <summary>
-        /// Initializes a new registry with the <see cref="BasicTypeSerializerRegistry.Default"/> and
-        /// <see cref="SimpleBinarySerializableRegistry.Default"/>.
+        /// Called by static BinarySerializer constructor to setup the <see cref="BinarySerializer.DefaultResolver"/>.
+        /// Only independent resolvers can be registered here: resolvers that depend
+        /// on the BinarySerializer.DefaultResolver cannot be referenced here and are 
+        /// registered after the instance creation.
+        /// </summary>
+        /// <param name="isBinarySerializerDefault">Fake parameter for internal calls.</param>
+        internal SerializerRegistry( bool isBinarySerializerDefault )
+        {
+            _resolvers = new ISerializerResolver[]
+            {
+                BasicTypeSerializerRegistry.Default,
+                SimpleBinarySerializableRegistry.Default,
+            };
+        }
+
+        /// <summary>
+        /// Initializes a new registry with the <see cref="BasicTypeSerializerRegistry.Default"/>,
+        /// <see cref="SimpleBinarySerializableRegistry.Default"/> and <see cref="CollectionSerializerRegistry.Default"/>.
         /// </summary>
         public SerializerRegistry()
         {
-            _resolvers = new ISerializerResolver[] { BasicTypeSerializerRegistry.Default, SimpleBinarySerializableRegistry.Default };
+            _resolvers = new ISerializerResolver[] 
+            { 
+                BasicTypeSerializerRegistry.Default,
+                SimpleBinarySerializableRegistry.Default,
+                CollectionSerializerRegistry.Default
+            };
         }
 
         /// <inheritdoc />
-        public ITypeSerializationDriver<T>? TryFindDriver<T>() where T : notnull
+        public ISerializationDriver<T>? TryFindDriver<T>()
         {
-            return (ITypeSerializationDriver<T>?)TryFindDriver( typeof( T ) );
+            return (ISerializationDriver<T>?)TryFindDriver( typeof( T ) );
         }
 
         /// <inheritdoc />
-        public ITypeSerializationDriver? TryFindDriver( Type t )
+        public IUntypedSerializationDriver? TryFindDriver( Type t )
         {
             foreach( var resolver in _resolvers )
             {

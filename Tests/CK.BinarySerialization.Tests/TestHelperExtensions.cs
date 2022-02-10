@@ -13,19 +13,36 @@ namespace CK.Core
     {
 
         [return: NotNullIfNotNull("o")]
-        public static object? SaveAndLoadObject( this IBasicTestHelper @this, object? o, 
-                                                                              IServiceProvider? serviceProvider = null, 
-                                                                              ISerializerResolver? serializers = null, 
+        public static object? SaveAndLoadObject( this IBasicTestHelper @this, object? o,
+                                                                              IServiceProvider? serviceProvider = null,
+                                                                              ISerializerResolver? serializers = null,
                                                                               IDeserializerResolver? deserializers = null )
         {
-            return SaveAndLoadObject( @this, o, ( x, w ) => w.WriteAnyNullable( x ), r => r.ReadAnyNullable(), serializers, deserializers );
+            return SaveAndLoad( @this, o, ( x, w ) => w.WriteAnyNullable( x ), r => r.ReadAnyNullable(), serviceProvider, serializers, deserializers );
         }
 
-        public static T SaveAndLoadObject<T>( this IBasicTestHelper @this, T o, 
-                                                                           Action<T, IBinarySerializer> w, 
-                                                                           Func<IBinaryDeserializer, T> r, 
-                                                                           ISerializerResolver? serializers = null, 
-                                                                           IDeserializerResolver? deserializers = null )
+        public static T SaveAndLoadValue<T>( this IBasicTestHelper @this, in T v,
+                                                                          IServiceProvider? serviceProvider = null,
+                                                                          ISerializerResolver? serializers = null,
+                                                                          IDeserializerResolver? deserializers = null ) where T : struct
+        {
+            return SaveAndLoad<T>( @this, v, ( x, w ) => w.WriteValue( x ), r => r.ReadValue<T>(), serviceProvider, serializers, deserializers );
+        }
+
+        public static T? SaveAndLoadNullableValue<T>( this IBasicTestHelper @this, in T? v,
+                                                                                   IServiceProvider? serviceProvider = null,
+                                                                                   ISerializerResolver? serializers = null,
+                                                                                   IDeserializerResolver? deserializers = null ) where T : struct
+        {
+            return SaveAndLoad<T?>( @this, v, ( x, w ) => w.WriteNullableValue( x ), r => r.ReadNullableValue<T>(), serviceProvider, serializers, deserializers );
+        }
+
+        public static T SaveAndLoad<T>( this IBasicTestHelper @this, in T o, 
+                                                                     Action<T, IBinarySerializer> w, 
+                                                                     Func<IBinaryDeserializer, T> r,
+                                                                     IServiceProvider? serviceProvider = null,
+                                                                     ISerializerResolver? serializers = null, 
+                                                                     IDeserializerResolver? deserializers = null )
         {
             using( var s = new MemoryStream() )
             using( var writer = BinarySerializer.Create( s, true, serializers ) )

@@ -14,16 +14,36 @@ namespace CK.BinarySerialization
         IDeserializerResolver[] _resolvers;
 
         /// <summary>
-        /// Initializes a new registry with the <see cref="BasicTypeDeserializerRegistry.Default"/>
-        /// and <see cref="SimpleBinaryDeserializableRegistry.Default"/>.
+        /// Called by static BinaryDeserializer constructor to setup the <see cref="BinaryDeserializer.DefaultResolver"/>.
+        /// Only independent resolvers can be registered here: resolvers that depend
+        /// on the BinarySerializer.DefaultResolver cannot be referenced here and are 
+        /// registered after the instance creation.
+        /// </summary>
+        /// <param name="isBinarySerializerDefault">Fake parameter for internal calls.</param>
+        internal DeserializerRegistry( bool isBinarySerializerDefault )
+        {
+            _resolvers = new IDeserializerResolver[]
+            {
+                BasicTypeDeserializerRegistry.Default,
+                SimpleBinaryDeserializableRegistry.Default,
+            };
+        }
+
+        /// <summary>
+        /// Initializes a new registry with the <see cref="BasicTypeDeserializerRegistry.Default"/>,
+        /// <see cref="SimpleBinaryDeserializableRegistry.Default"/> and <see cref="CollectionDeserializableRegistry.Default"/>.
         /// </summary>
         public DeserializerRegistry()
         {
-            _resolvers = new IDeserializerResolver[] { BasicTypeDeserializerRegistry.Default, SimpleBinaryDeserializableRegistry.Default };
+            _resolvers = new IDeserializerResolver[] 
+            { 
+                BasicTypeDeserializerRegistry.Default, 
+                SimpleBinaryDeserializableRegistry.Default,
+            };
         }
 
         /// <inheritdoc />
-        public object? TryFindDriver( TypeReadInfo info )
+        public IDeserializationDriver? TryFindDriver( TypeReadInfo info )
         {
             foreach( var resolver in _resolvers )
             {

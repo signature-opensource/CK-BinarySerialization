@@ -18,7 +18,7 @@ namespace CK.BinarySerialization.Tests
 
         class OpenArrayHolder<T>
         {
-            public T[] A;
+            public T[] A = Array.Empty<T>();
         }
 
         // For an unknown reason, TestCase sucks here. Using TestCaseSource instead.
@@ -47,7 +47,7 @@ namespace CK.BinarySerialization.Tests
         [TestCaseSource(nameof(SerializationTypes))]
         public void Type_serialization( Type t )
         {
-            Type backRW = TestHelper.SaveAndLoadObject( t, ( type, w ) => w.WriteTypeInfo( type ), r => r.ReadTypeInfo().ResolveLocalType() );
+            Type backRW = TestHelper.SaveAndLoad( t, ( type, w ) => w.WriteTypeInfo( type ), r => r.ReadTypeInfo().ResolveLocalType() );
             backRW.Should().BeSameAs( t );
 
             Type backO = (Type)TestHelper.SaveAndLoadObject( t );
@@ -66,20 +66,8 @@ namespace CK.BinarySerialization.Tests
         public void OpenArray_type_deserialization_uses_typeof_Array()
         {
             var gT = typeof( OpenArrayHolder<> ).GetField( "A" )!.FieldType;
-            Type backRW = TestHelper.SaveAndLoadObject( gT, ( type, w ) => w.WriteTypeInfo( type ), r => r.ReadTypeInfo().ResolveLocalType() );
+            Type backRW = TestHelper.SaveAndLoad( gT, ( type, w ) => w.WriteTypeInfo( type ), r => r.ReadTypeInfo().ResolveLocalType() );
             backRW.Should().BeSameAs( typeof(Array) );
-        }
-
-        [Test]
-        public void TypeReadInfo_with_generics()
-        {
-            var c = typeof( Samples.ClosedSpecializedList );
-            c.GetGenericArguments().Should().BeEmpty();
-            c.BaseType!.GetGenericArguments().Should().BeEquivalentTo( new[] { typeof( int ) } );
-
-            var o = typeof( Samples.OpenedSpecializedList<int> );
-            o.GetGenericArguments().Should().BeEquivalentTo( new[] { typeof( int ) } );
-            o.BaseType!.GetGenericArguments().Should().BeEquivalentTo( new[] { typeof( int ) } );
         }
 
     }

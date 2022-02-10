@@ -4,75 +4,80 @@ using System.Text;
 
 namespace CK.BinarySerialization.Deserialization
 {
-    sealed class DBool : IDeserializationDriver<bool>
+    sealed class DBool : Deserializer<bool>
     {
-        public static object Instance = new DBool();
-
-        public bool ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadBoolean();
+        protected override bool ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadBoolean();
     }
 
-    sealed class DInt32 : IDeserializationDriver<int>
+    sealed class DInt32 : Deserializer<int>
     {
-        public static object Instance = new DInt32();
+        public static IDeserializationDriver Instance = new DInt32();
 
-        public int ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadInt32();
+        protected override int ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadInt32();
     }
 
-    sealed class DUInt32 : IDeserializationDriver<uint>
+    sealed class DUInt32 : Deserializer<uint>
     {
-        public static object Instance = new DUInt32();
-
-        public uint ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadUInt32();
+        protected override uint ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadUInt32();
     }
 
-    sealed class DInt8 : IDeserializationDriver<sbyte>
+    sealed class DInt8 : Deserializer<sbyte>
     {
-        public static object Instance = new DInt8();
-
-        public sbyte ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadSByte();
+        protected override sbyte ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadSByte();
     }
 
-    sealed class DUInt8 : IDeserializationDriver<byte>
+    sealed class DUInt8 : Deserializer<byte>
     {
-        public static object Instance = new DUInt8();
-
-        public byte ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadByte();
+        protected override byte ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadByte();
     }
 
-    sealed class DInt16 : IDeserializationDriver<short>
+    sealed class DInt16 : Deserializer<short>
     {
-        public static object Instance = new DInt16();
-
-        public short ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadInt16();
+        protected override short ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadInt16();
     }
 
-    sealed class DUInt16 : IDeserializationDriver<ushort>
+    sealed class DUInt16 : Deserializer<ushort>
     {
-        public static object Instance = new DUInt16();
-
-        public ushort ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadUInt16();
+        protected override ushort ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadUInt16();
     }
 
-    sealed class DInt64 : IDeserializationDriver<long>
+    sealed class DInt64 : Deserializer<long>
     {
-        public static object Instance = new DInt64();
-
-        public long ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadInt64();
+        protected override long ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadInt64();
     }
 
-    sealed class DUInt64 : IDeserializationDriver<ulong>
+    sealed class DUInt64 : Deserializer<ulong>
     {
-        public static object Instance = new DUInt64();
-
-        public ulong ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadUInt64();
+        protected override ulong ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadUInt64();
     }
 
-    sealed class DString : IDeserializationDriver<string>
+    sealed class DString : Deserializer<string>
     {
-        public static object Instance = new DString();
-
-        public string ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadString();
+        protected override string ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadString();
     }
 
+    sealed class DSingle : Deserializer<float>
+    {
+        protected override float ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadSingle();
+    }
 
+    sealed class DDouble : Deserializer<double>
+    {
+        protected override double ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadDouble();
+    }
+
+    sealed class DChar : Deserializer<char>
+    {
+        protected override char ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadChar();
+    }
+
+    sealed class DDateTime : Deserializer<DateTime>
+    {
+        protected override DateTime ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadDateTime();
+    }
+
+    sealed class DDateTimeOffset : Deserializer<DateTimeOffset>
+    {
+        protected override DateTimeOffset ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadDateTimeOffset();
+    }
 }

@@ -1,7 +1,9 @@
 ﻿using CK.Core;
+using CK.Text;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -10,7 +12,7 @@ namespace CK.BinarySerialization
 {
     public class TypeReadInfo
     {
-        IDeserializationDriver<object>? _driver;
+        IDeserializationDriver? _driver;
         Type? _localType;
 
         internal TypeReadInfo( TypeKind k )
@@ -24,6 +26,7 @@ namespace CK.BinarySerialization
         {
             if( (DriverName = r.ReadSharedString()) != null )
             {
+                IsNullable = r.ReadBoolean();
                 SerializationVersion = r.ReadSmallInt32();
             }
             TypeNamespace = r.ReadSharedString()!;
@@ -58,6 +61,7 @@ namespace CK.BinarySerialization
             {
                 ElementTypeReadInfo = d.ReadTypeInfo();
                 DriverName = d.Reader.ReadSharedString();
+                IsNullable = d.Reader.ReadBoolean();
                 eName = ElementTypeReadInfo.TypeName.Split( '+' )[^1];
             }
             else
@@ -82,12 +86,42 @@ namespace CK.BinarySerialization
         /// </summary>
         public enum TypeKind
         {
+            /// <summary>
+            /// Regular object. Instances may be deserialized.
+            /// </summary>
             Regular,
+
+            /// <summary>
+            /// Array, potentially with multiple dimensions. Instances may be deserialized.
+            /// </summary>
             Array,
+
+            /// <summary>
+            /// "Generic" array (see <see cref="Type.ContainsGenericParameters"/> is true).
+            /// Instances cannot be deserialized.
+            /// </summary>
             OpenArray,
+
+            /// <summary>
+            /// <see cref="Type.IsPointer"/> type.
+            /// Instances cannot be deserialized.
+            /// </summary>
             Pointer,
+
+            /// <summary>
+            /// <see cref="Type.IsByRef"/> type.
+            /// Instances cannot be deserialized.
+            /// </summary>
             Ref,
+
+            /// <summary>
+            /// Generic closed type. Instances may be deserialized.
+            /// </summary>
             Generic,
+
+            /// <summary>
+            /// Open generic type. Instances cannot be deserialized.
+            /// </summary>
             OpenGeneric
         }
 
@@ -97,14 +131,20 @@ namespace CK.BinarySerialization
         public TypeKind Kind { get; private set; }
 
         /// <summary>
-        /// Gets the name of the driver that has been resolved or null is no 
+        /// Gets the name of the driver that has been resolved or null if no 
         /// driver was resolved for the type.
         /// <para>
-        /// A type written by <see cref="IBinarySerializer.WriteTypeInfo(System.Type)"/> is not 
+        /// A type written by <see cref="IBinarySerializer.WriteTypeInfo(Type)"/> is not 
         /// necessarily serializable. This is often the case for base types of a type that is serializable.
         /// </para>
         /// </summary>
         public string? DriverName { get; private set; }
+
+        /// <summary>
+        /// Gets whether this type is nullable or not.
+        /// Null when <see cref="DriverName"/> is null.
+        /// </summary>
+        public bool? IsNullable { get; set; }
 
         /// <summary>
         /// Gets the namespace of the type.
@@ -237,11 +277,11 @@ namespace CK.BinarySerialization
         /// Gets the deserialization driver. Throws an <see cref="InvalidOperationException"/> if it cannot be resolved.
         /// </summary>
         /// <param name="r">The deserializer.</param>
-        public IDeserializationDriver<object> GetDeserializationDriver( IDeserializerResolver r )
+        public IDeserializationDriver GetDeserializationDriver( IDeserializerResolver r )
         {
             if( _driver == null )
             {
-                _driver = (IDeserializationDriver<object>?)r.TryFindDriver( this );
+                _driver = r.TryFindDriver( this );
                 if( _driver == null )
                 {
                     throw new InvalidOperationException( $"Unable to resolve deserialization driver for {ToString()}." );
@@ -252,7 +292,10 @@ namespace CK.BinarySerialization
 
         public override string ToString()
         {
-            return $"Type {TypeNamespace}.{TypeName} from assembly '{AssemblyName}', DriverName = {DriverName}";
+            var gen = GenericParameters.Count > 0
+                        ? '[' + GenericParameters.Select( p => p.ToString() ).Concatenate() + ']'
+                        : "";
+            return $"DriverName = {DriverName}, Type '{TypeNamespace}.{TypeName}{gen},{AssemblyName}'";
         }
 
     }

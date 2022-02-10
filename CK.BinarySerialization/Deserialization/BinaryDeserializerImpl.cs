@@ -197,7 +197,7 @@ namespace CK.BinarySerialization
                 ThrowInvalidDataException( $"Unexpected '{b}' marker while reading non nullable '{typeof( T )}'." );
             }
             var info = ReadTypeInfo();
-            var d = (IDeserializationDriver<T>)info.GetDeserializationDriver( _resolver );
+            var d = (INonNullableDeserializationDriver<T>)info.GetDeserializationDriver( _resolver );
             return d.ReadInstance( this, info );
         }
 

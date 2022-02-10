@@ -1,8 +1,5 @@
-﻿using CK.Core;
-using System;
-using System.Collections.Concurrent;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace CK.BinarySerialization
 {
@@ -11,7 +8,7 @@ namespace CK.BinarySerialization
     /// </summary>
     public class BasicTypeSerializerRegistry : ISerializerResolver
     {
-        static readonly Dictionary<Type, ITypeSerializationDriver> _byType;
+        static readonly Dictionary<Type, IUntypedSerializationDriver> _byType;
 
         /// <summary>
         /// Gets the default registry.
@@ -20,31 +17,47 @@ namespace CK.BinarySerialization
 
         static BasicTypeSerializerRegistry()
         {
-            _byType = new Dictionary<Type, ITypeSerializationDriver>()
+            _byType = new Dictionary<Type, IUntypedSerializationDriver>();
+
+            RegReferenceType( new Serialization.DString() );
+
+            RegValueType( new Serialization.DBool() );
+            RegValueType( new Serialization.DInt32() );
+            RegValueType( new Serialization.DUInt32() );
+            RegValueType( new Serialization.DInt8() );
+            RegValueType( new Serialization.DUInt8() );
+            RegValueType( new Serialization.DInt16() );
+            RegValueType( new Serialization.DUInt16() );
+            RegValueType( new Serialization.DInt64() );
+            RegValueType( new Serialization.DUInt64() );
+            RegValueType( new Serialization.DSingle() );
+            RegValueType( new Serialization.DDouble() );
+            RegValueType( new Serialization.DChar() );
+            RegValueType( new Serialization.DDateTime() );
+            RegValueType( new Serialization.DDateTimeOffset() );
+
+            void RegValueType<T>( INonNullableSerializationDriver<T> driver ) where T : struct
             {
-                { typeof( bool ), Serialization.DBool.Instance },
-                { typeof( int ), Serialization.DInt32.Instance },
-                { typeof( uint ), Serialization.DUInt32.Instance },
-                { typeof( sbyte ), Serialization.DInt8.Instance },
-                { typeof( byte ), Serialization.DUInt8.Instance },
-                { typeof( short ), Serialization.DInt16.Instance },
-                { typeof( ushort ), Serialization.DUInt16.Instance },
-                { typeof( long ), Serialization.DInt16.Instance },
-                { typeof( ulong ), Serialization.DUInt32.Instance },
-                { typeof( string ), Serialization.DString.Instance },
-            };
+                _byType.Add( typeof( T ), driver );
+                _byType.Add( typeof( T? ), new ValueTypeNullableDriver<T>( driver ) );
+            }
+
+            void RegReferenceType<T>( INonNullableSerializationDriver<T> driver ) where T : class
+            {
+                _byType.Add( typeof( T ), new ReferenceTypeNullableDriver<T>( driver ) );
+            }
         }
 
         BasicTypeSerializerRegistry() { }
 
         /// <inheritdoc />
-        public ITypeSerializationDriver<T>? TryFindDriver<T>() where T : notnull
+        public ISerializationDriver<T>? TryFindDriver<T>()
         {
-            return (ITypeSerializationDriver<T>?)_byType.GetValueOrDefault( typeof( T ) );
+            return (ISerializationDriver<T>?)_byType.GetValueOrDefault( typeof( T ) );
         }
 
         /// <inheritdoc />
-        public ITypeSerializationDriver? TryFindDriver( Type t )
+        public IUntypedSerializationDriver? TryFindDriver( Type t )
         {
             return _byType.GetValueOrDefault( t );
         }

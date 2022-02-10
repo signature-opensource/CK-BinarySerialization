@@ -24,5 +24,12 @@ namespace CK.BinarySerialization
         /// Gets the version.
         /// </summary>
         public int Version { get; }
+
+        internal static int GetRequiredVersion( Type t )
+        {
+            var a = (SerializationVersionAttribute?)GetCustomAttribute( t, typeof( SerializationVersionAttribute ) );
+            if( a == null ) throw new InvalidOperationException( $"Type '{t}' must be decorated with a [SerializationVersion()] attribute." );
+            return a.Version;
+        }
     }
 }

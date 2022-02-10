@@ -8,7 +8,13 @@ namespace CK.BinarySerialization
 {
     public static class BinaryDeserializer
     {
-        public static readonly DeserializerRegistry DefaultResolver = new DeserializerRegistry();
+        public static readonly DeserializerRegistry DefaultResolver;
+
+        static BinaryDeserializer()
+        {
+            DefaultResolver = new DeserializerRegistry( true );
+            DefaultResolver.Register( CollectionDeserializerRegistry.Default, false );
+        }
 
         public static IBinaryDeserializer Create( Stream s,
                                                   bool leaveOpen,
