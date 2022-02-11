@@ -12,6 +12,7 @@ namespace CK.BinarySerialization
     {
         readonly ICKBinaryReader _reader;
         readonly IDeserializerResolver _resolver;
+        readonly IDeserializerKnownObject _knownObjects;
         readonly List<TypeReadInfo> _types;
         readonly List<object> _objects;
 
@@ -27,12 +28,18 @@ namespace CK.BinarySerialization
 
         bool _leaveOpen;
 
-        internal BinaryDeserializerImpl( int version, ICKBinaryReader reader, bool leaveOpen, IDeserializerResolver resolver, IServiceProvider? services )
+        internal BinaryDeserializerImpl( int version,
+                                         ICKBinaryReader reader,
+                                         bool leaveOpen,
+                                         IDeserializerResolver resolver,
+                                         IDeserializerKnownObject knownObjects,
+                                         IServiceProvider? services )
         {
             SerializationVersion = version;
             _reader = reader;
             _leaveOpen = leaveOpen;
             _resolver = resolver;
+            _knownObjects = knownObjects;
             Services = new SimpleServiceContainer( services );
             _types = new List<TypeReadInfo>();
             _objects = new List<object>();
@@ -63,29 +70,39 @@ namespace CK.BinarySerialization
         public object? ReadAnyNullable()
         {
             var b = (SerializationMarker)_reader.ReadByte();
-            if( b == SerializationMarker.Null ) return null;
-            if( b == SerializationMarker.Type )
+            switch( b )
             {
-                return ReadTypeInfo().ResolveLocalType();
-            }
-            if( b == SerializationMarker.ObjectRef )
-            {
-                int idx = _reader.ReadInt32();
-                if( idx >= _objects.Count )
-                {
-                    ThrowInvalidDataException( $"Unable to resolve reference {idx}. Current is {_objects.Count}." );
-                }
-                if( _objects[idx] == null )
-                {
-                    ThrowInvalidDataException( $"Unable to resolve reference {idx}. Object has not been created or has not been registered." );
-                }
-                return _objects[idx];
-            }
-            if( b == SerializationMarker.EmptyObject )
-            {
-                var o = new object();
-                _objects.Add( o );
-                return o;
+                case SerializationMarker.Null: return null;
+                case SerializationMarker.Type: return ReadTypeInfo().ResolveLocalType();
+                case SerializationMarker.ObjectRef:
+                    {
+                        int idx = _reader.ReadInt32();
+                        if( idx >= _objects.Count )
+                        {
+                            ThrowInvalidDataException( $"Unable to resolve reference {idx}. Current is {_objects.Count}." );
+                        }
+                        if( _objects[idx] == null )
+                        {
+                            ThrowInvalidDataException( $"Unable to resolve reference {idx}. Object has not been created or has not been registered." );
+                        }
+                        return _objects[idx];
+                    }
+                case SerializationMarker.EmptyObject:
+                    {
+                        var o = new object();
+                        _objects.Add( o );
+                        return o;
+                    }
+                case SerializationMarker.KnownObject:
+                    {
+                        var key = _reader.ReadString()!;
+                        object? o = _knownObjects.GetKnownObject( key );
+                        if( o == null )
+                        {
+                            ThrowInvalidDataException( $"Known Object key '{key}' cannot be resolved." );
+                        }
+                        return o;
+                    }
             }
             Debug.Assert( b == SerializationMarker.DeferredObject || b == SerializationMarker.Object || b == SerializationMarker.Struct );
             var info = ReadTypeInfo();
@@ -106,7 +123,7 @@ namespace CK.BinarySerialization
             else
             {
                 ++_recurseCount;
-                result = d.ReadInstance( this, info );
+                result = d.ToNonNullable.ReadAsObject( this, info );
                 --_recurseCount;
             }
             if( _recurseCount == 0 && _deferred != null )
@@ -192,12 +209,12 @@ namespace CK.BinarySerialization
 
         T DoReadValue<T>( SerializationMarker b ) where T : struct
         {
-            if( b != SerializationMarker.Struct )
+            if( b != SerializationMarker.Struct && b != SerializationMarker.Object )
             {
                 ThrowInvalidDataException( $"Unexpected '{b}' marker while reading non nullable '{typeof( T )}'." );
             }
             var info = ReadTypeInfo();
-            var d = (INonNullableDeserializationDriver<T>)info.GetDeserializationDriver( _resolver );
+            var d = (IValueTypeNonNullableDeserializationDriver<T>)info.GetDeserializationDriver( _resolver );
             return d.ReadInstance( this, info );
         }
 

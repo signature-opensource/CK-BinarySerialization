@@ -10,6 +10,6 @@
         /// </summary>
         /// <param name="w">The serializer.</param>
         /// <param name="o">The nullable object instance.</param>
-        void WriteNullableObject( IBinarySerializer w, object? o );
+        void WriteNullableObject( IBinarySerializer w, in object? o );
     }
 }

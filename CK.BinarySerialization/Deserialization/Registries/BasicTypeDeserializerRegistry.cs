@@ -16,24 +16,28 @@ namespace CK.BinarySerialization
 
         static BasicTypeDeserializerRegistry()
         {
-            _byName = new Dictionary<string, IDeserializationDriver>()
+            _byName = new Dictionary<string, IDeserializationDriver>();
+            Register( "string", new Deserialization.DString() );
+            Register( "bool", new Deserialization.DBool() );
+            Register( "int", new Deserialization.DInt32() );
+            Register( "uint", new Deserialization.DUInt32() );
+            Register( "sbyte", new Deserialization.DInt8() );
+            Register( "byte", new Deserialization.DUInt8() );
+            Register( "short", new Deserialization.DInt16() );
+            Register( "ushort", new Deserialization.DUInt16() );
+            Register( "long", new Deserialization.DInt64() );
+            Register( "ulong", new Deserialization.DUInt64() );
+            Register( "float", new Deserialization.DSingle() );
+            Register( "double", new Deserialization.DDouble() );
+            Register( "char", new Deserialization.DChar() );
+            Register( "DateTime", new Deserialization.DDateTime() );
+            Register( "DateTimeOffset", new Deserialization.DDateTimeOffset() );
+
+            void Register( string driverName, IDeserializationDriver driver )
             {
-                { "bool", new Deserialization.DBool() },
-                { "int", new Deserialization.DInt32() },
-                { "uint", new Deserialization.DUInt32() },
-                { "sbyte", new Deserialization.DInt8() },
-                { "byte", new Deserialization.DUInt8() },
-                { "short", new Deserialization.DInt16() },
-                { "ushort", new Deserialization.DUInt16() },
-                { "long", new Deserialization.DInt64() },
-                { "ulong", new Deserialization.DUInt64() },
-                { "string", new Deserialization.DString() },
-                { "float", new Deserialization.DSingle() },
-                { "double", new Deserialization.DDouble() },
-                { "char", new Deserialization.DChar() },
-                { "DateTime", new Deserialization.DDateTime() },
-                { "DateTimeOffset", new Deserialization.DDateTimeOffset() },
-            };
+                _byName.Add( driverName, driver.ToNonNullable );
+                _byName.Add( driverName + '?', driver.ToNullable );
+            }
         }
 
         BasicTypeDeserializerRegistry() { }

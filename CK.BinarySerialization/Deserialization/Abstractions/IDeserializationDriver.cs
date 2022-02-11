@@ -16,6 +16,11 @@ namespace CK.BinarySerialization
         Type ResolvedType { get; }
 
         /// <summary>
+        /// Gets a <see cref="TypedReader"/> for this type and nullability.
+        /// </summary>
+        Delegate TypedReader { get; }
+
+        /// <summary>
         /// Gets the nullable driver.
         /// </summary>
         INullableDeserializationDriver ToNullable { get; }

@@ -9,25 +9,31 @@ namespace CK.BinarySerialization
     {
         readonly ICKBinaryWriter _writer;
         readonly ISerializerResolver _resolver;
-        readonly Dictionary<Type, (int Idx, IUntypedSerializationDriver? D)> _types;
+        readonly ISerializerKnownObject _knownObjects;
+        readonly Dictionary<Type, (int Idx, ISerializationDriver? D)> _types;
         readonly Action<IDestroyable>? _destroyedTracker;
         readonly Dictionary<object, int> _seen;
 
         public const int MaxRecurse = 50;
         int _recurseCount;
-        Stack<(IUntypedSerializationDriver D, object O)>? _deferred;
+        Stack<(ISerializationDriver D, object O)>? _deferred;
 
         int _debugModeCounter;
         int _debugSentinel;
         bool _leaveOpen;
 
-        public BinarySerializerImpl( ICKBinaryWriter writer, bool leaveOpen, ISerializerResolver resolver, Action<IDestroyable>? destroyedTracker )
+        public BinarySerializerImpl( ICKBinaryWriter writer,
+                                     bool leaveOpen,
+                                     ISerializerResolver resolver,
+                                     ISerializerKnownObject knownObjects,
+                                     Action<IDestroyable>? destroyedTracker )
         {
             _writer = writer;
             _leaveOpen = leaveOpen;
             _resolver = resolver;
+            _knownObjects = knownObjects;
             _destroyedTracker = destroyedTracker;
-            _types = new Dictionary<Type, (int, IUntypedSerializationDriver?)>();
+            _types = new Dictionary<Type, (int, ISerializationDriver?)>();
             _seen = new Dictionary<object, int>( PureObjectRefEqualityComparer<object>.Default );
         }
 
@@ -48,7 +54,7 @@ namespace CK.BinarySerialization
             return WriteTypeInfo( t, null );
         }
 
-        bool WriteTypeInfo( Type t, IUntypedSerializationDriver? knownDriver )
+        bool WriteTypeInfo( Type t, ISerializationDriver? knownDriver )
         {
             if( _types.TryGetValue( t, out var info ) )
             {
@@ -56,7 +62,7 @@ namespace CK.BinarySerialization
                 return false;
             }
 
-            void RegisterAndWriteIndex( Type t, IUntypedSerializationDriver? d )
+            void RegisterAndWriteIndex( Type t, ISerializationDriver? d )
             {
                 var i = (_types.Count, d);
                 _types.Add( t, i );
@@ -177,11 +183,11 @@ namespace CK.BinarySerialization
 
         public void WriteValue<T>( in T value ) where T : struct
         {
-            var d = _resolver.FindDriver<T>();
+            var d = _resolver.FindWriter<T>();
             // Writing the Struct marker enables this to be read as any object.
             _writer.Write( (byte)SerializationMarker.Struct );
             WriteTypeInfo( typeof( T ) );
-            d.WriteData( this, value );
+            d( this, value );
         }
 
         public bool WriteAnyNullable( object? o )
@@ -229,18 +235,25 @@ namespace CK.BinarySerialization
                     _writer.Write( (byte)SerializationMarker.EmptyObject );
                     return true;
                 }
+                string? knownObject = _knownObjects.GetKnownObjectKey( o );
+                if( knownObject != null )
+                {
+                    _writer.Write( (byte)SerializationMarker.KnownObject );
+                    _writer.Write( knownObject );
+                    return true;
+                }
                 marker = SerializationMarker.Object;
             }
             else
             {
                 marker = SerializationMarker.Struct;
             }
-            IUntypedSerializationDriver driver = _resolver.FindDriver( t );
+            ISerializationDriver driver = _resolver.FindDriver( t );
             if( _recurseCount > MaxRecurse 
                 && marker == SerializationMarker.Object
                 && driver is ISerializationDriverAllowDeferredRead )
             {
-                if( _deferred == null ) _deferred = new Stack<(IUntypedSerializationDriver D, object O)>( 200 );
+                if( _deferred == null ) _deferred = new Stack<(ISerializationDriver D, object O)>( 200 );
                 _deferred.Push( (driver, o) );
                 _writer.Write( (byte)SerializationMarker.DeferredObject );
                 WriteTypeInfo( t, driver );
@@ -250,7 +263,7 @@ namespace CK.BinarySerialization
                 ++_recurseCount;
                 _writer.Write( (byte)marker );
                 WriteTypeInfo( t, driver );
-                driver.WriteData( this, o );
+                driver.UntypedWriter( this, o );
                 --_recurseCount;
             }
             if( _recurseCount == 0 && _deferred != null )
@@ -258,7 +271,7 @@ namespace CK.BinarySerialization
                 while( _deferred.TryPop( out var d ) )
                 {
                     ++_recurseCount;
-                    d.D.WriteData( this, d.O );
+                    d.D.UntypedWriter( this, d.O );
                     --_recurseCount;
                 }
             }

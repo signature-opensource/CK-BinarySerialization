@@ -13,5 +13,6 @@ namespace CK.BinarySerialization
         Type,
         DeferredObject,
         EmptyObject,
+        KnownObject,
     }
 }

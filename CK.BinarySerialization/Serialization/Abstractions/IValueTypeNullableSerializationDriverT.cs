@@ -8,7 +8,7 @@ namespace CK.BinarySerialization
     /// Typed deserialization driver that knows how to instantiate an instance of a <typeparamref name="T"/>
     /// that can be null and initializes it from a <see cref="IBinaryDeserializer"/>.
     /// </summary>
-    public interface INullableSerializationDriver<T> : ISerializationDriver<T>, INullableSerializationDriver where T : notnull
+    public interface IValueTypeNullableSerializationDriver<T> : IValueTypeSerializationDriver<T>, INullableSerializationDriver where T : struct
     {
         /// <summary>
         /// Writes a potentially null instance.
@@ -16,5 +16,7 @@ namespace CK.BinarySerialization
         /// <param name="w">The serializer.</param>
         /// <param name="o">The nullable instance.</param>
         void WriteNullable( IBinarySerializer w, in T? o );
+
+        new TypedWriter<T?> TypedWriter { get; }
     }
 }

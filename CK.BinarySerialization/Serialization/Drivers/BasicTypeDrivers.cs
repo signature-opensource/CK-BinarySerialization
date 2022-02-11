@@ -4,138 +4,138 @@ using System.Text;
 
 namespace CK.BinarySerialization.Serialization
 {
-    sealed class DString : INonNullableSerializationDriver<string>
+    sealed class DString : ReferenceTypeSerializer<string>
     {
-        public string DriverName => "string";
+        public override string DriverName => "string";
 
-        public int SerializationVersion => -1;
+        public override int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in string o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer w, in string o ) => w.Writer.Write( o );
     }
 
-    sealed class DBool : INonNullableSerializationDriver<bool>
+    sealed class DBool : ValueTypeSerializer<bool>
     {
-        public string DriverName => "bool";
+        public override string DriverName => "bool";
 
-        public int SerializationVersion => -1;
+        public override int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in bool o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer w, in bool o ) => w.Writer.Write( o );
     }
 
-    sealed class DInt32 : INonNullableSerializationDriver<int>
+    sealed class DInt32 : ValueTypeSerializer<int>
     {
-        public string DriverName => "int";
+        public override string DriverName => "int";
 
-        public int SerializationVersion => -1;
+        public override int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in int o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer w, in int o ) => w.Writer.Write( o );
     }
 
-    sealed class DUInt32 : INonNullableSerializationDriver<uint>
+    sealed class DUInt32 : ValueTypeSerializer<uint>
     {
-        public string DriverName => "uint";
+        public override string DriverName => "uint";
 
-        public int SerializationVersion => -1;
+        public override int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in uint o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer w, in uint o ) => w.Writer.Write( o );
     }
 
-    sealed class DInt8 : INonNullableSerializationDriver<sbyte>
+    sealed class DInt8 : ValueTypeSerializer<sbyte>
     {
-        public string DriverName => "sbyte";
+        public override string DriverName => "sbyte";
 
-        public int SerializationVersion => -1;
+        public override int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in sbyte o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer w, in sbyte o ) => w.Writer.Write( o );
     }
 
-    sealed class DUInt8 : INonNullableSerializationDriver<byte>
+    sealed class DUInt8 : ValueTypeSerializer<byte>
     {
-        public string DriverName => "byte";
+        public override string DriverName => "byte";
 
-        public int SerializationVersion => -1;
+        public override int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in byte o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer w, in byte o ) => w.Writer.Write( o );
     }
 
-    sealed class DInt16 : INonNullableSerializationDriver<short>
+    sealed class DInt16 : ValueTypeSerializer<short>
     {
-        public string DriverName => "short";
+        public override string DriverName => "short";
 
-        public int SerializationVersion => -1;
+        public override int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in short o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer w, in short o ) => w.Writer.Write( o );
     }
 
-    sealed class DUInt16 : INonNullableSerializationDriver<ushort>
+    sealed class DUInt16 : ValueTypeSerializer<ushort>
     {
-        public string DriverName => "ushort";
+        public override string DriverName => "ushort";
 
-        public int SerializationVersion => -1;
+        public override int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in ushort o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer w, in ushort o ) => w.Writer.Write( o );
     }
 
-    sealed class DInt64 : INonNullableSerializationDriver<long>
+    sealed class DInt64 : ValueTypeSerializer<long>
     {
-        public string DriverName => "long";
+        public override string DriverName => "long";
 
-        public int SerializationVersion => -1;
+        public override int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in long o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer w, in long o ) => w.Writer.Write( o );
     }
 
-    sealed class DUInt64 : INonNullableSerializationDriver<ulong>
+    sealed class DUInt64 : ValueTypeSerializer<ulong>
     {
-        public string DriverName => "ulong";
+        public override string DriverName => "ulong";
 
-        public int SerializationVersion => -1;
+        public override int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in ulong o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer w, in ulong o ) => w.Writer.Write( o );
     }
 
-    sealed class DSingle : INonNullableSerializationDriver<float>
+    sealed class DSingle : ValueTypeSerializer<float>
     {
-        public string DriverName => "float";
+        public override string DriverName => "float";
 
-        public int SerializationVersion => -1;
+        public override int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in float o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer w, in float o ) => w.Writer.Write( o );
     }
 
-    sealed class DDouble : INonNullableSerializationDriver<double>
+    sealed class DDouble : ValueTypeSerializer<double>
     {
-        public string DriverName => "double";
+        public override string DriverName => "double";
 
-        public int SerializationVersion => -1;
+        public override int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in double o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer w, in double o ) => w.Writer.Write( o );
     }
 
-    sealed class DChar : INonNullableSerializationDriver<char>
+    sealed class DChar : ValueTypeSerializer<char>
     {
-        public string DriverName => "char";
+        public override string DriverName => "char";
 
-        public int SerializationVersion => -1;
+        public override int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in char o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer w, in char o ) => w.Writer.Write( o );
     }
 
-    sealed class DDateTime : INonNullableSerializationDriver<DateTime>
+    sealed class DDateTime : ValueTypeSerializer<DateTime>
     {
-        public string DriverName => "DateTime";
+        public override string DriverName => "DateTime";
 
-        public int SerializationVersion => -1;
+        public override int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in DateTime o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer w, in DateTime o ) => w.Writer.Write( o );
     }
 
-    sealed class DDateTimeOffset : INonNullableSerializationDriver<DateTimeOffset>
+    sealed class DDateTimeOffset : ValueTypeSerializer<DateTimeOffset>
     {
-        public string DriverName => "DateTimeOffset";
+        public override string DriverName => "DateTimeOffset";
 
-        public int SerializationVersion => -1;
+        public override int SerializationVersion => -1;
 
-        public void WriteData( IBinarySerializer w, in DateTimeOffset o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer w, in DateTimeOffset o ) => w.Writer.Write( o );
     }
 }

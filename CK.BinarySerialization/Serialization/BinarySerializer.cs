@@ -21,19 +21,21 @@ namespace CK.BinarySerialization
         public static IBinarySerializer Create( Stream s,
                                                 bool leaveOpen,
                                                 ISerializerResolver? resolver = null,
+                                                ISerializerKnownObject? knownObjects = null,
                                                 Action<IDestroyable>? destroyedTracker = null )
         {
             var w = new CKBinaryWriter( s, Encoding.UTF8, leaveOpen );
-            return Create( w, false, resolver, destroyedTracker );
+            return Create( w, false, resolver, knownObjects, destroyedTracker );
         }
         
         public static IBinarySerializer Create( ICKBinaryWriter writer,
                                                 bool leaveOpen,
                                                 ISerializerResolver? resolver = null,
+                                                ISerializerKnownObject? knownObjects = null,
                                                 Action<IDestroyable>? destroyedTracker = null )
         {
             writer.WriteSmallInt32( SerializerVersion );
-            return new BinarySerializerImpl( writer, leaveOpen, resolver ?? DefaultResolver, destroyedTracker );
+            return new BinarySerializerImpl( writer, leaveOpen, resolver ?? DefaultResolver, knownObjects ?? SerializerKnownObject.Default, destroyedTracker );
         }
     }
 }

@@ -15,12 +15,12 @@ namespace CK.BinarySerialization
     /// </summary>
     class SharedCache
     {
-        static public readonly ConcurrentDictionary<Type, IUntypedSerializationDriver> Serialization;
+        static public readonly ConcurrentDictionary<Type, ISerializationDriver> Serialization;
         static public readonly ConcurrentDictionary<Type, IDeserializationDriver> Deserialization;
 
         static SharedCache()
         {
-            Serialization = new ConcurrentDictionary<Type, IUntypedSerializationDriver>();
+            Serialization = new ConcurrentDictionary<Type, ISerializationDriver>();
             Deserialization = new ConcurrentDictionary<Type, IDeserializationDriver>();
         }
 

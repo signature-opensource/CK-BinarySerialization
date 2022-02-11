@@ -9,8 +9,10 @@ namespace CK.BinarySerialization
 {
     public class CollectionDeserializerRegistry : IDeserializerResolver
     {
-        // Associates the resolved item driver and the rank to the array driver.
-        readonly ConcurrentDictionary<Key, IDeserializationDriver> _cache;
+        // Associates the resolved item driver and the rank to the array driver or
+        // a fake rank for other generic with only one item:
+        //  - 0 for List<>.
+        readonly ConcurrentDictionary<Key, IDeserializationDriver> _singleItemcache;
         readonly IDeserializerResolver _resolver;
 
         readonly struct Key : IEquatable<Key>
@@ -40,19 +42,27 @@ namespace CK.BinarySerialization
 
         public CollectionDeserializerRegistry( IDeserializerResolver resolver ) 
         {
-            _cache = new ConcurrentDictionary<Key, IDeserializationDriver>();
+            _singleItemcache = new ConcurrentDictionary<Key, IDeserializationDriver>();
             _resolver = resolver;
         }
 
         public IDeserializationDriver? TryFindDriver( TypeReadInfo info )
         {
-            if( info.DriverName == "ArrayItem" )
+            if( info.DriverName == "Array" )
             {
                 Debug.Assert( info.ElementTypeReadInfo != null );
-                var item = _resolver.TryFindDriver( info.ElementTypeReadInfo );
+                var item = info.ElementTypeReadInfo.TryGetDeserializationDriver( _resolver );
                 if( item == null ) return null;
                 var k = new Key( item, info.ArrayRank );
-                return _cache.GetOrAdd( k, CreateArray );
+                return _singleItemcache.GetOrAdd( k, CreateArray );
+            }
+            if( info.DriverName == "List" )
+            {
+                Debug.Assert( info.GenericParameters.Count == 1 );
+                var item = info.GenericParameters[0].TryGetDeserializationDriver( _resolver );
+                if( item == null ) return null;
+                var k = new Key( item, 0 );
+                return _singleItemcache.GetOrAdd( k, CreateList );
             }
             return null;
         }
@@ -61,10 +71,17 @@ namespace CK.BinarySerialization
         {
             if( k.Rank == 1 )
             {
-                var tS = typeof( Deserialization.DArrayItem<> ).MakeGenericType( k.Item.ResolvedType );
-                return (IDeserializationDriver)Activator.CreateInstance( tS, k.Item )!;
+                var tS = typeof( Deserialization.DArray<> ).MakeGenericType( k.Item.ResolvedType );
+                return (IDeserializationDriver)Activator.CreateInstance( tS, k.Item.TypedReader )!;
             }
             throw new NotImplementedException( "Arrays with more than one dimension are not yet supported." );
+        }
+
+        IDeserializationDriver CreateList( Key k )
+        {
+            Debug.Assert( k.Rank == 0 );
+            var tS = typeof( Deserialization.DList<> ).MakeGenericType( k.Item.ResolvedType );
+            return (IDeserializationDriver)Activator.CreateInstance( tS, k.Item.TypedReader )!;
         }
     }
 }

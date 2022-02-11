@@ -11,7 +11,7 @@ namespace CK.BinarySerialization
     public interface ISerializationDriver
     {
         /// <summary>
-        /// Gets the type that this drivers is able to serialize.
+        /// Gets the actual type (nullable or not) that this drivers is able to serialize.
         /// </summary>
         Type Type { get; }
 
@@ -27,13 +27,26 @@ namespace CK.BinarySerialization
         int SerializationVersion { get; }
 
         /// <summary>
+        /// Gets the writer function that can write an instance of this type as a nullable object.
+        /// If this is a <see cref="INonNullableSerializationDriver"/>, the writer will throw if the 
+        /// object to write is null.
+        /// </summary>
+        UntypedWriter UntypedWriter { get; }
+
+        /// <summary>
+        /// Gets a strongly typed <see cref="TypedWriter{T}"/> function for this <see cref="Type"/> and nullability.
+        /// </summary>
+        Delegate TypedWriter { get; }
+
+        /// <summary>
         /// Gets the nullable driver.
         /// </summary>
         INullableSerializationDriver ToNullable { get; }
-        
+
         /// <summary>
         /// Gets the non nullable driver.
         /// </summary>
         INonNullableSerializationDriver ToNonNullable { get; }
+
     }
 }

@@ -10,6 +10,6 @@
         /// </summary>
         /// <param name="w">The serializer.</param>
         /// <param name="o">The object instance.</param>
-        void WriteObject( IBinarySerializer w, object o );
+        void WriteObject( IBinarySerializer w, in object o );
     }
 }

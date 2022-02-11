@@ -14,6 +14,7 @@ namespace CK.BinarySerialization
     {
         IDeserializationDriver? _driver;
         Type? _localType;
+        bool _driverLookupDone;
 
         internal TypeReadInfo( TypeKind k )
         {
@@ -26,7 +27,6 @@ namespace CK.BinarySerialization
         {
             if( (DriverName = r.ReadSharedString()) != null )
             {
-                IsNullable = r.ReadBoolean();
                 SerializationVersion = r.ReadSmallInt32();
             }
             TypeNamespace = r.ReadSharedString()!;
@@ -61,7 +61,6 @@ namespace CK.BinarySerialization
             {
                 ElementTypeReadInfo = d.ReadTypeInfo();
                 DriverName = d.Reader.ReadSharedString();
-                IsNullable = d.Reader.ReadBoolean();
                 eName = ElementTypeReadInfo.TypeName.Split( '+' )[^1];
             }
             else
@@ -139,12 +138,6 @@ namespace CK.BinarySerialization
         /// </para>
         /// </summary>
         public string? DriverName { get; private set; }
-
-        /// <summary>
-        /// Gets whether this type is nullable or not.
-        /// Null when <see cref="DriverName"/> is null.
-        /// </summary>
-        public bool? IsNullable { get; set; }
 
         /// <summary>
         /// Gets the namespace of the type.
@@ -277,15 +270,26 @@ namespace CK.BinarySerialization
         /// Gets the deserialization driver. Throws an <see cref="InvalidOperationException"/> if it cannot be resolved.
         /// </summary>
         /// <param name="r">The deserializer.</param>
-        public IDeserializationDriver GetDeserializationDriver( IDeserializerResolver r )
+        internal IDeserializationDriver GetDeserializationDriver( IDeserializerResolver r )
         {
-            if( _driver == null )
+            if( TryGetDeserializationDriver( r ) == null )
             {
+                throw new InvalidOperationException( $"Unable to resolve deserialization driver for {ToString()}." );
+            }
+            Debug.Assert( _driver != null );
+            return _driver;
+        }
+
+        /// <summary>
+        /// Tries to get the deserialization driver.
+        /// </summary>
+        /// <param name="r">The deserializer.</param>
+        internal IDeserializationDriver? TryGetDeserializationDriver( IDeserializerResolver r )
+        {
+            if( !_driverLookupDone )
+            {
+                _driverLookupDone = true;
                 _driver = r.TryFindDriver( this );
-                if( _driver == null )
-                {
-                    throw new InvalidOperationException( $"Unable to resolve deserialization driver for {ToString()}." );
-                }
             }
             return _driver;
         }

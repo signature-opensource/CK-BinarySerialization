@@ -5,11 +5,11 @@ using System.Text;
 
 namespace CK.BinarySerialization.Deserialization
 {
-    class DArrayItem<T> : Deserializer<T[]> where T : notnull
+    class DArray<T> : ReferenceTypeDeserializer<T[]>
     {
-        readonly INonNullableDeserializationDriver<T> _item;
+        readonly TypedReader<T> _item;
 
-        public DArrayItem( INonNullableDeserializationDriver<T> item )
+        public DArray( TypedReader<T> item )
         {
             _item = item;
         }
@@ -20,7 +20,7 @@ namespace CK.BinarySerialization.Deserialization
             var a = new T[r.Reader.ReadNonNegativeSmallInt32()];
             for( int i = 0; i < a.Length; i++ )
             {
-                a[i] = _item.ReadInstance( r, readInfo.ElementTypeReadInfo );
+                a[i] = _item( r, readInfo.ElementTypeReadInfo );
             }
             return a;
         }

@@ -23,12 +23,20 @@ namespace CK.BinarySerialization
 
         SimpleBinarySerializableRegistry() { }
 
-        public ISerializationDriver<T>? TryFindDriver<T>()
+        /// <inheritdoc />
+        public IValueTypeSerializationDriver<T>? TryFindValueTypeDriver<T>() where T : struct
         {
-            return (ISerializationDriver<T>?)TryFindDriver( typeof(T) );
+            return (IValueTypeSerializationDriver<T>?)TryFindDriver( typeof( T ) );
         }
 
-        public IUntypedSerializationDriver? TryFindDriver( Type t )
+        /// <inheritdoc />
+        public IReferenceTypeSerializationDriver<T>? TryFindReferenceTypeDriver<T>() where T : class
+        {
+            return (IReferenceTypeSerializationDriver<T>?)TryFindDriver( typeof( T ) );
+        }
+
+
+        public ISerializationDriver? TryFindDriver( Type t )
         {
             // Cache only the driver if the type is a ICKSimpleBinarySerializable or a .
             if( typeof( ICKSimpleBinarySerializable ).IsAssignableFrom( t ) )
@@ -46,46 +54,67 @@ namespace CK.BinarySerialization
             return null;
         }
 
-        sealed class SimpleBinarySerializableDriver<T> : INonNullableSerializationDriver<T> where T : ICKSimpleBinarySerializable
+        sealed class SimpleBinarySerializableDriverR<T> : ReferenceTypeSerializer<T> where T : class, ICKSimpleBinarySerializable
         {
-            public string DriverName => "SimpleBinarySerializable";
+            public override string DriverName => "SimpleBinarySerializable";
 
-            public int SerializationVersion => -1;
+            public override int SerializationVersion => -1;
 
-            public void WriteData( IBinarySerializer w, in T o )
-            {
-                o.Write( w.Writer );
-            }
+            protected internal override void Write( IBinarySerializer w, in T o ) => o.Write( w.Writer );
         }
 
-        static IUntypedSerializationDriver CreateSimple( Type t )
+        sealed class SimpleBinarySerializableDriverV<T> : ValueTypeSerializer<T> where T : struct, ICKSimpleBinarySerializable
         {
-            var tS = typeof( SimpleBinarySerializableDriver<> ).MakeGenericType( t );
-            return (IUntypedSerializationDriver)Activator.CreateInstance( tS )!;
+            public override string DriverName => "SimpleBinarySerializable";
+
+            public override int SerializationVersion => -1;
+
+            protected internal override void Write( IBinarySerializer w, in T o ) => o.Write( w.Writer );
         }
 
-        sealed class SealedBinarySerializableDriver<T> : INonNullableSerializationDriver<T> where T : ISealedVersionedSimpleSerializable
+        static ISerializationDriver CreateSimple( Type t )
         {
-            public string DriverName => "SealedVersionBinarySerializable";
-
-            public SealedBinarySerializableDriver( int version )
+            if( t.IsValueType )
             {
-                SerializationVersion = version;
+                var tV = typeof( SimpleBinarySerializableDriverV<> ).MakeGenericType( t );
+                return (ISerializationDriver)Activator.CreateInstance( tV )!;
             }
-
-            public int SerializationVersion { get; }
-
-            public void WriteData( IBinarySerializer w, in T o )
-            {
-                o.Write( w.Writer );
-            }
+            var tR = typeof( SimpleBinarySerializableDriverR<> ).MakeGenericType( t );
+            return (ISerializationDriver)Activator.CreateInstance( tR )!;
         }
 
-        static IUntypedSerializationDriver CreateSealed( Type t )
+        sealed class SealedBinarySerializableDriverR<T> : ReferenceTypeSerializer<T> where T : class, ISealedVersionedSimpleSerializable
+        {
+            public override string DriverName => "SealedVersionBinarySerializable";
+
+            public SealedBinarySerializableDriverR( int version ) => SerializationVersion = version;
+
+            public override int SerializationVersion { get; }
+
+            protected internal override void Write( IBinarySerializer w, in T o ) => o.Write( w.Writer );
+        }
+
+        sealed class SealedBinarySerializableDriverV<T> : ValueTypeSerializer<T> where T : struct, ISealedVersionedSimpleSerializable
+        {
+            public override string DriverName => "SealedVersionBinarySerializable";
+
+            public SealedBinarySerializableDriverV( int version ) => SerializationVersion = version;
+
+            public override int SerializationVersion { get; }
+
+            protected internal override void Write( IBinarySerializer w, in T o ) => o.Write( w.Writer );
+        }
+
+        static ISerializationDriver CreateSealed( Type t )
         {
             int v = SerializationVersionAttribute.GetRequiredVersion( t );
-            var tS = typeof( SealedBinarySerializableDriver<> ).MakeGenericType( t );
-            return (IUntypedSerializationDriver)Activator.CreateInstance( tS, v )!;
+            if( t.IsValueType )
+            {
+                var tV = typeof( SealedBinarySerializableDriverV<> ).MakeGenericType( t );
+                return (ISerializationDriver)Activator.CreateInstance( tV, v )!;
+            }
+            var tR = typeof( SealedBinarySerializableDriverR<> ).MakeGenericType( t );
+            return (ISerializationDriver)Activator.CreateInstance( tR, v )!;
         }
     }
 }

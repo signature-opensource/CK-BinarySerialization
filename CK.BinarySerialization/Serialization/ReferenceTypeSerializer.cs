@@ -2,24 +2,22 @@
 
 namespace CK.BinarySerialization
 {
-
     /// <summary>
     /// Serializer for type <typeparamref name="T"/> that serializes nullable as well as non nullable instances.
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
-    public abstract class ValueTypeSerializer<T> : IValueTypeNonNullableSerializationDriver<T> where T : struct
+    public abstract class ReferenceTypeSerializer<T> : IReferenceTypeNonNullableSerializationDriver<T> where T : class
     {
-        class ValueTypeNullable : IValueTypeNullableSerializationDriver<T>
+        class ReferenceTypeNullable : IReferenceTypeNullableSerializationDriver<T>
         {
-            readonly ValueTypeSerializer<T> _serializer;
+            readonly ReferenceTypeSerializer<T> _serializer;
             readonly UntypedWriter _uWriter;
             readonly TypedWriter<T?> _tWriter;
 
-            public ValueTypeNullable( ValueTypeSerializer<T> serializer )
+            public ReferenceTypeNullable( ReferenceTypeSerializer<T> serializer )
             {
                 _serializer = serializer;
                 DriverName = _serializer.DriverName + '?';
-                Type = typeof( Nullable<> ).MakeGenericType( _serializer.Type );
                 _tWriter = WriteNullable;
                 _uWriter = WriteNullableObject;
             }
@@ -30,11 +28,11 @@ namespace CK.BinarySerialization
 
             Delegate ISerializationDriver.TypedWriter => _tWriter;
 
-            public IValueTypeNullableSerializationDriver<T> ToNullable => this;
+            public IReferenceTypeNullableSerializationDriver<T> ToNullable => this;
 
-            public IValueTypeNonNullableSerializationDriver<T> ToNonNullable => _serializer;
+            public IReferenceTypeNonNullableSerializationDriver<T> ToNonNullable => _serializer;
 
-            public Type Type { get; }
+            public Type Type => _serializer.Type;
 
             public string DriverName { get; }
 
@@ -46,10 +44,10 @@ namespace CK.BinarySerialization
 
             public void WriteNullable( IBinarySerializer w, in T? o )
             {
-                if( o.HasValue )
+                if( o != null )
                 {
-                    w.Writer.Write( (byte)SerializationMarker.Struct );
-                    _serializer.Write( w, o.Value );
+                    w.Writer.Write( (byte)SerializationMarker.Object );
+                    _serializer.Write( w, o );
                 }
                 else
                 {
@@ -60,15 +58,15 @@ namespace CK.BinarySerialization
             public void WriteNullableObject( IBinarySerializer w, in object? o ) => WriteNullable( w, (T?)o );
         }
 
-        readonly ValueTypeNullable _nullable;
+        readonly ReferenceTypeNullable _nullable;
         readonly UntypedWriter _uWriter;
         readonly TypedWriter<T> _tWriter;
 
-        public ValueTypeSerializer()
+        public ReferenceTypeSerializer()
         {
-            _nullable = new ValueTypeNullable( this );
-            _tWriter = Write;
+            _nullable = new ReferenceTypeNullable( this );
             _uWriter = WriteUntyped;
+            _tWriter = Write;
         }
 
         /// <summary>
@@ -89,10 +87,10 @@ namespace CK.BinarySerialization
         Delegate ISerializationDriver.TypedWriter => _tWriter;
 
         /// <inheritdoc />
-        public IValueTypeNullableSerializationDriver<T> ToNullable => _nullable;
+        public IReferenceTypeNullableSerializationDriver<T> ToNullable => _nullable;
 
         /// <inheritdoc />
-        public IValueTypeNonNullableSerializationDriver<T> ToNonNullable => this;
+        public IReferenceTypeNonNullableSerializationDriver<T> ToNonNullable => this;
 
         INullableSerializationDriver ISerializationDriver.ToNullable => _nullable;
 
@@ -102,10 +100,10 @@ namespace CK.BinarySerialization
 
         public abstract int SerializationVersion { get; }
 
-        void IValueTypeNonNullableSerializationDriver<T>.Write( IBinarySerializer w, in T o ) => Write( w, in o );
+        void IReferenceTypeNonNullableSerializationDriver<T>.Write( IBinarySerializer w, in T o ) => Write( w, in o );
 
         void WriteUntyped( IBinarySerializer w, in object? o ) => Write( w, (T)o );
-        
-        void INonNullableSerializationDriver.WriteObject( IBinarySerializer w, in object o ) => Write( w, (T)o );
+
+        void INonNullableSerializationDriver.WriteObject( IBinarySerializer w, in object o) => Write( w, (T)o );
     }
 }

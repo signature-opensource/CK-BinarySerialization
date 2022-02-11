@@ -44,13 +44,7 @@ namespace CK.BinarySerialization
         }
 
         /// <inheritdoc />
-        public ISerializationDriver<T>? TryFindDriver<T>()
-        {
-            return (ISerializationDriver<T>?)TryFindDriver( typeof( T ) );
-        }
-
-        /// <inheritdoc />
-        public IUntypedSerializationDriver? TryFindDriver( Type t )
+        public ISerializationDriver? TryFindDriver( Type t )
         {
             foreach( var resolver in _resolvers )
             {
