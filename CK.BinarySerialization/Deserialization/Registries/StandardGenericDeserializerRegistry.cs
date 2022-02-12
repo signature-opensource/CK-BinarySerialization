@@ -51,7 +51,7 @@ namespace CK.BinarySerialization
                 case "Enum":
                     {
                         Debug.Assert( info.Kind == TypeReadInfo.TypeKind.Enum && info.ElementTypeReadInfo != null );
-                        var uD = info.ElementTypeReadInfo.TryGetDeserializationDriver( _resolver );
+                        var uD = info.ElementTypeReadInfo.TryResolveDeserializationDriver();
                         if( uD == null ) return null;
                         var localType = info.TryResolveLocalType();
                         if( localType == null ) return null;
@@ -61,7 +61,7 @@ namespace CK.BinarySerialization
                     {
                         Debug.Assert( info.Kind == TypeReadInfo.TypeKind.Array );
                         Debug.Assert( info.ElementTypeReadInfo != null );
-                        var item = info.ElementTypeReadInfo.TryGetDeserializationDriver( _resolver );
+                        var item = info.ElementTypeReadInfo.TryResolveDeserializationDriver();
                         if( item == null ) return null;
                         return _cache.GetOrAdd( (item, info.ArrayRank), CreateArray );
                     }
@@ -75,7 +75,7 @@ namespace CK.BinarySerialization
         private IDeserializationDriver? TryGetSingleGenericParameter( TypeReadInfo info, Type tGenD )
         {
             Debug.Assert( info.GenericParameters.Count == 1 );
-            var item = info.GenericParameters[0].TryGetDeserializationDriver( _resolver );
+            var item = info.GenericParameters[0].TryResolveDeserializationDriver();
             if( item == null ) return null;
             var k = (item, tGenD);
             return _cache.GetOrAdd( k, CreateSingleGenericTypeParam );

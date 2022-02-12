@@ -73,6 +73,20 @@ namespace CK.BinarySerialization.Tests
             backRW.Should().BeSameAs( typeof(Array) );
         }
 
+        class L : List<List<L>>
+        {
+        }
+
+        [Test]
+        public void recursive_generic_types()
+        {
+            var t = typeof( L );
+            Type backT = TestHelper.SaveAndLoad( t, ( type, w ) => w.WriteTypeInfo( type ), r => r.ReadTypeInfo().ResolveLocalType() );
+            backT.Should().BeSameAs( typeof( L ) );
+        }
+
+
+
     }
 }
 

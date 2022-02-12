@@ -112,7 +112,7 @@ namespace CK.BinarySerialization
                 _factory = (Func<ICKBinaryReader, int, T>)CreateNewDelegate<T>( typeof( Func<ICKBinaryReader, int, T> ), _sealedCPExpressions, _sealedCPTypes );
             }
 
-            protected override T ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => _factory( r.Reader, r.SerializationVersion );
+            protected override T ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => _factory( r.Reader, r.SerializerVersion );
         }
 
         sealed class SealedBinaryDeserializableDriverR<T> : ReferenceTypeDeserializer<T> where T : class, ISealedVersionedSimpleSerializable
@@ -124,7 +124,7 @@ namespace CK.BinarySerialization
                 _factory = (Func<ICKBinaryReader, int, T>)CreateNewDelegate<T>( typeof( Func<ICKBinaryReader, int, T> ), _sealedCPExpressions, _sealedCPTypes );
             }
 
-            protected override T ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => _factory( r.Reader, r.SerializationVersion );
+            protected override T ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => _factory( r.Reader, r.SerializerVersion );
         }
 
         static IDeserializationDriver CreateSealed( Type t )

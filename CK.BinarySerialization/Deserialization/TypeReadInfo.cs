@@ -11,21 +11,26 @@ using System.Reflection;
 namespace CK.BinarySerialization
 {
     /// <summary>
-    /// 
+    /// Immutable neutral description of a Type that has been written.
     /// </summary>
     public class TypeReadInfo
     {
+        readonly BinaryDeserializerImpl _deserializer;
         IDeserializationDriver? _driver;
         Type? _localType;
+        Mutable? _mutating;
+
         bool _driverLookupDone;
 
-        internal TypeReadInfo( TypeKind k )
+        internal TypeReadInfo( BinaryDeserializerImpl deserializer, TypeKind k )
         {
+            _deserializer = deserializer;
             Kind = k;
             SerializationVersion = -1;
             GenericParameters = Array.Empty<TypeReadInfo>();
         }
 
+        #region Read methods called after instantiation by BinaryDeserializerImpl.ReadTypeInfo().
         internal void ReadNames( ICKBinaryReader r )
         {
             if( (DriverName = r.ReadSharedString()) != null )
@@ -37,33 +42,33 @@ namespace CK.BinarySerialization
             AssemblyName = r.ReadSharedString()!;
         }
 
-        internal void ReadBaseType( IBinaryDeserializer d )
+        internal void ReadBaseType()
         {
-            if( d.Reader.ReadBoolean() ) BaseTypeReadInfo = d.ReadTypeInfo();
+            if( _deserializer.Reader.ReadBoolean() ) BaseTypeReadInfo = _deserializer.ReadTypeInfo();
         }
 
-        internal void ReadGenericParameters( IBinaryDeserializer d, int l )
+        internal void ReadGenericParameters( int l )
         {
             var t = new TypeReadInfo[l];
             for( int i = 0; i < l; i++ )
             {
-                t[i] = d.ReadTypeInfo();
+                t[i] = _deserializer.ReadTypeInfo();
             }
             GenericParameters = t;
         }
 
-        internal void ReadArray( IBinaryDeserializer d )
+        internal void ReadArray()
         {
             Debug.Assert( typeof( int[] ).Namespace == "System"
                             && typeof( int[] ).Assembly.GetName().Name == "System.Private.CoreLib" );
             TypeNamespace = "System";
             AssemblyName = "System.Private.CoreLib";
-            ArrayRank = d.Reader.ReadSmallInt32( 1 );
+            ArrayRank = _deserializer.Reader.ReadSmallInt32( 1 );
             string eName;
-            if( d.Reader.ReadBoolean() )
+            if( _deserializer.Reader.ReadBoolean() )
             {
-                ElementTypeReadInfo = d.ReadTypeInfo();
-                DriverName = d.Reader.ReadSharedString();
+                ElementTypeReadInfo = _deserializer.ReadTypeInfo();
+                DriverName = _deserializer.Reader.ReadSharedString();
                 eName = ElementTypeReadInfo.TypeName.Split( '+' )[^1];
             }
             else
@@ -75,17 +80,60 @@ namespace CK.BinarySerialization
             TypeName = eName + '[' + new string( ',', ArrayRank - 1 ) + ']';
         }
 
-        internal void ReadEnum( IBinaryDeserializer d )
+        internal void ReadEnum()
         {
-            ElementTypeReadInfo = d.ReadTypeInfo();
+            ElementTypeReadInfo = _deserializer.ReadTypeInfo();
         }
 
-        internal void ReadRefOrPointerInfo( IBinaryDeserializer d )
+        internal void ReadRefOrPointerInfo()
         {
-            ElementTypeReadInfo = d.ReadTypeInfo();
+            ElementTypeReadInfo = _deserializer.ReadTypeInfo();
             TypeNamespace = ElementTypeReadInfo.TypeNamespace;
             AssemblyName = ElementTypeReadInfo.AssemblyName;
             TypeName = ElementTypeReadInfo.TypeName + (Kind == TypeKind.Ref ? '&' : '*');
+        }
+        #endregion
+
+        class Mutable : IMutableTypeReadInfo
+        {
+            readonly TypeReadInfo _info;
+            bool _closed;
+
+            public Mutable( TypeReadInfo info )
+            {
+                Debug.Assert( info._mutating == null );
+                info._mutating = this;
+                _info = info;
+            }
+
+            public TypeReadInfo ReadInfo => _info;
+
+            public void SetDriver( IDeserializationDriver driver )
+            {
+                if( _closed ) throw new InvalidOperationException();
+                _info._driver = driver;
+            }
+
+            public void SetLocalType( Type t )
+            {
+                if( _closed ) throw new InvalidOperationException();
+                _info._localType = t;
+            }
+
+            public IDeserializationDriver? Close()
+            {
+                _closed = true;
+                if( _info._driver != null ) _info._driverLookupDone = true;
+                _info._mutating = null;
+                return _info._driver; 
+            }
+        }
+
+        internal IMutableTypeReadInfo CreateMutation() => new Mutable( this );
+        internal IDeserializationDriver? CloseMutation()
+        {
+            Debug.Assert( _mutating != null );
+            return _mutating.Close();
         }
 
         /// <summary>
@@ -94,7 +142,7 @@ namespace CK.BinarySerialization
         public enum TypeKind
         {
             /// <summary>
-            /// Regular object. Instances may be deserialized.
+            /// Regular reference or value type. Instances may be deserialized.
             /// </summary>
             Regular,
 
@@ -143,11 +191,13 @@ namespace CK.BinarySerialization
         public TypeKind Kind { get; private set; }
 
         /// <summary>
-        /// Gets the name of the driver that has been resolved or null if no 
-        /// driver was resolved for the type.
+        /// Gets the serialization's driver name that has been resolved and potentially 
+        /// used to write instance of this type.
         /// <para>
-        /// A type written by <see cref="IBinarySerializer.WriteTypeInfo(Type)"/> is not 
-        /// necessarily serializable. This is often the case for base types of a type that is serializable.
+        /// Null if no serialization's driver was resolved for the type This is 
+        /// totally possible since a type written by <see cref="IBinarySerializer.WriteTypeInfo(Type)"/> is not 
+        /// necessarily serializable and this is often the case for base types of a type that is itself serializable
+        /// (like <see cref="TypeKind.OpenGeneric"/> for instance).
         /// </para>
         /// </summary>
         public string? DriverName { get; private set; }
@@ -159,7 +209,7 @@ namespace CK.BinarySerialization
 
         /// <summary>
         /// Gets the simple name or nested name of the type (parent nested simple type name are separated with a '+').
-        /// For generic type, suffixed with a backtick and the number of generic parameters.
+        /// For generic type, it is suffixed with a backtick and the number of generic parameters.
         /// </summary>
         public string TypeName { get; private set; }
         
@@ -185,7 +235,7 @@ namespace CK.BinarySerialization
         public TypeReadInfo? ElementTypeReadInfo { get; private set; }
 
         /// <summary>
-        /// Gets the base type information if any.
+        /// Gets the base type information if any (object and ValueType are skipped).
         /// </summary>
         public TypeReadInfo? BaseTypeReadInfo { get; private set; }
 
@@ -196,7 +246,9 @@ namespace CK.BinarySerialization
 
         /// <summary>
         /// Tries to resolve the local type.
-        /// <see cref="TypeKind.OpenArray"/> is bound to the system typeof( <see cref="Array"/> ).
+        /// <para>
+        /// Note that <see cref="TypeKind.OpenArray"/> is bound to the system typeof( <see cref="Array"/> ).
+        /// </para>
         /// </summary>
         /// <returns>The local type if it can be resolved, null otherwise.</returns>
         public Type? TryResolveLocalType()
@@ -280,31 +332,30 @@ namespace CK.BinarySerialization
             }
         }
 
+
         /// <summary>
-        /// Gets the deserialization driver. Throws an <see cref="InvalidOperationException"/> if it cannot be resolved.
+        /// Tries to resolve the deserialization driver.
         /// </summary>
-        /// <param name="r">The deserializer.</param>
-        internal IDeserializationDriver GetDeserializationDriver( IDeserializerResolver r )
+        internal IDeserializationDriver? TryResolveDeserializationDriver()
         {
-            if( TryGetDeserializationDriver( r ) == null )
+            if( !_driverLookupDone && _mutating == null )
             {
-                throw new InvalidOperationException( $"Unable to resolve deserialization driver for {ToString()}." );
+                _driverLookupDone = true;
+                _driver = _deserializer.TryResolveDriver( this );
             }
-            Debug.Assert( _driver != null );
             return _driver;
         }
 
         /// <summary>
-        /// Tries to get the deserialization driver.
+        /// Gets the deserialization driver. Throws an <see cref="InvalidOperationException"/> if it cannot be resolved.
         /// </summary>
-        /// <param name="r">The deserializer.</param>
-        internal IDeserializationDriver? TryGetDeserializationDriver( IDeserializerResolver r )
+        internal IDeserializationDriver GetDeserializationDriver()
         {
-            if( !_driverLookupDone )
+            if( TryResolveDeserializationDriver() == null )
             {
-                _driverLookupDone = true;
-                _driver = r.TryFindDriver( this );
+                throw new InvalidOperationException( $"Unable to resolve deserialization driver for {ToString()}." );
             }
+            Debug.Assert( _driver != null );
             return _driver;
         }
 

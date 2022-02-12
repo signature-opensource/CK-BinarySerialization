@@ -50,7 +50,7 @@ namespace CK.BinarySerialization
         /// <typeparam name="T">The object's type.</typeparam>
         /// <param name="o">The object to write.</param>
         /// <returns>
-        /// True if it has been written, false if the object has already been
+        /// True if the object has been written, false if it has already been
         /// written and only a reference has been written.
         /// </returns>
         bool WriteObject<T>( T o ) where T : class;
@@ -61,8 +61,8 @@ namespace CK.BinarySerialization
         /// <typeparam name="T">The object's type.</typeparam>
         /// <param name="o">The object to write.</param>
         /// <returns>
-        /// True if it has been written, false if the object has already been
-        /// written and only a reference has been written.
+        /// True if the object is null or has been written, false 
+        /// if it has already been written and only a reference has been written.
         /// </returns>
         bool WriteNullableObject<T>( T? o ) where T : class;
 
@@ -87,6 +87,12 @@ namespace CK.BinarySerialization
         /// written and only a reference has been written.
         /// </returns>
         void WriteNullableValue<T>( in T? value ) where T : struct;
+
+        /// <summary>
+        /// Raised whenever a true <see cref="IDestroyable.IsDestroyed"/> object
+        /// is met.
+        /// </summary>
+        event Action<IDestroyable>? OnDestroyedObject;
 
         /// <summary>
         /// Gets whether this serializer is currently in debug mode.

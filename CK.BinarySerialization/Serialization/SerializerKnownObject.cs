@@ -22,19 +22,6 @@ namespace CK.BinarySerialization
         (object O, string K)[] _objects;
 
         /// <summary>
-        /// Gets a shared instance that can be used safely.
-        /// <para>
-        /// If dynamic registration is used (during serialization), it's more efficient to first
-        /// call <see cref="GetKnownObjectKey(object)"/> with the object and if null is returned
-        /// then call <see cref="RegisterKnownObject(object, string)"/>.
-        /// </para>
-        /// <para>
-        /// It is recommended to register the known objects once for all in static constructors whenever possible.
-        /// </para>
-        /// </summary>
-        public static readonly ISerializerKnownObject Default = new SerializerKnownObject();
-
-        /// <summary>
         /// Initializes a new empty <see cref="SerializerKnownObject"/>.
         /// </summary>
         public SerializerKnownObject()
@@ -74,16 +61,26 @@ namespace CK.BinarySerialization
                 if( e.K == a.K )
                 {
                     if( e.O == a.O ) return l;
-                    throw new InvalidOperationException( $"Known Object key '{e.K}' is already associated to another instance (of type '{e.O.GetType()}')." );
+                    ThrowOnDuplicateKnownKey( e.O, e.K );
                 }
                 if( e.O == a.O )
                 {
                     if( e.K == a.K ) return l;
-                    throw new InvalidOperationException( $"Known Object instance (of type '{e.O.GetType()}') cannot be associated to key '{a.K}' since it is already associated to key '{e.K}'." );
+                    ThrowOnDuplicateObject( e.O, e.K, a.K );
                 }
             }
             l.Add( a );
             return l;
+        }
+
+        public static void ThrowOnDuplicateObject( object oExist, string kExist, string kNew )
+        {
+            throw new InvalidOperationException( $"Known Object instance (of type '{oExist.GetType()}') cannot be associated to key '{kNew}' since it is already associated to key '{kExist}'." );
+        }
+
+        public static void ThrowOnDuplicateKnownKey( object o, string key )
+        {
+            throw new InvalidOperationException( $"Known Object key '{key}' is already associated to another instance (of type '{o.GetType()}')." );
         }
 
         /// <inheritdoc />

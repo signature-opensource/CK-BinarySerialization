@@ -16,25 +16,28 @@ namespace CK.Core
         public static object? SaveAndLoadObject( this IBasicTestHelper @this, object? o,
                                                                               IServiceProvider? serviceProvider = null,
                                                                               ISerializerResolver? serializers = null,
-                                                                              IDeserializerResolver? deserializers = null )
+                                                                              IDeserializerResolver? deserializers = null,
+                                                                              Action<IBinaryDeserializer, IMutableTypeReadInfo>? onReadType = null )
         {
-            return SaveAndLoad( @this, o, ( x, w ) => w.WriteAnyNullable( x ), r => r.ReadAnyNullable(), serviceProvider, serializers, deserializers );
+            return SaveAndLoad( @this, o, ( x, w ) => w.WriteAnyNullable( x ), r => r.ReadAnyNullable(), serviceProvider, serializers, deserializers, onReadType );
         }
 
         public static T SaveAndLoadValue<T>( this IBasicTestHelper @this, in T v,
                                                                           IServiceProvider? serviceProvider = null,
                                                                           ISerializerResolver? serializers = null,
-                                                                          IDeserializerResolver? deserializers = null ) where T : struct
+                                                                          IDeserializerResolver? deserializers = null,
+                                                                          Action<IBinaryDeserializer, IMutableTypeReadInfo>? onReadType = null ) where T : struct
         {
-            return SaveAndLoad<T>( @this, v, ( x, w ) => w.WriteValue( x ), r => r.ReadValue<T>(), serviceProvider, serializers, deserializers );
+            return SaveAndLoad<T>( @this, v, ( x, w ) => w.WriteValue( x ), r => r.ReadValue<T>(), serviceProvider, serializers, deserializers, onReadType );
         }
 
         public static T? SaveAndLoadNullableValue<T>( this IBasicTestHelper @this, in T? v,
                                                                                    IServiceProvider? serviceProvider = null,
                                                                                    ISerializerResolver? serializers = null,
-                                                                                   IDeserializerResolver? deserializers = null ) where T : struct
+                                                                                   IDeserializerResolver? deserializers = null,
+                                                                                   Action<IBinaryDeserializer, IMutableTypeReadInfo>? onReadType = null ) where T : struct
         {
-            return SaveAndLoad<T?>( @this, v, ( x, w ) => w.WriteNullableValue( x ), r => r.ReadNullableValue<T>(), serviceProvider, serializers, deserializers );
+            return SaveAndLoad<T?>( @this, v, ( x, w ) => w.WriteNullableValue( x ), r => r.ReadNullableValue<T>(), serviceProvider, serializers, deserializers, onReadType );
         }
 
         public static T SaveAndLoad<T>( this IBasicTestHelper @this, in T o, 
@@ -42,7 +45,8 @@ namespace CK.Core
                                                                      Func<IBinaryDeserializer, T> r,
                                                                      IServiceProvider? serviceProvider = null,
                                                                      ISerializerResolver? serializers = null, 
-                                                                     IDeserializerResolver? deserializers = null )
+                                                                     IDeserializerResolver? deserializers = null,
+                                                                     Action<IBinaryDeserializer,IMutableTypeReadInfo>? onReadType = null )
         {
             using( var s = new MemoryStream() )
             using( var writer = BinarySerializer.Create( s, true, serializers ) )
@@ -53,6 +57,10 @@ namespace CK.Core
                 s.Position = 0;
                 using( var reader = BinaryDeserializer.Create( s, true, deserializers ) )
                 {
+                    if( onReadType != null )
+                    {
+                        reader.OnTypeReadInfo += onReadType;
+                    }
                     reader.DebugCheckSentinel();
                     T result = r( reader );
                     reader.DebugCheckSentinel();

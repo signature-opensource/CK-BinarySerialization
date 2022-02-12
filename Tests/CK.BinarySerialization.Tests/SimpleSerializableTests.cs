@@ -132,5 +132,74 @@ namespace CK.BinarySerialization.Tests
                 .WithMessage( "*requires a constructor with ( ICKBinaryReader ) parameters*" );
         }
 
+        class XA<T1, T2> : ICKSimpleBinarySerializable
+        {
+            public string A { get; }
+
+            public XA( string a )
+            {
+                A = a;
+            }
+            public XA( ICKBinaryReader r )
+            {
+                A = r.ReadString();
+            }
+
+            public virtual void Write( ICKBinaryWriter w )
+            {
+                w.Write( A );
+            }
+        }
+        class XB<T> : XA<XB<int>, XC>
+        {
+            public string B { get; }
+
+            public XB( string a, string b )
+                : base( a )
+            {
+                B = b;
+            }
+            public XB( ICKBinaryReader r )
+                : base( r )
+            {
+                B = r.ReadString();
+            }
+            public override void Write( ICKBinaryWriter w )
+            {
+                base.Write( w );
+                w.Write( B );
+            }
+
+        }
+        class XC : XB<int>
+        {
+            public string C { get; }
+
+            public XC( string a, string b, string c )
+                : base( a, b )
+            {
+                C = c;
+            }
+            public XC( ICKBinaryReader r )
+                : base( r )
+            {
+                C = r.ReadString();
+            }
+            public override void Write( ICKBinaryWriter w )
+            {
+                base.Write( w );
+                w.Write( C );
+            }
+        }
+
+        [Test]
+        public void some_complex_generic_types()
+        {
+            var c = new XC( "Albert", "Berth", "Clio" );
+            object? backC = TestHelper.SaveAndLoadObject( c );
+            backC.Should().BeEquivalentTo( c );
+        }
+
+
     }
 }

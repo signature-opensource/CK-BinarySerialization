@@ -11,8 +11,8 @@ namespace CK.BinarySerialization
         readonly ISerializerResolver _resolver;
         readonly ISerializerKnownObject _knownObjects;
         readonly Dictionary<Type, (int Idx, ISerializationDriver? D)> _types;
-        readonly Action<IDestroyable>? _destroyedTracker;
         readonly Dictionary<object, int> _seen;
+        readonly BinarySerializerContext? _context;
 
         public const int MaxRecurse = 50;
         int _recurseCount;
@@ -21,24 +21,32 @@ namespace CK.BinarySerialization
         int _debugModeCounter;
         int _debugSentinel;
         bool _leaveOpen;
+        
+        public BinarySerializerImpl( ICKBinaryWriter writer,
+                                     bool leaveOpen,
+                                     BinarySerializerContext context )
+            : this( writer, leaveOpen, context, context )
+        {
+            context.Acquire();
+            _context = context;
+        }
 
         public BinarySerializerImpl( ICKBinaryWriter writer,
                                      bool leaveOpen,
                                      ISerializerResolver resolver,
-                                     ISerializerKnownObject knownObjects,
-                                     Action<IDestroyable>? destroyedTracker )
+                                     ISerializerKnownObject knownObjects )
         {
             _writer = writer;
             _leaveOpen = leaveOpen;
             _resolver = resolver;
             _knownObjects = knownObjects;
-            _destroyedTracker = destroyedTracker;
             _types = new Dictionary<Type, (int, ISerializationDriver?)>();
             _seen = new Dictionary<object, int>( PureObjectRefEqualityComparer<object>.Default );
         }
 
         public void Dispose()
         {
+            _context.Release();
             if( !_leaveOpen && _writer is IDisposable d )
             {
                 _leaveOpen = true;
@@ -47,6 +55,8 @@ namespace CK.BinarySerialization
         }
 
         public ICKBinaryWriter Writer => _writer;
+
+        public event Action<IDestroyable>? OnDestroyedObject;
 
         public bool WriteTypeInfo( Type t )
         {
@@ -225,6 +235,10 @@ namespace CK.BinarySerialization
                 return false;
             }
             _seen.Add( o, _seen.Count );
+            if( OnDestroyedObject != null && o is IDestroyable d && d.IsDestroyed )
+            {
+                OnDestroyedObject( d );
+            }
             return true;
         }
 

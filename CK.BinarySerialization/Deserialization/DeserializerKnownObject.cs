@@ -20,19 +20,6 @@ namespace CK.BinarySerialization
         (string K, object O)[] _knownKeys;
 
         /// <summary>
-        /// Gets a shared instance that can be used safely.
-        /// <para>
-        /// If dynamic registration is used (during serialization), it's more efficient to first
-        /// call <see cref="GetKnownObject(string)"/> with the key and if null is returned
-        /// then call <see cref="RegisterKnownKey(string, object)"/>.
-        /// </para>
-        /// <para>
-        /// It is recommended to register the known objects once for all in static constructors whenever possible.
-        /// </para>
-        /// </summary>
-        public static readonly IDeserializerKnownObject Default = new DeserializerKnownObject();
-
-        /// <summary>
         /// Initializes a new empty <see cref="DeserializerKnownObject"/>.
         /// </summary>
         public DeserializerKnownObject()
