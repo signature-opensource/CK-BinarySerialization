@@ -25,6 +25,7 @@ namespace CK.BinarySerialization.Tests
         static Type[] SerializationTypes = new[]
         {
             typeof( int ),
+            typeof( int? ),
             typeof( TypeSerializationTests ),
             typeof( List<TypeSerializationTests> ),
             typeof( TypeHolder<Func<List<int>, double, Action<object>>> ),
@@ -42,6 +43,8 @@ namespace CK.BinarySerialization.Tests
             typeof( (int, string)[] ),
             typeof( Dictionary<(short,float),List<(int, string)[]>> ),
             typeof( OpenArrayHolder<> ),
+            typeof( GrantLevel ),
+            typeof( GrantLevel? ),
         };
 
         [TestCaseSource(nameof(SerializationTypes))]

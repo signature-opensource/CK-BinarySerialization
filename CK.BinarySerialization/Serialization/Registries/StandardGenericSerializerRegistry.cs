@@ -8,7 +8,7 @@ namespace CK.BinarySerialization
     /// <summary>
     /// Handles Array, List, Dictionary, Tuple, ValueTuple, KeyValuePair and other generics.
     /// </summary>
-    public class CollectionSerializerRegistry : ISerializerResolver
+    public class StandardGenericSerializerRegistry : ISerializerResolver
     {
         readonly ConcurrentDictionary<Type, ISerializationDriver?> _cache;
         readonly ISerializerResolver _resolver;
@@ -16,24 +16,12 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Gets the default registry.
         /// </summary>
-        public static readonly ISerializerResolver Default = new CollectionSerializerRegistry( BinarySerializer.DefaultResolver );
+        public static readonly ISerializerResolver Default = new StandardGenericSerializerRegistry( BinarySerializer.DefaultResolver );
 
-        public CollectionSerializerRegistry( ISerializerResolver resolver ) 
+        public StandardGenericSerializerRegistry( ISerializerResolver resolver ) 
         {
             _cache = new ConcurrentDictionary<Type, ISerializationDriver?>();
             _resolver = resolver;
-        }
-
-        /// <inheritdoc />
-        public IValueTypeSerializationDriver<T>? TryFindValueTypeDriver<T>() where T : struct
-        {
-            return (IValueTypeSerializationDriver<T>?)TryFindDriver( typeof( T ) );
-        }
-
-        /// <inheritdoc />
-        public IReferenceTypeSerializationDriver<T>? TryFindReferenceTypeDriver<T>() where T : class
-        {
-            return (IReferenceTypeSerializationDriver<T>?)TryFindDriver( typeof( T ) );
         }
 
         public ISerializationDriver? TryFindDriver( Type t )
@@ -43,12 +31,24 @@ namespace CK.BinarySerialization
             {
                 return _cache.GetOrAdd( t, CreateArray );
             }
+            if( t.IsEnum )
+            {
+                return _cache.GetOrAdd( t, CreateEnum );
+            }
             if( t.IsGenericType )
             {
                 var tGen = t.GetGenericTypeDefinition();
                 if( tGen == typeof( List<> ) )
                 {
-                    return _cache.GetOrAdd( t, CreateList );
+                    return _cache.GetOrAdd( t, CreateSingleGenericParam, typeof( Serialization.DList<> ) );
+                }
+                if( tGen == typeof( Stack<> ) )
+                {
+                    return _cache.GetOrAdd( t, CreateSingleGenericParam, typeof( Serialization.DStack<> ) );
+                }
+                if( tGen == typeof( Queue<> ) )
+                {
+                    return _cache.GetOrAdd( t, CreateSingleGenericParam, typeof( Serialization.DQueue<> ) );
                 }
             }
             return null;
@@ -63,13 +63,22 @@ namespace CK.BinarySerialization
             return (ISerializationDriver)Activator.CreateInstance( tS, dItem.TypedWriter )!;
         }
 
-        ISerializationDriver? CreateList( Type t )
+        ISerializationDriver? CreateSingleGenericParam( Type t, Type tGenD )
         {
             var tE = t.GetGenericArguments()[0];
             var dItem = _resolver.TryFindDriver( tE );
-            if( dItem == null ) return null;    
-            var tS = typeof( Serialization.DList<> ).MakeGenericType( tE );
+            if( dItem == null ) return null;
+            var tS = tGenD.MakeGenericType( tE );
             return (ISerializationDriver)Activator.CreateInstance( tS, dItem.TypedWriter )!;
+        }
+
+        ISerializationDriver? CreateEnum( Type t )
+        {
+            var tU = Enum.GetUnderlyingType( t );
+            var dU = _resolver.TryFindDriver( tU );
+            if( dU == null ) return null;
+            var tS = typeof( Serialization.DEnum<,>).MakeGenericType( t, tU );
+            return (ISerializationDriver)Activator.CreateInstance( tS, dU.TypedWriter )!;
         }
     }
 }

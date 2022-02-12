@@ -31,7 +31,7 @@ namespace CK.BinarySerialization
 
         /// <summary>
         /// Initializes a new registry with the <see cref="BasicTypeSerializerRegistry.Default"/>,
-        /// <see cref="SimpleBinarySerializableRegistry.Default"/> and <see cref="CollectionSerializerRegistry.Default"/>.
+        /// <see cref="SimpleBinarySerializableRegistry.Default"/> and <see cref="StandardGenericSerializerRegistry.Default"/>.
         /// </summary>
         public SerializerRegistry()
         {
@@ -39,7 +39,7 @@ namespace CK.BinarySerialization
             { 
                 BasicTypeSerializerRegistry.Default,
                 SimpleBinarySerializableRegistry.Default,
-                CollectionSerializerRegistry.Default
+                StandardGenericSerializerRegistry.Default
             };
         }
 

@@ -93,14 +93,14 @@ namespace CK.BinarySerialization
             if( t.IsPointer )
             {
                 RegisterAndWriteIndex( t, null );
-                _writer.Write( (byte)4 );
+                _writer.Write( (byte)5 );
                 WriteElementTypeInfo( t, true );
                 return true;
             }
             if( t.IsByRef )
             {
                 RegisterAndWriteIndex( t, null );
-                _writer.Write( (byte)3 );
+                _writer.Write( (byte)4 );
                 WriteElementTypeInfo( t, true );
                 return true;
             }
@@ -109,7 +109,7 @@ namespace CK.BinarySerialization
             RegisterAndWriteIndex( t, d );
             if( t.IsArray )
             {
-                _writer.Write( (byte)2 );
+                _writer.Write( (byte)3 );
                 _writer.WriteSmallInt32( t.GetArrayRank(), 1 );
                 if( WriteElementTypeInfo( t, false ) )
                 {
@@ -119,7 +119,7 @@ namespace CK.BinarySerialization
             }
             if( t.IsGenericType )
             {
-                _writer.Write( (byte)1 );
+                _writer.Write( (byte)2 );
                 // For Generics we consider only Opened vs. Closed ones.
                 if( t.ContainsGenericParameters )
                 {
@@ -135,6 +135,11 @@ namespace CK.BinarySerialization
                         WriteTypeInfo( p );
                     }
                 }
+            }
+            else if( t.IsEnum )
+            {
+                _writer.Write( (byte)1 );
+                WriteTypeInfo( t.GetEnumUnderlyingType() );
             }
             else
             {
@@ -153,15 +158,20 @@ namespace CK.BinarySerialization
             _writer.WriteSharedString( t.Namespace );
             _writer.Write( GetNotSoSimpleName( t ) );
             _writer.WriteSharedString( t.Assembly.GetName().Name );
-            // Write base types recursively.
-            var b = t.BaseType;
-            if( b != null && b != typeof( object ) && b != typeof( ValueType ) )
+            // Write base types recursively. Skip it for enum only.
+            // We don't tag ValueType (to KISS since it would require a bit flag rather
+            // than a simple enumeration) and deserialization should be able to handle
+            // struct/class changes.
+            if( !t.IsEnum )
             {
-                _writer.Write( true );
-                WriteTypeInfo( b );
+                var b = t.BaseType;
+                if( b != null && b != typeof( object ) && b != typeof( ValueType ) )
+                {
+                    _writer.Write( true );
+                    WriteTypeInfo( b );
+                }
+                else _writer.Write( false );
             }
-            else _writer.Write( false );
-
             return true;
         }
 

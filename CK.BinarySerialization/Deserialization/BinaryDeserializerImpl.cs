@@ -156,6 +156,14 @@ namespace CK.BinarySerialization
                     }
                 case 1:
                     {
+                        var t = new TypeReadInfo( TypeReadInfo.TypeKind.Enum );
+                        _types.Add( t );
+                        t.ReadEnum( this );
+                        t.ReadNames( _reader );
+                        return t;
+                    }
+                case 2:
+                    {
                         var args = _reader.ReadNonNegativeSmallInt32();
                         TypeReadInfo t;
                         t = new TypeReadInfo( args == 0 ? TypeReadInfo.TypeKind.OpenGeneric : TypeReadInfo.TypeKind.Generic );
@@ -165,21 +173,21 @@ namespace CK.BinarySerialization
                         t.ReadBaseType( this );
                         return t;
                     }
-                case 2:
+                case 3:
                     {
                         var t = new TypeReadInfo( TypeReadInfo.TypeKind.Array );
                         _types.Add( t );
                         t.ReadArray( this );
                         return t;
                     }
-                case 3:
+                case 4:
                     {
                         var t = new TypeReadInfo( TypeReadInfo.TypeKind.Ref );
                         _types.Add( t );
                         t.ReadRefOrPointerInfo( this );
                         return t;
                     }
-                case 4:
+                case 5:
                     {
                         var t = new TypeReadInfo( TypeReadInfo.TypeKind.Pointer );
                         _types.Add( t );

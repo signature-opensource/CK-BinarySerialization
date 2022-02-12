@@ -13,7 +13,7 @@ namespace CK.BinarySerialization
         static BinaryDeserializer()
         {
             DefaultResolver = new DeserializerRegistry( true );
-            DefaultResolver.Register( CollectionDeserializerRegistry.Default, false );
+            DefaultResolver.Register( StandardGenericDeserializerRegistry.Default, false );
         }
 
         public static IBinaryDeserializer Create( Stream s,

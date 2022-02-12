@@ -10,6 +10,9 @@ using System.Reflection;
 
 namespace CK.BinarySerialization
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class TypeReadInfo
     {
         IDeserializationDriver? _driver;
@@ -72,6 +75,11 @@ namespace CK.BinarySerialization
             TypeName = eName + '[' + new string( ',', ArrayRank - 1 ) + ']';
         }
 
+        internal void ReadEnum( IBinaryDeserializer d )
+        {
+            ElementTypeReadInfo = d.ReadTypeInfo();
+        }
+
         internal void ReadRefOrPointerInfo( IBinaryDeserializer d )
         {
             ElementTypeReadInfo = d.ReadTypeInfo();
@@ -89,6 +97,11 @@ namespace CK.BinarySerialization
             /// Regular object. Instances may be deserialized.
             /// </summary>
             Regular,
+
+            /// <summary>
+            /// Enumeration. Instances may be deserialized.
+            /// </summary>
+            Enum,
 
             /// <summary>
             /// Array, potentially with multiple dimensions. Instances may be deserialized.
@@ -166,7 +179,8 @@ namespace CK.BinarySerialization
         public int ArrayRank { get; private set; }
 
         /// <summary>
-        /// Gets the element type information if this is an array, pointer or reference.
+        /// Gets the element type information if this is an array, pointer or reference
+        /// or the underlying type for an Enum.
         /// </summary>
         public TypeReadInfo? ElementTypeReadInfo { get; private set; }
 
@@ -244,7 +258,7 @@ namespace CK.BinarySerialization
                     }
                     else
                     {
-                        Debug.Assert( Kind == TypeKind.Regular || Kind == TypeKind.OpenGeneric );
+                        Debug.Assert( Kind == TypeKind.Regular || Kind == TypeKind.Enum || Kind == TypeKind.OpenGeneric );
                         _localType = CreateTypeFromNames();
                     }
                 }

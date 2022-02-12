@@ -15,7 +15,7 @@ namespace CK.BinarySerialization
         static BinarySerializer()
         {
             DefaultResolver = new SerializerRegistry( true );
-            DefaultResolver.Register( CollectionSerializerRegistry.Default );
+            DefaultResolver.Register( StandardGenericSerializerRegistry.Default );
         }
 
         public static IBinarySerializer Create( Stream s,

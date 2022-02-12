@@ -110,6 +110,33 @@ namespace CK.BinarySerialization.Tests
             }
         }
 
+        [Test]
+        public void enum_serialization()
+        {
+            var o = GrantLevel.Administrator;
+            GrantLevel? oN = GrantLevel.User;
+            GrantLevel? oNN = default;
+            {
+                GrantLevel b = TestHelper.SaveAndLoadValue( o );
+                b.Should().Be( o );
+            }
+            {
+                GrantLevel? b = TestHelper.SaveAndLoadNullableValue( oN );
+                b.Should().Be( oN );
+            }
+            {
+                GrantLevel? b = TestHelper.SaveAndLoadNullableValue( oNN );
+                b.Should().Be( oNN );
+            }
+            {
+                object? b = TestHelper.SaveAndLoadObject( oN );
+                b.Should().Be( oN );
+            }
+            {
+                object? b = TestHelper.SaveAndLoadObject( oNN );
+                b.Should().Be( oNN );
+            }
+        }
 
     }
 }
