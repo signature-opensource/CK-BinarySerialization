@@ -11,9 +11,11 @@ namespace CK.BinarySerialization
         static readonly Dictionary<Type, ISerializationDriver> _byType;
 
         /// <summary>
-        /// Gets the default registry.
+        /// Gets the singleton instance.
         /// </summary>
-        public static readonly ISerializerResolver Default = new BasicTypeSerializerRegistry();
+        public static readonly BasicTypeSerializerRegistry Instance = new BasicTypeSerializerRegistry();
+
+        BasicTypeSerializerRegistry() { }
 
         static BasicTypeSerializerRegistry()
         {
@@ -46,7 +48,6 @@ namespace CK.BinarySerialization
             _byType.Add( driver.Type, driver );
         }
 
-        BasicTypeSerializerRegistry() { }
 
         /// <inheritdoc />
         public IValueTypeSerializationDriver<T>? TryFindValueTypeDriver<T>() where T : struct
@@ -61,10 +62,7 @@ namespace CK.BinarySerialization
         }
 
         /// <inheritdoc />
-        public ISerializationDriver? TryFindDriver( Type t )
-        {
-            return _byType.GetValueOrDefault( t );
-        }
+        public ISerializationDriver? TryFindDriver( Type t ) => _byType.GetValueOrDefault( t );
 
     }
 }

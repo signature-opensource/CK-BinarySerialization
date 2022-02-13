@@ -11,8 +11,7 @@ namespace CK.BinarySerialization
     class BinaryDeserializerImpl : IBinaryDeserializer
     {
         readonly ICKBinaryReader _reader;
-        readonly IDeserializerResolver _resolver;
-        readonly IDeserializerKnownObject _knownObjects;
+        readonly BinaryDeserializerContext _context;
         readonly List<TypeReadInfo> _types;
         readonly List<object> _objects;
 
@@ -31,22 +30,19 @@ namespace CK.BinarySerialization
         internal BinaryDeserializerImpl( int version,
                                          ICKBinaryReader reader,
                                          bool leaveOpen,
-                                         IDeserializerResolver resolver,
-                                         IDeserializerKnownObject knownObjects,
-                                         IServiceProvider? services )
+                                         BinaryDeserializerContext context )
         {
+            (_context = context).Acquire( this );
             SerializerVersion = version;
             _reader = reader;
             _leaveOpen = leaveOpen;
-            _resolver = resolver;
-            _knownObjects = knownObjects;
-            Services = new SimpleServiceContainer( services );
             _types = new List<TypeReadInfo>();
             _objects = new List<object>();
         }
 
         public void Dispose()
         {
+            _context.Release();
             if( !_leaveOpen && _reader is IDisposable d )
             {
                 _leaveOpen = true;
@@ -56,9 +52,7 @@ namespace CK.BinarySerialization
 
         public ICKBinaryReader Reader => _reader;
 
-        public event Action<IBinaryDeserializer, IMutableTypeReadInfo>? OnTypeReadInfo;
-
-        public IServiceProvider Services { get; }
+        public BinaryDeserializerContext Context => _context;
 
         public int SerializerVersion { get; }
 
@@ -98,7 +92,7 @@ namespace CK.BinarySerialization
                 case SerializationMarker.KnownObject:
                     {
                         var key = _reader.ReadString()!;
-                        object? o = _knownObjects.GetKnownObject( key );
+                        object? o = _context.GetKnownObject( key );
                         if( o == null )
                         {
                             ThrowInvalidDataException( $"Known Object key '{key}' cannot be resolved." );
@@ -198,16 +192,6 @@ namespace CK.BinarySerialization
                     }
                 default: throw new NotSupportedException();
             }
-        }
-
-        internal IDeserializationDriver? TryResolveDriver( TypeReadInfo info )
-        {
-            if( OnTypeReadInfo != null )
-            {
-                OnTypeReadInfo( this, info.CreateMutation() );
-                return info.CloseMutation() ?? _resolver.TryFindDriver( info ); 
-            }
-            return _resolver.TryFindDriver( info );
         }
 
         public T ReadObject<T>() where T : class => (T)ReadAny();

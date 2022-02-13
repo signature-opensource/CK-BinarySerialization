@@ -27,8 +27,10 @@ namespace CK.BinarySerialization.Tests
                     i.SetLocalType( typeof( NewGranteLevel ) );
                 }
             }
+            var dC = new BinaryDeserializerContext();
+            dC.OnTypeReadInfo += SetNewLocalType;
 
-            object back = TestHelper.SaveAndLoadObject( o, onReadType: SetNewLocalType );
+            object back = TestHelper.SaveAndLoadObject( o, deserializerContext: dC );
             back.Should().BeOfType<NewGranteLevel>();
             back.Should().Be( NewGranteLevel.NewNameOfAdmin );
         }
@@ -42,6 +44,7 @@ namespace CK.BinarySerialization.Tests
         public void enum_changed_its_underlying_type_for_a_wider_type_is_always_fine()
         {
             var o = GrantLevel.Administrator;
+
             static void SetNewLocalType( IBinaryDeserializer r, IMutableTypeReadInfo i )
             {
                 if( i.ReadInfo.AssemblyName == "CK.Core" && i.ReadInfo.TypeName == "GrantLevel" )
@@ -49,8 +52,10 @@ namespace CK.BinarySerialization.Tests
                     i.SetLocalType( typeof( NewGranteLevelIsNowAnInt ) );
                 }
             }
+            var dC = new BinaryDeserializerContext();
+            dC.OnTypeReadInfo += SetNewLocalType;
 
-            object back = TestHelper.SaveAndLoadObject( o, onReadType: SetNewLocalType );
+            object back = TestHelper.SaveAndLoadObject( o, deserializerContext: dC );
             back.Should().BeOfType<NewGranteLevelIsNowAnInt>();
             back.Should().Be( NewGranteLevelIsNowAnInt.NewNameOfAdmin );
         }
@@ -78,20 +83,22 @@ namespace CK.BinarySerialization.Tests
                     i.SetLocalType( typeof( NowItsAInt ) );
                 }
             }
+            var dC = new BinaryDeserializerContext();
+            dC.OnTypeReadInfo += SetNewLocalType;
 
             var noWay = BeforeItWasALong.FitInLongOnly;
 
-            FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( noWay, onReadType: SetNewLocalType ) )
+            FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( noWay, deserializerContext: dC ) )
                 .Should().Throw<OverflowException>();
 
             var canDoIt = BeforeItWasALong.FitInInt;
             var canAlsoDoIt = BeforeItWasALong.FitInByte;
 
-            object back = TestHelper.SaveAndLoadObject( canDoIt, onReadType: SetNewLocalType );
+            object back = TestHelper.SaveAndLoadObject( canDoIt, deserializerContext: dC );
             back.Should().BeOfType<NowItsAInt>();
             back.Should().Be( NowItsAInt.FitInInt );
             
-            back = TestHelper.SaveAndLoadObject( canAlsoDoIt, onReadType: SetNewLocalType );
+            back = TestHelper.SaveAndLoadObject( canAlsoDoIt, deserializerContext: dC );
             back.Should().BeOfType<NowItsAInt>();
             back.Should().Be( NowItsAInt.FitInByte );
         }

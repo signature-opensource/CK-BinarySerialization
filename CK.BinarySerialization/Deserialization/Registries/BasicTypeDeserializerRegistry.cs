@@ -12,7 +12,7 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Gets the default registry.
         /// </summary>
-        public static readonly IDeserializerResolver Default = new BasicTypeDeserializerRegistry();
+        public static readonly IDeserializerResolver Instance = new BasicTypeDeserializerRegistry();
 
         static BasicTypeDeserializerRegistry()
         {

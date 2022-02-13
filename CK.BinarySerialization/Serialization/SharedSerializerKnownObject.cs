@@ -13,8 +13,21 @@ namespace CK.BinarySerialization
     /// Thread safe implementation of unique association between a key string and its object.
     /// <see cref="StringComparer.Ordinal"/> and all other static comparer are preregistered.
     /// </summary>
-    public class SerializerKnownObject : ISerializerKnownObject
+    public class SharedSerializerKnownObject : ISerializerKnownObject
     {
+        /// <summary>
+        /// Gets a shared thread safe instance.
+        /// <para>
+        /// If dynamic registration is used (during serialization), it's more efficient to first
+        /// call <see cref="ISerializerKnownObject.GetKnownObjectKey(object)"/> with the object and if null is returned
+        /// then call <see cref="ISerializerKnownObject.RegisterKnownObject(object, string)"/>.
+        /// </para>
+        /// <para>
+        /// It is recommended to register the known objects once for all in static constructors whenever possible.
+        /// </para>
+        /// </summary>
+        public static readonly SharedSerializerKnownObject Default = new SharedSerializerKnownObject();
+
         // We use a simple array since there should not be a lot of instances.
         // Interlocked set is used to add new entries in a thread safe way (don't really care
         // of performance and there will be barely no concurrency here) so that
@@ -22,9 +35,10 @@ namespace CK.BinarySerialization
         (object O, string K)[] _objects;
 
         /// <summary>
-        /// Initializes a new empty <see cref="SerializerKnownObject"/>.
+        /// Initializes a new <see cref="SharedSerializerKnownObject"/> that 
+        /// contains preregistered <see cref="StringComparer"/> singletons (like <see cref="StringComparer.OrdinalIgnoreCase"/>).
         /// </summary>
-        public SerializerKnownObject()
+        public SharedSerializerKnownObject()
         {
             _objects = new (object O, string K)[]
             {

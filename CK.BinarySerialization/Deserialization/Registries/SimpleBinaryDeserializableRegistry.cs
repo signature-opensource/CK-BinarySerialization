@@ -23,7 +23,7 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Gets the default registry.
         /// </summary>
-        public static readonly IDeserializerResolver Default = new SimpleBinaryDeserializableRegistry();
+        public static readonly IDeserializerResolver Instance = new SimpleBinaryDeserializableRegistry();
 
         SimpleBinaryDeserializableRegistry() { }
 
@@ -41,7 +41,7 @@ namespace CK.BinarySerialization
                     {
                         throw new Exception( $"Type '{t}' has been serialized thanks to its ISimpleBinarySerializable implementation but it doesn't support it anymore." );
                     }
-                    return SharedCache.Deserialization.GetOrAdd( t, CreateSimple );
+                    return InternalSharedCache.Deserialization.GetOrAdd( t, CreateSimple );
                 }
                 if( info.DriverName == "SealedVersionBinarySerializable" )
                 {
@@ -51,7 +51,7 @@ namespace CK.BinarySerialization
                     {
                         throw new Exception( $"Type '{t}' has been serialized thanks to its ISealedVersionedSimpleSerializable implementation but it doesn't support it anymore." );
                     }
-                    return SharedCache.Deserialization.GetOrAdd( t, CreateSealed );
+                    return InternalSharedCache.Deserialization.GetOrAdd( t, CreateSealed );
                 }
             }
             catch( TargetInvocationException ex )

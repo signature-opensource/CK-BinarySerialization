@@ -8,11 +8,9 @@ namespace CK.BinarySerialization
     class BinarySerializerImpl : IBinarySerializer
     {
         readonly ICKBinaryWriter _writer;
-        readonly ISerializerResolver _resolver;
-        readonly ISerializerKnownObject _knownObjects;
         readonly Dictionary<Type, (int Idx, ISerializationDriver? D)> _types;
         readonly Dictionary<object, int> _seen;
-        readonly BinarySerializerContext? _context;
+        readonly BinarySerializerContext _context;
 
         public const int MaxRecurse = 50;
         int _recurseCount;
@@ -25,21 +23,10 @@ namespace CK.BinarySerialization
         public BinarySerializerImpl( ICKBinaryWriter writer,
                                      bool leaveOpen,
                                      BinarySerializerContext context )
-            : this( writer, leaveOpen, context, context )
         {
-            context.Acquire();
-            _context = context;
-        }
-
-        public BinarySerializerImpl( ICKBinaryWriter writer,
-                                     bool leaveOpen,
-                                     ISerializerResolver resolver,
-                                     ISerializerKnownObject knownObjects )
-        {
+            (_context = context).Acquire();
             _writer = writer;
             _leaveOpen = leaveOpen;
-            _resolver = resolver;
-            _knownObjects = knownObjects;
             _types = new Dictionary<Type, (int, ISerializationDriver?)>();
             _seen = new Dictionary<object, int>( PureObjectRefEqualityComparer<object>.Default );
         }
@@ -55,6 +42,8 @@ namespace CK.BinarySerialization
         }
 
         public ICKBinaryWriter Writer => _writer;
+
+        public BinarySerializerContext Context => _context;
 
         public event Action<IDestroyable>? OnDestroyedObject;
 
@@ -115,7 +104,7 @@ namespace CK.BinarySerialization
                 return true;
             }
             // Now we may have a driver names.
-            var d = knownDriver ?? _resolver.TryFindDriver( t );
+            var d = knownDriver ?? _context.TryFindDriver( t );
             RegisterAndWriteIndex( t, d );
             if( t.IsArray )
             {
@@ -203,7 +192,7 @@ namespace CK.BinarySerialization
 
         public void WriteValue<T>( in T value ) where T : struct
         {
-            var d = _resolver.FindWriter<T>();
+            var d = _context.FindWriter<T>();
             // Writing the Struct marker enables this to be read as any object.
             _writer.Write( (byte)SerializationMarker.Struct );
             WriteTypeInfo( typeof( T ) );
@@ -259,7 +248,7 @@ namespace CK.BinarySerialization
                     _writer.Write( (byte)SerializationMarker.EmptyObject );
                     return true;
                 }
-                string? knownObject = _knownObjects.GetKnownObjectKey( o );
+                string? knownObject = _context.GetKnownObjectKey( o );
                 if( knownObject != null )
                 {
                     _writer.Write( (byte)SerializationMarker.KnownObject );
@@ -272,7 +261,7 @@ namespace CK.BinarySerialization
             {
                 marker = SerializationMarker.Struct;
             }
-            ISerializationDriver driver = _resolver.FindDriver( t );
+            ISerializationDriver driver = _context.FindDriver( t );
             if( _recurseCount > MaxRecurse 
                 && marker == SerializationMarker.Object
                 && driver is ISerializationDriverAllowDeferredRead )

@@ -341,7 +341,7 @@ namespace CK.BinarySerialization
             if( !_driverLookupDone && _mutating == null )
             {
                 _driverLookupDone = true;
-                _driver = _deserializer.TryResolveDriver( this );
+                _driver = _deserializer.Context.TryFindDriver( this );
             }
             return _driver;
         }

@@ -13,12 +13,12 @@ namespace CK.BinarySerialization
     /// since this is, as of today, the only ones that can do their work without any other resolvers. 
     /// </para>
     /// </summary>
-    class SharedCache
+    class InternalSharedCache
     {
         static public readonly ConcurrentDictionary<Type, ISerializationDriver> Serialization;
         static public readonly ConcurrentDictionary<Type, IDeserializationDriver> Deserialization;
 
-        static SharedCache()
+        static InternalSharedCache()
         {
             Serialization = new ConcurrentDictionary<Type, ISerializationDriver>();
             Deserialization = new ConcurrentDictionary<Type, IDeserializationDriver>();

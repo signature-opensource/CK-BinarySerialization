@@ -36,7 +36,7 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Gets the default registry.
         /// </summary>
-        public static readonly IDeserializerResolver Default = new StandardGenericDeserializerRegistry( BinaryDeserializer.DefaultResolver );
+        public static readonly IDeserializerResolver Default = new StandardGenericDeserializerRegistry( BinaryDeserializer.DefaultSharedContext );
 
         public StandardGenericDeserializerRegistry( IDeserializerResolver resolver ) 
         {

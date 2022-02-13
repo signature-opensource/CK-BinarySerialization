@@ -8,7 +8,7 @@ namespace CK.BinarySerialization
     /// Associates a unique string to a known object.
     /// <para>
     /// New entries can be registered during serialization: if the instance is shared
-    /// (like the <see cref="DeserializerKnownObject.Default"/>), the implementation must be thread safe.
+    /// (like the <see cref="SharedDeserializerKnownObject.Default"/>), the implementation must be thread safe.
     /// </para>
     /// </summary>
     public interface IDeserializerKnownObject

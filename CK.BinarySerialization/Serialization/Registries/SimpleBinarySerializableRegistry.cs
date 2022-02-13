@@ -7,7 +7,7 @@ using System.Text;
 namespace CK.BinarySerialization
 {
     /// <summary>
-    /// Static thread safe registry for <see cref="ICKSimpleBinarySerializable"/> and <see cref="ISealedVersionedSimpleSerializable"/>
+    /// Static thread safe singleton for <see cref="ICKSimpleBinarySerializable"/> and <see cref="ISealedVersionedSimpleSerializable"/>
     /// serializers.
     /// <para>
     /// Since this kind on serialization don't need any other resolvers (drivers only depends on the actual type), a singleton
@@ -17,9 +17,9 @@ namespace CK.BinarySerialization
     public class SimpleBinarySerializableRegistry : ISerializerResolver
     {
         /// <summary>
-        /// Gets the default registry.
+        /// Gets the singleton instance.
         /// </summary>
-        public static readonly ISerializerResolver Default = new SimpleBinarySerializableRegistry();
+        public static readonly SimpleBinarySerializableRegistry Instance = new SimpleBinarySerializableRegistry();
 
         SimpleBinarySerializableRegistry() { }
 
@@ -41,7 +41,7 @@ namespace CK.BinarySerialization
             // Cache only the driver if the type is a ICKSimpleBinarySerializable or a .
             if( typeof( ICKSimpleBinarySerializable ).IsAssignableFrom( t ) )
             {
-                return SharedCache.Serialization.GetOrAdd( t, CreateSimple );
+                return InternalSharedCache.Serialization.GetOrAdd( t, CreateSimple );
             }
             if( typeof( ISealedVersionedSimpleSerializable ).IsAssignableFrom( t ) )
             {
@@ -49,7 +49,7 @@ namespace CK.BinarySerialization
                 {
                     throw new InvalidOperationException( $"Type '{t}' cannot implement ISealedVersionedSimpleSerializable interface. It must be a sealed class or a value type." );
                 }
-                return SharedCache.Serialization.GetOrAdd( t, CreateSealed );
+                return InternalSharedCache.Serialization.GetOrAdd( t, CreateSealed );
             }
             return null;
         }

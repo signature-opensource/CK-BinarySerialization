@@ -19,19 +19,9 @@ namespace CK.BinarySerialization
         int SerializerVersion { get; }
 
         /// <summary>
-        /// Raised for each <see cref="TypeReadInfo"/> read. See <see cref="IMutableTypeReadInfo"/>.
-        /// <para>
-        /// This event enables setting the local type to deserialize and/or the <see cref="IDeserializationDriver"/> 
-        /// to use instead of calling <see cref="IDeserializerResolver.TryFindDriver(TypeReadInfo)"/>.
-        /// </para>
+        /// Gets the context of this deserializer.
         /// </summary>
-        event Action<IBinaryDeserializer, IMutableTypeReadInfo>? OnTypeReadInfo;
-
-        /// <summary>
-        /// Gets a container of services available for constructor
-        /// injection in the deserialized instances.
-        /// </summary>
-        IServiceProvider Services { get; }
+        BinaryDeserializerContext Context { get; }
 
         /// <summary>
         /// Reads a non null object or value type previously written by <see cref="IBinarySerializer.WriteAnyNullable(object?)"/>

@@ -48,11 +48,13 @@ namespace CK.BinarySerialization.Tests
             var n4 = new Node() { Name = "Cycle!", Parent = n3 };
             n1.Parent = n4;
 
-            var sReg = new BinarySerializerContext();
-            sReg.Add( typeof(Node), new NodeSerializer() );
+            var sC = new BinarySerializerContext();
+            sC.EnsureDriver( typeof( Node ), new NodeSerializer() );
 
+            var dC = new BinaryDeserializerContext();
+            dC.EnsureLocalTypeDeserializer( new NodeDeserializer() );
 
-            object back = TestHelper.SaveAndLoadObject( n1 );
+            object back = TestHelper.SaveAndLoadObject( n1, sC, dC );
             back.Should().BeEquivalentTo( n1 );
         }
 

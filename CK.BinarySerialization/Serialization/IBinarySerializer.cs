@@ -12,6 +12,11 @@ namespace CK.BinarySerialization
         ICKBinaryWriter Writer { get; }
 
         /// <summary>
+        /// Gets the context of this deserializer.
+        /// </summary>
+        BinarySerializerContext Context { get; }
+
+        /// <summary>
         /// Writes a nullable object or value type.
         /// Note that for value type, using <see cref="WriteNullableValue{T}(T?)"/> avoids boxing.
         /// </summary>

@@ -6,7 +6,10 @@ using System.Text;
 namespace CK.BinarySerialization
 {
     /// <summary>
-    /// Handles Array, List, Dictionary, Tuple, ValueTuple, KeyValuePair and other generics.
+    /// Thread safe registry that handles Array, List, Dictionary, Tuple, ValueTuple, KeyValuePair and other generics.
+    /// <para>
+    /// This registry is bound to a root resolver (that must also be thread safe).
+    /// </para>
     /// </summary>
     public class StandardGenericSerializerRegistry : ISerializerResolver
     {
@@ -16,14 +19,19 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Gets the default registry.
         /// </summary>
-        public static readonly ISerializerResolver Default = new StandardGenericSerializerRegistry( BinarySerializer.DefaultResolver );
+        public static readonly StandardGenericSerializerRegistry Default = new StandardGenericSerializerRegistry( BinarySerializer.DefaultSharedContext );
 
+        /// <summary>
+        /// Initializes a new registry.
+        /// </summary>
+        /// <param name="resolver">The root resolver to use.</param>
         public StandardGenericSerializerRegistry( ISerializerResolver resolver ) 
         {
             _cache = new ConcurrentDictionary<Type, ISerializationDriver?>();
             _resolver = resolver;
         }
 
+        /// <inheritdoc />
         public ISerializationDriver? TryFindDriver( Type t )
         {
             if( t.ContainsGenericParameters ) return null;
