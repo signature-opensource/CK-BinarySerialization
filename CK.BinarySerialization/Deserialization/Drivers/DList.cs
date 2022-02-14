@@ -5,7 +5,7 @@ using System.Text;
 
 namespace CK.BinarySerialization.Deserialization
 {
-    class DList<T> : ReferenceTypeDeserializer<List<T>>
+    sealed class DList<T> : ReferenceTypeDeserializer<List<T>>
     {
         readonly TypedReader<T> _item;
 
@@ -14,16 +14,16 @@ namespace CK.BinarySerialization.Deserialization
             _item = item;
         }
 
-        protected override List<T> ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo )
+        protected override void ReadInstance( ref RefReader r )
         {
-            Debug.Assert( readInfo.GenericParameters.Count == 1 );
+            Debug.Assert( r.ReadInfo.GenericParameters.Count == 1 );
             int len = r.Reader.ReadNonNegativeSmallInt32();
             var a = new List<T>( len );
+            var d = r.SetInstance( a );
             while( --len >= 0 )
             {
-                a.Add( _item( r, readInfo.GenericParameters[0] ) );
+                a.Add( _item( d, r.ReadInfo.GenericParameters[0] ) );
             }
-            return a;
         }
     }
 }

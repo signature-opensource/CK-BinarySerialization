@@ -63,6 +63,12 @@ namespace CK.BinarySerialization
             return o!;
         }
 
+        internal IBinaryDeserializer Track( object o )
+        {
+            _objects.Add( o );
+            return this;
+        }
+
         public object? ReadAnyNullable()
         {
             var b = (SerializationMarker)_reader.ReadByte();
@@ -113,7 +119,7 @@ namespace CK.BinarySerialization
                 }
                 if( _deferred == null ) _deferred = new Stack<(IDeserializationDeferredDriver D, TypeReadInfo T, object O)>( 100 );
 
-                result = defer.Allocate( this, info );
+                result = RuntimeHelpers.GetUninitializedObject( d.ResolvedType );
                 _deferred.Push( (defer, info, result) );
             }
             else

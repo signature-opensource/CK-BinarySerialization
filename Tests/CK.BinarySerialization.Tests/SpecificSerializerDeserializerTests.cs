@@ -32,10 +32,13 @@ namespace CK.BinarySerialization.Tests
 
         class NodeDeserializer : ReferenceTypeDeserializer<Node>
         {
-            protected override Node ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo )
+            protected override void ReadInstance( ref RefReader r )
             {
-                readInfo.SerializationVersion.Should().Be( 3712 );
-                return new Node() {  Name = r.Reader.ReadNullableString(), Parent = r.ReadNullableObject<Node>() };
+                r.ReadInfo.SerializationVersion.Should().Be( 3712 );
+                var n = new Node();
+                var d = r.SetInstance( n );
+                n.Name = r.Reader.ReadNullableString();
+                n.Parent = d.ReadNullableObject<Node>();
             }
         }
 
@@ -54,8 +57,8 @@ namespace CK.BinarySerialization.Tests
             var dC = new BinaryDeserializerContext();
             dC.EnsureLocalTypeDeserializer( new NodeDeserializer() );
 
-            object back = TestHelper.SaveAndLoadObject( n1, sC, dC );
-            back.Should().BeEquivalentTo( n1 );
+            Node back = TestHelper.SaveAndLoadObject( n1, sC, dC );
+            back.Should().BeEquivalentTo( n1, options => options.IgnoringCyclicReferences() );
         }
 
     }

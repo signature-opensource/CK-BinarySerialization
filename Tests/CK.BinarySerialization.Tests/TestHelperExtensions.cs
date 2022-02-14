@@ -13,6 +13,14 @@ namespace CK.Core
     {
 
         [return: NotNullIfNotNull("o")]
+        public static T SaveAndLoadObject<T>( this IBasicTestHelper @this, T o,
+                                                                            BinarySerializerContext? serializerContext = null,
+                                                                            BinaryDeserializerContext? deserializerContext = null ) where T : class
+        {
+            return SaveAndLoad( @this, o, ( x, w ) => w.WriteObject( x ), r => r.ReadObject<T>(), serializerContext, deserializerContext );
+        }
+
+        [return: NotNullIfNotNull("o")]
         public static object? SaveAndLoadObject( this IBasicTestHelper @this, object? o,
                                                                               BinarySerializerContext? serializerContext = null,
                                                                               BinaryDeserializerContext? deserializerContext = null )

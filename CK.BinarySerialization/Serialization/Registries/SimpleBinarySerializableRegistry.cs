@@ -23,19 +23,6 @@ namespace CK.BinarySerialization
 
         SimpleBinarySerializableRegistry() { }
 
-        /// <inheritdoc />
-        public IValueTypeSerializationDriver<T>? TryFindValueTypeDriver<T>() where T : struct
-        {
-            return (IValueTypeSerializationDriver<T>?)TryFindDriver( typeof( T ) );
-        }
-
-        /// <inheritdoc />
-        public IReferenceTypeSerializationDriver<T>? TryFindReferenceTypeDriver<T>() where T : class
-        {
-            return (IReferenceTypeSerializationDriver<T>?)TryFindDriver( typeof( T ) );
-        }
-
-
         public ISerializationDriver? TryFindDriver( Type t )
         {
             // Cache only the driver if the type is a ICKSimpleBinarySerializable or a .

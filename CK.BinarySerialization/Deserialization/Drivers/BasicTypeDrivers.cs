@@ -1,12 +1,13 @@
-﻿using System;
+﻿using CK.Core;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace CK.BinarySerialization.Deserialization
 {
-    sealed class DString : ReferenceTypeDeserializer<string>
+    sealed class DString : SimpleReferenceTypeDeserializer<string>
     {
-        protected override string ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => r.Reader.ReadString();
+        protected override string ReadInstance( ICKBinaryReader r, TypeReadInfo readInfo ) => r.ReadString();
     }
 
     sealed class DBool : ValueTypeDeserializer<bool>

@@ -77,7 +77,7 @@ namespace CK.BinarySerialization
             protected override T ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => _factory( r.Reader );
         }
 
-        sealed class SimpleBinaryDeserializableDriverR<T> : ReferenceTypeDeserializer<T> where T : class, ICKSimpleBinarySerializable
+        sealed class SimpleBinaryDeserializableDriverR<T> : SimpleReferenceTypeDeserializer<T> where T : class, ICKSimpleBinarySerializable
         {
             readonly Func<ICKBinaryReader, T> _factory;
 
@@ -86,7 +86,7 @@ namespace CK.BinarySerialization
                 _factory = (Func<ICKBinaryReader, T>)CreateNewDelegate<T>( typeof( Func<ICKBinaryReader, T> ), _simpleCPExpressions, _simpleCPTypes );
             }
 
-            protected override T ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => _factory( r.Reader );
+            protected override T ReadInstance( ICKBinaryReader r, TypeReadInfo readInfo ) => _factory( r );
         }
 
         static IDeserializationDriver CreateSimple( Type t )
@@ -115,7 +115,7 @@ namespace CK.BinarySerialization
             protected override T ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => _factory( r.Reader, r.SerializerVersion );
         }
 
-        sealed class SealedBinaryDeserializableDriverR<T> : ReferenceTypeDeserializer<T> where T : class, ISealedVersionedSimpleSerializable
+        sealed class SealedBinaryDeserializableDriverR<T> : SimpleReferenceTypeDeserializer<T> where T : class, ISealedVersionedSimpleSerializable
         {
             readonly Func<ICKBinaryReader, int, T> _factory;
 
@@ -124,7 +124,7 @@ namespace CK.BinarySerialization
                 _factory = (Func<ICKBinaryReader, int, T>)CreateNewDelegate<T>( typeof( Func<ICKBinaryReader, int, T> ), _sealedCPExpressions, _sealedCPTypes );
             }
 
-            protected override T ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => _factory( r.Reader, r.SerializerVersion );
+            protected override T ReadInstance( ICKBinaryReader r, TypeReadInfo readInfo ) => _factory( r, readInfo.SerializationVersion );
         }
 
         static IDeserializationDriver CreateSealed( Type t )

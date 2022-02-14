@@ -5,7 +5,7 @@ using System.Text;
 
 namespace CK.BinarySerialization.Deserialization
 {
-    class DQueue<T> : ReferenceTypeDeserializer<Queue<T>>
+    sealed class DQueue<T> : ReferenceTypeDeserializer<Queue<T>>
     {
         readonly TypedReader<T> _item;
 
@@ -14,16 +14,16 @@ namespace CK.BinarySerialization.Deserialization
             _item = item;
         }
 
-        protected override Queue<T> ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo )
+        protected override void ReadInstance( ref RefReader r )
         {
-            Debug.Assert( readInfo.GenericParameters.Count == 1 );
+            Debug.Assert( r.ReadInfo.GenericParameters.Count == 1 );
             int len = r.Reader.ReadNonNegativeSmallInt32();
             var a = new Queue<T>( len );
+            var d = r.SetInstance( a );
             while( --len >= 0 )
             {
-                a.Enqueue( _item( r, readInfo.GenericParameters[0] ) );
+                a.Enqueue( _item( d, r.ReadInfo.GenericParameters[0] ) );
             }
-            return a;
         }
     }
 }

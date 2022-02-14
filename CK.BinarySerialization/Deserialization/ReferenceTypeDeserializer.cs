@@ -1,4 +1,6 @@
-﻿using System;
+﻿using CK.Core;
+using System;
+using System.Runtime.CompilerServices;
 
 namespace CK.BinarySerialization
 {
@@ -6,9 +8,9 @@ namespace CK.BinarySerialization
     /// Deserializer for type <typeparamref name="T"/> that handles nullable as well as non nullable written instances.
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
-    public abstract class ReferenceTypeDeserializer<T> : IReferenceTypeNonNullableDeserializationDriver<T> where T : class
+    public abstract class ReferenceTypeDeserializer<T> : INonNullableDeserializationDriver where T : class
     {
-        class NullableAdapter : IReferenceTypeNullableDeserializationDriver<T>
+        class NullableAdapter : INullableDeserializationDriver
         {
             readonly ReferenceTypeDeserializer<T> _deserializer;
             readonly TypedReader<T?> _reader;
@@ -18,10 +20,6 @@ namespace CK.BinarySerialization
                 _deserializer = deserializer;
                 _reader = ReadInstance;
             }
-
-            public IReferenceTypeNullableDeserializationDriver<T> ToNullable => this;
-
-            public IReferenceTypeNonNullableDeserializationDriver<T> ToNonNullable => _deserializer;
 
             public Type ResolvedType => _deserializer.ResolvedType;
 
@@ -37,7 +35,7 @@ namespace CK.BinarySerialization
             {
                 if( r.Reader.ReadBoolean() )
                 {
-                    return ReadInstance( r, readInfo );
+                    return _deserializer.ReadInstance( r, readInfo );
                 }
                 return default;
             }
@@ -54,12 +52,65 @@ namespace CK.BinarySerialization
         }
 
         /// <summary>
-        /// Must read a non null instance from the binary reader.
+        /// Secures object tracking by requiring the deserialized object to first be 
+        /// instantiated before enabling the reading of its content.
         /// </summary>
-        /// <param name="r">The binary reader.</param>
-        /// <param name="readInfo">The read type info.</param>
-        /// <returns>The new instance.</returns>
-        protected abstract T ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo );
+        public ref struct RefReader
+        {
+            /// <summary>
+            /// Gets the basic reader than can be used any time, typically 
+            /// before calling <see cref="SetInstance(T)"/> to read data required to 
+            /// instantiate the new object to read.
+            /// </summary>
+            public readonly ICKBinaryReader Reader;
+
+            /// <summary>
+            /// Gets the type read information.
+            /// </summary>
+            public readonly TypeReadInfo ReadInfo;
+
+            /// <summary>
+            /// Sets the unitialized instance and returns the deserializer to use
+            /// to read the object's content.
+            /// <para>
+            /// This must be called once and only once 
+            /// </para>
+            /// </summary>
+            /// <param name="o">The unitialized object.</param>
+            /// <returns>The deserializer to use.</returns>
+            public IBinaryDeserializer SetInstance( T o )
+            {
+                if( o == null ) throw new ArgumentNullException( "o" );
+                if( Instance != null ) throw new InvalidOperationException( "Result already set." );
+                Instance = o;
+                return Unsafe.As<BinaryDeserializerImpl>( _d ).Track( o );
+            }
+
+            internal RefReader( IBinaryDeserializer d, TypeReadInfo i )
+            {
+                _d = d;
+                ReadInfo = i;
+                Reader = d.Reader;
+                Instance = null;
+            }
+            internal T? Instance;
+            readonly IBinaryDeserializer _d;
+        }
+
+        T ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo )
+        {
+            var c = new RefReader( r, readInfo );
+            ReadInstance( ref c );
+            if( c.Instance == null ) throw new InvalidOperationException( "ReadInstance must set a non null instance." );
+            return c.Instance;
+        }
+
+        /// <summary>
+        /// Must instantiate a new object, call <see cref="RefReader.SetInstance(T)"/> and
+        /// then read its content.
+        /// </summary>
+        /// <param name="r">Deserialization context to use.</param>
+        protected abstract void ReadInstance( ref RefReader r );
 
         /// <inheritdoc />
         public Type ResolvedType => typeof( T );
@@ -67,17 +118,9 @@ namespace CK.BinarySerialization
         /// <inheritdoc />
         public Delegate TypedReader => _reader;
 
-        /// <inheritdoc />
-        public IReferenceTypeNullableDeserializationDriver<T> ToNullable => _null;
-
-        /// <inheritdoc />
-        public IReferenceTypeNonNullableDeserializationDriver<T> ToNonNullable => this;
-
         INullableDeserializationDriver IDeserializationDriver.ToNullable => _null;
 
         INonNullableDeserializationDriver IDeserializationDriver.ToNonNullable => this;
-
-        T IReferenceTypeNonNullableDeserializationDriver<T>.ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => ReadInstance( r, readInfo );
 
         object INonNullableDeserializationDriver.ReadAsObject( IBinaryDeserializer r, TypeReadInfo readInfo ) => ReadInstance( r, readInfo );
 

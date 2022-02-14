@@ -21,14 +21,6 @@ namespace CK.BinarySerialization
     public interface IDeserializationDeferredDriver
     {
         /// <summary>
-        /// Allocates an unitialized object.
-        /// </summary>
-        /// <param name="r">The deserializer.</param>
-        /// <param name="readInfo">The read info.</param>
-        /// <returns>The unitialized object.</returns>
-        object Allocate( IBinaryDeserializer r, TypeReadInfo readInfo );
-
-        /// <summary>
         /// Deserializes an already allocated object by <see cref="Allocate(IBinaryDeserializer, TypeReadInfo)"/>.
         /// </summary>
         /// <param name="r">The deserializer.</param>
