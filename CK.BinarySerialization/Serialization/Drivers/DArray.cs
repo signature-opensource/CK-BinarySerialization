@@ -4,7 +4,7 @@ using System.Text;
 
 namespace CK.BinarySerialization.Serialization
 {
-    class DArray<T> : ReferenceTypeSerializer<T[]>
+    sealed class DArray<T> : ReferenceTypeSerializer<T[]>
     {
         readonly TypedWriter<T> _item;
 

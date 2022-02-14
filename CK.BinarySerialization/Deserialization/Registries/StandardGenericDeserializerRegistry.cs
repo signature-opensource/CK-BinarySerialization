@@ -93,14 +93,12 @@ namespace CK.BinarySerialization
             var k = ((IDeserializationDriver I, int Rank))key;
             if( k.Rank == 1 )
             {
-                var tS = typeof( Deserialization.DArray<> ).MakeGenericType( k.I.ResolvedType );
-                return (IDeserializationDriver)Activator.CreateInstance( tS, k.I.TypedReader )!;
+                var t1 = typeof( Deserialization.DArray<> ).MakeGenericType( k.I.ResolvedType );
+                return (IDeserializationDriver)Activator.CreateInstance( t1, k.I.TypedReader )!;
             }
-            else if( k.Rank > 1 )
-            {
-
-            }
-            throw new NotImplementedException( "Arrays with more than one dimension are not yet supported." );
+            var tA = k.I.ResolvedType.MakeArrayType( k.Rank );
+            var tM = typeof( Deserialization.DArrayMD<,> ).MakeGenericType( tA, k.I.ResolvedType );
+            return (IDeserializationDriver)Activator.CreateInstance( tM, k.I.TypedReader )!;
         }
 
         IDeserializationDriver CreateEnum( object key )

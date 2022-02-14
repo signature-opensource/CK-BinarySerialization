@@ -4,7 +4,7 @@ using System.Text;
 
 namespace CK.BinarySerialization.Serialization
 {
-    class DQueue<T> : ReferenceTypeSerializer<Queue<T>>
+    sealed class DQueue<T> : ReferenceTypeSerializer<Queue<T>>
     {
         readonly TypedWriter<T> _item;
 

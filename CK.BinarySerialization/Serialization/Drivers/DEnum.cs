@@ -6,7 +6,7 @@ using System.Text;
 
 namespace CK.BinarySerialization.Serialization
 {
-    class DEnum<T, TU> : ValueTypeSerializer<T> where T : struct, Enum where TU : struct
+    sealed class DEnum<T, TU> : ValueTypeSerializer<T> where T : struct, Enum where TU : struct
     {
         readonly TypedWriter<TU> _underlying;
 

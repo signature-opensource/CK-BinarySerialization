@@ -5,7 +5,7 @@ using System.Text;
 
 namespace CK.BinarySerialization.Serialization
 {
-    class DStack<T> : ReferenceTypeSerializer<Stack<T>>
+    sealed class DStack<T> : ReferenceTypeSerializer<Stack<T>>
     {
         readonly TypedWriter<T> _item;
 

@@ -41,7 +41,7 @@ namespace CK.BinarySerialization
                     {
                         throw new Exception( $"Type '{t}' has been serialized thanks to its ISimpleBinarySerializable implementation but it doesn't support it anymore." );
                     }
-                    return InternalSharedCache.Deserialization.GetOrAdd( t, CreateSimple );
+                    return InternalShared.Deserialization.GetOrAdd( t, CreateSimple );
                 }
                 if( info.DriverName == "SealedVersionBinarySerializable" )
                 {
@@ -51,7 +51,7 @@ namespace CK.BinarySerialization
                     {
                         throw new Exception( $"Type '{t}' has been serialized thanks to its ISealedVersionedSimpleSerializable implementation but it doesn't support it anymore." );
                     }
-                    return InternalSharedCache.Deserialization.GetOrAdd( t, CreateSealed );
+                    return InternalShared.Deserialization.GetOrAdd( t, CreateSealed );
                 }
             }
             catch( TargetInvocationException ex )

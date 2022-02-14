@@ -66,9 +66,15 @@ namespace CK.BinarySerialization
         {
             var tE = t.GetElementType()!;
             var dItem = _resolver.TryFindDriver( tE );
-            if( dItem == null ) return null;    
-            var tS = typeof( Serialization.DArray<> ).MakeGenericType( tE );
-            return (ISerializationDriver)Activator.CreateInstance( tS, dItem.TypedWriter )!;
+            if( dItem == null ) return null;
+            int rank = t.GetArrayRank();
+            if( rank == 1 )
+            {
+                var t1 = typeof( Serialization.DArray<> ).MakeGenericType( tE );
+                return (ISerializationDriver)Activator.CreateInstance( t1, dItem.TypedWriter )!;
+            }
+            var tM = typeof( Serialization.DArrayMD<,> ).MakeGenericType( t, tE );
+            return (ISerializationDriver)Activator.CreateInstance( tM, dItem.TypedWriter )!;
         }
 
         ISerializationDriver? CreateSingleGenericParam( Type t, Type tGenD )

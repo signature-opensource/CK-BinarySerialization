@@ -4,7 +4,7 @@ using System.Text;
 
 namespace CK.BinarySerialization.Serialization
 {
-    class DList<T> : ReferenceTypeSerializer<List<T>>
+    sealed class DList<T> : ReferenceTypeSerializer<List<T>>
     {
         readonly TypedWriter<T> _item;
 

@@ -28,7 +28,7 @@ namespace CK.BinarySerialization
             // Cache only the driver if the type is a ICKSimpleBinarySerializable or a .
             if( typeof( ICKSimpleBinarySerializable ).IsAssignableFrom( t ) )
             {
-                return InternalSharedCache.Serialization.GetOrAdd( t, CreateSimple );
+                return InternalShared.Serialization.GetOrAdd( t, CreateSimple );
             }
             if( typeof( ISealedVersionedSimpleSerializable ).IsAssignableFrom( t ) )
             {
@@ -36,7 +36,7 @@ namespace CK.BinarySerialization
                 {
                     throw new InvalidOperationException( $"Type '{t}' cannot implement ISealedVersionedSimpleSerializable interface. It must be a sealed class or a value type." );
                 }
-                return InternalSharedCache.Serialization.GetOrAdd( t, CreateSealed );
+                return InternalShared.Serialization.GetOrAdd( t, CreateSealed );
             }
             return null;
         }

@@ -13,15 +13,26 @@ namespace CK.BinarySerialization
     /// since this is, as of today, the only ones that can do their work without any other resolvers. 
     /// </para>
     /// </summary>
-    class InternalSharedCache
+    class InternalShared
     {
         static public readonly ConcurrentDictionary<Type, ISerializationDriver> Serialization;
         static public readonly ConcurrentDictionary<Type, IDeserializationDriver> Deserialization;
 
-        static InternalSharedCache()
+        static InternalShared()
         {
             Serialization = new ConcurrentDictionary<Type, ISerializationDriver>();
             Deserialization = new ConcurrentDictionary<Type, IDeserializationDriver>();
+        }
+
+        internal static bool NextInArray( int[] coords, int[] lengths )
+        {
+            int i = coords.Length - 1;
+            while( ++coords[i] >= lengths[i] )
+            {
+                if( i == 0 ) return false;
+                coords[i--] = 0;
+            }
+            return true;
         }
 
     }

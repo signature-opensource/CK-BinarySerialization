@@ -107,5 +107,41 @@ namespace CK.BinarySerialization.Tests
             ((Stack<uint?>)TestHelper.SaveAndLoadObject( a )).Should().BeEmpty();
         }
 
+        [Test]
+        public void multidimensional_arrays()
+        {
+            {
+                var a = new int[2, 3] { { 0, 1, 2 }, { 3, 4, 5 } };
+                object? backA = TestHelper.SaveAndLoadObject( a );
+                backA.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
+            }
+            {
+                var a = new int[0, 3] { };
+                object? backA = TestHelper.SaveAndLoadObject( a );
+                backA.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
+            }
+            {
+                var a = new int[2, 2, 3]
+                {
+                    { { 1, 2, 3}, {4, 5, 6} },
+                    { { 7, 8, 9}, {10, 11, 12} }
+                };
+                object? backA = TestHelper.SaveAndLoadObject( a );
+                backA.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
+            }
+            {
+                int[,,,] a = new int[1, 2, 2, 2]
+                {
+                    {
+                        { {1, 2}, {3, 4} },
+                        { {5, 6}, {7, 8} }
+                    }
+                };
+
+                object? backA = TestHelper.SaveAndLoadObject( a );
+                backA.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
+            }
+        }
+
     }
 }
