@@ -9,6 +9,13 @@ namespace CK.BinarySerialization.Serialization
         readonly TypedWriter<TKey> _key;
         readonly TypedWriter<TValue> _value;
 
+        static DDictionary()
+        {
+            var k = typeof( EqualityComparer<TKey> ).AssemblyQualifiedName!;
+            var c = EqualityComparer<TKey>.Default;
+            SharedSerializerKnownObject.Default.RegisterKnownObject( c, k );
+        }
+
         public DDictionary( TypedWriter<TKey> k, TypedWriter<TValue> v ) => (_key, _value) = (k, v);
 
         public override string DriverName => "Dictionary";
@@ -18,6 +25,7 @@ namespace CK.BinarySerialization.Serialization
         internal protected override void Write( IBinarySerializer w, in Dictionary<TKey, TValue> o )
         {
             w.Writer.WriteNonNegativeSmallInt32( o.Count );
+            w.WriteObject( o.Comparer );
             foreach( var kv in o )
             {
                 _key( w, kv.Key );

@@ -13,7 +13,7 @@ namespace CK.BinarySerialization
     /// that must be disposed to free the context (otherwise a <see cref="InvalidOperationException"/> is raised).
     /// </para>
     /// </summary>
-    public class BinaryDeserializerContext : IDeserializerResolver, IDeserializerKnownObject
+    public class BinaryDeserializerContext : IDeserializerResolver
     {
         readonly Dictionary<string,object> _knownObjects;
         readonly SharedBinaryDeserializerContext _shared;
@@ -86,7 +86,7 @@ namespace CK.BinarySerialization
             return _shared.TryFindDriver( info );
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="IDeserializerKnownObject.GetKnownObject(string)"/>
         public object? GetKnownObject( string instanceKey )
         {
             if( !_knownObjects.TryGetValue( instanceKey, out var r ) )
@@ -97,23 +97,5 @@ namespace CK.BinarySerialization
             return r;
         }
 
-        /// <inheritdoc />
-        public void RegisterKnownKey( string key, object o )
-        {
-            if( _knownObjects.TryGetValue( key, out var oExist ) )
-            {
-                SharedDeserializerKnownObject.ThrowOnDuplicateKey( key, oExist );
-            }
-            _knownObjects.Add( key, o );
-        }
-
-        /// <inheritdoc />
-        public void RegisterKnownKey( params (string key, object o)[] mapping )
-        {
-            foreach( var a in mapping )
-            {
-                RegisterKnownKey( a.key, a.o );
-            }
-        }
     }
 }

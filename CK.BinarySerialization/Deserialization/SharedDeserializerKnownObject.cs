@@ -80,7 +80,7 @@ namespace CK.BinarySerialization
             return l;
         }
 
-        public static void ThrowOnDuplicateKey( string key, object o )
+        static void ThrowOnDuplicateKey( string key, object o )
         {
             throw new InvalidOperationException( $"Known Object key '{key}' is already associated to another instance (of type '{o.GetType()}')." );
         }

@@ -87,12 +87,12 @@ namespace CK.BinarySerialization
             return l;
         }
 
-        public static void ThrowOnDuplicateObject( object oExist, string kExist, string kNew )
+        static void ThrowOnDuplicateObject( object oExist, string kExist, string kNew )
         {
             throw new InvalidOperationException( $"Known Object instance (of type '{oExist.GetType()}') cannot be associated to key '{kNew}' since it is already associated to key '{kExist}'." );
         }
 
-        public static void ThrowOnDuplicateKnownKey( object o, string key )
+        static void ThrowOnDuplicateKnownKey( object o, string key )
         {
             throw new InvalidOperationException( $"Known Object key '{key}' is already associated to another instance (of type '{o.GetType()}')." );
         }

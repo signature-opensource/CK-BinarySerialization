@@ -10,6 +10,13 @@ namespace CK.BinarySerialization.Deserialization
         readonly TypedReader<TKey> _key;
         readonly TypedReader<TValue> _value;
 
+        static DDictionary()
+        {
+            var k = typeof( EqualityComparer<TKey> ).AssemblyQualifiedName!;
+            var c = EqualityComparer<TKey>.Default;
+            SharedDeserializerKnownObject.Default.RegisterKnownKey( k, c );
+        }
+
         public DDictionary( TypedReader<TKey> k, TypedReader<TValue> v )
         {
             _key = k;
@@ -20,11 +27,14 @@ namespace CK.BinarySerialization.Deserialization
         {
             Debug.Assert( r.ReadInfo.GenericParameters.Count == 2 );
             int len = r.Reader.ReadNonNegativeSmallInt32();
-            var a = new Dictionary<TKey,TValue>( len );
-            var d = r.SetInstance( a );
+            var (d,dict) = r.SetInstance( d =>
+            {
+                var comparer = d.ReadObject<IEqualityComparer<TKey>>();
+                return new Dictionary<TKey, TValue>( len, comparer );
+            } );
             while( --len >= 0 )
             {
-                a.Add( _key( d, r.ReadInfo.GenericParameters[0] ), _value( d, r.ReadInfo.GenericParameters[1] ) );
+                dict.Add( _key( d, r.ReadInfo.GenericParameters[0] ), _value( d, r.ReadInfo.GenericParameters[1] ) );
             }
         }
     }

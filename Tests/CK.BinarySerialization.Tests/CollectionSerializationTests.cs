@@ -171,17 +171,17 @@ namespace CK.BinarySerialization.Tests
                 object? backA = TestHelper.SaveAndLoadObject( a );
                 backA.Should().BeEquivalentTo( a );
             }
-            {
-                var a = new Dictionary<int,string?>
-                {
-                    {1, "2"}, 
-                    {3, "4"},
-                    {5, null!}, 
-                    {7, "8"}
-                };
-                object? backA = TestHelper.SaveAndLoadObject( a );
-                backA.Should().BeEquivalentTo( a );
-            }
+            //{
+            //    var a = new Dictionary<int,string?>
+            //    {
+            //        {1, "2"}, 
+            //        {3, "4"},
+            //        {5, null!}, 
+            //        {7, "8"}
+            //    };
+            //    object? backA = TestHelper.SaveAndLoadObject( a );
+            //    backA.Should().BeEquivalentTo( a );
+            //}
         }
 
         [Test]
@@ -198,7 +198,7 @@ namespace CK.BinarySerialization.Tests
                     { (6, 0), null }
                 };
                 object? backA = TestHelper.SaveAndLoadObject( a );
-                backA.Should().BeEquivalentTo( a, o => o.ComparingByMembers<List<int>>() );
+                backA.Should().BeEquivalentTo( a );
             }
             {
                 var a = new Dictionary<string, List<Dictionary<ushort, string[,]?>>>
@@ -219,7 +219,18 @@ namespace CK.BinarySerialization.Tests
                 object? backA = TestHelper.SaveAndLoadObject( a );
                 backA.Should().BeEquivalentTo( a );
             }
-
         }
+
+        [Test]
+        public void dictionary_comparer_support()
+        {
+            var a = new Dictionary<string, int>( StringComparer.OrdinalIgnoreCase );
+            a.Add( "A", 1 );
+            FluentActions.Invoking( () => a.Add( "a", 1 ) ).Should().Throw<ArgumentException>();
+            var backA = TestHelper.SaveAndLoadObject( a );
+            backA.Should().BeEquivalentTo( a );
+            FluentActions.Invoking( () => backA.Add( "a", 1 ) ).Should().Throw<ArgumentException>();
+        }
+
     }
 }

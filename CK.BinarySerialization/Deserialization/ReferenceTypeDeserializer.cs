@@ -73,10 +73,10 @@ namespace CK.BinarySerialization
             /// Sets the unitialized instance and returns the deserializer to use
             /// to read the object's content.
             /// <para>
-            /// This must be called once and only once 
+            /// This must be called once and only once.
             /// </para>
             /// </summary>
-            /// <param name="o">The unitialized object.</param>
+            /// <param name="o">The instantiated but not yet fully initialized object.</param>
             /// <returns>The deserializer to use.</returns>
             public IBinaryDeserializer SetInstance( T o )
             {
@@ -84,6 +84,29 @@ namespace CK.BinarySerialization
                 if( Instance != null ) throw new InvalidOperationException( "Result already set." );
                 Instance = o;
                 return Unsafe.As<BinaryDeserializerImpl>( _d ).Track( o );
+            }
+
+            /// <summary>
+            /// Sets the instance by allowing to read a header for the object instantiation.
+            /// <para></para>
+            /// This must be used if instantiating the object requires some data: these data must appear first 
+            /// (hence the term <paramref name="headerReader"/>) and should have no back reference to any object of 
+            /// the deserialized graph.
+            /// <para>
+            /// This must be called once and only once before reading the actual object's content.
+            /// </para>
+            /// </summary>
+            /// <param name="headerReader">
+            /// Must return the instantiated but not yet fully initialized object. This function is 
+            /// allowed to read some simple data from the deserializer.
+            /// </param>
+            /// <returns>The deserializer to use to read the object's content and the instantiated object.</returns>
+            public (IBinaryDeserializer d, T o) SetInstance( Func<IBinaryDeserializer,T> headerReader )
+            {
+                if( headerReader == null ) throw new ArgumentNullException( "o" );
+                if( Instance != null ) throw new InvalidOperationException( "Result already set." );
+                Instance = headerReader( _d );
+                return (Unsafe.As<BinaryDeserializerImpl>( _d ).Track( Instance ), Instance );
             }
 
             internal RefReader( IBinaryDeserializer d, TypeReadInfo i )
