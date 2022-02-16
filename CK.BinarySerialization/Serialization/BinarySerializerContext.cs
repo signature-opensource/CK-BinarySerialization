@@ -9,12 +9,12 @@ namespace CK.BinarySerialization
     /// reused for multiple, non concurrent, serialization sessions of the same objects family.
     /// <para>
     /// This is absolutely not thread safe and can be used at any time by only one <see cref="IBinarySerializer"/>
-    /// that must be disposed to free the context (otherwise a <see cref="InvalidOperationException"/> is raised).
+    /// that must be disposed before reusing this context (otherwise a <see cref="InvalidOperationException"/> is raised).
     /// </para>
     /// </summary>
-    public class BinarySerializerContext : ISerializerResolver, ISerializerKnownObject
+    public class BinarySerializerContext : ISerializerResolver
     {
-        readonly Dictionary<Type, ISerializationDriver?> _resolvers;
+        readonly Dictionary<Type, ISerializationDriver?> _cache;
         readonly Dictionary<object, string> _knownObjects;
         readonly SharedBinarySerializerContext _shared;
         bool _inUse;
@@ -25,7 +25,7 @@ namespace CK.BinarySerialization
         /// <param name="shared">The shared context to use.</param>
         public BinarySerializerContext( SharedBinarySerializerContext shared )
         {
-            _resolvers = new Dictionary<Type, ISerializationDriver?>();
+            _cache = new Dictionary<Type, ISerializationDriver?>();
             _knownObjects = new Dictionary<object, string>();
             _shared = shared;
         }
@@ -52,28 +52,23 @@ namespace CK.BinarySerialization
             _inUse = false;
         }
 
+        /// <summary>
+        /// Gets the shared serializer context used by this context.
+        /// </summary>
+        public SharedBinarySerializerContext Shared => _shared;
+
         /// <inheritdoc />
         public ISerializationDriver? TryFindDriver( Type t )
         {
-            if( !_resolvers.TryGetValue( t, out var r ) )
+            if( !_cache.TryGetValue( t, out var r ) )
             {
                 r = _shared.TryFindDriver( t );
-                _resolvers.Add( t, r );
+                _cache.Add( t, r );
             }
             return r;
         }
 
-        /// <summary>
-        /// Overrides any existing driver for a type.
-        /// </summary>
-        /// <param name="t">The serializable type.</param>
-        /// <param name="driver">The driver that will handle the type's serialization.</param>
-        public void EnsureDriver( Type t, ISerializationDriver driver )
-        {
-            _resolvers[t] = driver;
-        }
-
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISerializerKnownObject.GetKnownObjectKey(object)"/>
         public string? GetKnownObjectKey( object o )
         {
             if( !_knownObjects.TryGetValue( o, out var r ) )
@@ -82,35 +77,6 @@ namespace CK.BinarySerialization
                 if( r != null ) _knownObjects.Add( o, r );
             }
             return r;
-        }
-
-        /// <inheritdoc />
-        public void RegisterKnownObject( object o, string key )
-        {
-            if( _knownObjects.TryGetValue( o, out var kExist ) )
-            {
-                SharedSerializerKnownObject.ThrowOnDuplicateObject( o, kExist, key );
-            }
-            else
-            {
-                foreach( var kv in _knownObjects )
-                {
-                    if( kv.Value == key )
-                    {
-                        SharedSerializerKnownObject.ThrowOnDuplicateKnownKey( kv.Key, key );
-                    }
-                }
-            }
-            _knownObjects.Add( o, key );
-        }
-
-        /// <inheritdoc />
-        public void RegisterKnownObject( params (object o, string key)[] association )
-        {
-            foreach( var a in association )
-            {
-                RegisterKnownObject( a.o, a.key );
-            }
         }
     }
 }

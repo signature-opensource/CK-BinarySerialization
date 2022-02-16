@@ -9,7 +9,7 @@ namespace CK.BinarySerialization
     /// </summary>
     /// <param name="w">The writer.</param>
     /// <param name="o">The nullable object.</param>
-    public delegate void UntypedWriter( IBinarySerializer w, in object? o );
+    public delegate void UntypedWriter( IBinarySerializer w, in object o );
 
     /// <summary>
     /// Typed writer handles a nullable or not typed parameter.

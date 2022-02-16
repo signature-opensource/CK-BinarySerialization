@@ -45,7 +45,7 @@ namespace CK.BinarySerialization
 
         static void Register<T>( ReferenceTypeSerializer<T> driver ) where T : class
         {
-            _byType.Add( driver.Type, driver );
+            _byType.Add( driver.Type, driver.ToNullable );
         }
 
 

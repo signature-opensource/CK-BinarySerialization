@@ -19,6 +19,7 @@ namespace CK.BinarySerialization
         IDeserializationDriver? _driver;
         Type? _localType;
         Mutable? _mutating;
+        string _driverName;
 
         bool _driverLookupDone;
 
@@ -110,12 +111,21 @@ namespace CK.BinarySerialization
 
             public void SetDriver( IDeserializationDriver driver )
             {
+                if( driver == null ) throw new ArgumentNullException( nameof( driver ) );
                 if( _closed ) throw new InvalidOperationException();
                 _info._driver = driver;
             }
 
+            public void SetDriverName( string driverName )
+            {
+                if( driverName == null ) throw new ArgumentNullException( nameof( driverName ) );
+                if( _closed ) throw new InvalidOperationException();
+                _info.DriverName = driverName;
+            }
+
             public void SetLocalType( Type t )
             {
+                if( t == null ) throw new ArgumentNullException( nameof( t ) );
                 if( _closed ) throw new InvalidOperationException();
                 _info._localType = t;
             }
@@ -194,13 +204,35 @@ namespace CK.BinarySerialization
         /// Gets the serialization's driver name that has been resolved and potentially 
         /// used to write instance of this type.
         /// <para>
-        /// Null if no serialization's driver was resolved for the type This is 
-        /// totally possible since a type written by <see cref="IBinarySerializer.WriteTypeInfo(Type)"/> is not 
+        /// Null if no serialization's driver was resolved for the type.
+        /// This is totally possible since a type written by <see cref="IBinarySerializer.WriteTypeInfo(Type)"/> is not 
         /// necessarily serializable and this is often the case for base types of a type that is itself serializable
         /// (like <see cref="TypeKind.OpenGeneric"/> for instance).
         /// </para>
         /// </summary>
-        public string? DriverName { get; private set; }
+        public string? DriverName 
+        { 
+            get => _driverName; 
+            private set
+            {
+                if( value != null && value != _driverName )
+                {
+                    _driverName = value;
+                    if( IsNullable = (value[value.Length - 1] == '?' ) )
+                    {
+                        NonNullableDriverName = value.Substring( 0, value.Length - 1 );
+                    }
+                    else
+                    {
+                        NonNullableDriverName = value;
+                    }
+                }
+            }
+        }
+
+        public string? NonNullableDriverName { get; private set; }
+
+        public bool IsNullable { get; private set; }
 
         /// <summary>
         /// Gets the namespace of the type.

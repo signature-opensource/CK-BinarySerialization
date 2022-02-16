@@ -29,7 +29,7 @@ namespace CK.BinarySerialization
 
         static BinarySerializer()
         {
-            DefaultSharedContext = new SharedBinarySerializerContext();
+            DefaultSharedContext = new SharedBinarySerializerContext( 0 );
             DefaultSharedContext.Register( StandardGenericSerializerRegistry.Default, false );
         }
 

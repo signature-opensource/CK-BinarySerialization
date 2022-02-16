@@ -102,7 +102,7 @@ namespace CK.BinarySerialization
 
         void IReferenceTypeNonNullableSerializationDriver<T>.Write( IBinarySerializer w, in T o ) => Write( w, in o );
 
-        void WriteUntyped( IBinarySerializer w, in object? o ) => Write( w, (T)o );
+        void WriteUntyped( IBinarySerializer w, in object o ) => Write( w, (T)o );
 
         void INonNullableSerializationDriver.WriteObject( IBinarySerializer w, in object o) => Write( w, (T)o );
     }

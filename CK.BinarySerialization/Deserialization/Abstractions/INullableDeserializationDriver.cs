@@ -12,7 +12,7 @@
         /// <param name="r">The deserializer.</param>
         /// <param name="readInfo">The type information read.</param>
         /// <returns>The new instance or null.</returns>
-        object? ReadAsObject( IBinaryDeserializer r, TypeReadInfo readInfo );
+        object? ReadAsObject( IBinaryDeserializer d, TypeReadInfo readInfo );
 
     }
 }

@@ -19,7 +19,7 @@ namespace CK.BinarySerialization
 
         static BinaryDeserializer()
         {
-            DefaultSharedContext = new SharedBinaryDeserializerContext();
+            DefaultSharedContext = new SharedBinaryDeserializerContext( 0 );
             DefaultSharedContext.Register( StandardGenericDeserializerRegistry.Default, false );
         }
 

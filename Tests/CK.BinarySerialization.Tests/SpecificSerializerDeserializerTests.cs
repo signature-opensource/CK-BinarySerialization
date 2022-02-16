@@ -51,11 +51,11 @@ namespace CK.BinarySerialization.Tests
             var n4 = new Node() { Name = "Cycle!", Parent = n3 };
             n1.Parent = n4;
 
-            var sC = new BinarySerializerContext();
-            sC.EnsureDriver( typeof( Node ), new NodeSerializer() );
+            var sC = new BinarySerializerContext( new SharedBinarySerializerContext() );
+            sC.Shared.AddSerializationDriver( typeof( Node ), new NodeSerializer() );
 
-            var dC = new BinaryDeserializerContext();
-            dC.EnsureLocalTypeDeserializer( new NodeDeserializer() );
+            var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
+            dC.Shared.AddLocalTypeDeserializer( new NodeDeserializer() );
 
             Node back = TestHelper.SaveAndLoadObject( n1, sC, dC );
             back.Should().BeEquivalentTo( n1, options => options.IgnoringCyclicReferences() );

@@ -67,7 +67,7 @@ namespace CK.BinarySerialization
                 return (ISerializationDriver)Activator.CreateInstance( tV )!;
             }
             var tR = typeof( SimpleBinarySerializableDriverR<> ).MakeGenericType( t );
-            return (ISerializationDriver)Activator.CreateInstance( tR )!;
+            return ((ISerializationDriver)Activator.CreateInstance( tR )!).ToNullable;
         }
 
         sealed class SealedBinarySerializableDriverR<T> : ReferenceTypeSerializer<T> where T : class, ISealedVersionedSimpleSerializable
@@ -101,7 +101,7 @@ namespace CK.BinarySerialization
                 return (ISerializationDriver)Activator.CreateInstance( tV, v )!;
             }
             var tR = typeof( SealedBinarySerializableDriverR<> ).MakeGenericType( t );
-            return (ISerializationDriver)Activator.CreateInstance( tR, v )!;
+            return ((ISerializationDriver)Activator.CreateInstance( tR, v )!).ToNullable;
         }
     }
 }

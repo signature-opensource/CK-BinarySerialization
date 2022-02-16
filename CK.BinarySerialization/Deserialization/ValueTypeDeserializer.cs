@@ -32,13 +32,13 @@ namespace CK.BinarySerialization
 
             INonNullableDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
 
-            public object? ReadAsObject( IBinaryDeserializer r, TypeReadInfo readInfo ) => ReadInstance( r, readInfo );
+            public object? ReadAsObject( IBinaryDeserializer d, TypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 
-            public T? ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo )
+            public T? ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo )
             {
-                if( r.Reader.ReadBoolean() )
+                if( d.Reader.ReadBoolean() )
                 {
-                    return _deserializer.ReadInstance( r, readInfo );
+                    return _deserializer.ReadInstance( d, readInfo );
                 }
                 return default;
             }
@@ -60,7 +60,7 @@ namespace CK.BinarySerialization
         /// <param name="r">The binary reader.</param>
         /// <param name="readInfo">The read type info.</param>
         /// <returns>The new instance.</returns>
-        protected abstract T ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo );
+        protected abstract T ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo );
 
         /// <inheritdoc />
         public Type ResolvedType => typeof( T );
@@ -78,9 +78,9 @@ namespace CK.BinarySerialization
 
         INonNullableDeserializationDriver IDeserializationDriver.ToNonNullable => this;
 
-        T IValueTypeNonNullableDeserializationDriver<T>.ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => ReadInstance( r, readInfo );
+        T IValueTypeNonNullableDeserializationDriver<T>.ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 
-        object INonNullableDeserializationDriver.ReadAsObject( IBinaryDeserializer r, TypeReadInfo readInfo ) => ReadInstance( r, readInfo );
+        object INonNullableDeserializationDriver.ReadAsObject( IBinaryDeserializer d, TypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 
     }
 }

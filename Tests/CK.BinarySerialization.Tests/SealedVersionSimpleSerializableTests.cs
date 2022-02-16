@@ -50,7 +50,7 @@ namespace CK.BinarySerialization.Tests
         public void value_type_simple_serializable_with_version()
         {
             ValueType v = new ValueType( 31, "Albert", 12 );
-            object? backO = TestHelper.SaveAndLoadObject( v );
+            object? backO = TestHelper.SaveAndLoadAny( v );
             backO.Should().Be( v );
         }
 
@@ -100,7 +100,7 @@ namespace CK.BinarySerialization.Tests
         public void version_attribute_is_required()
         {
             var v = new MissingVersionValueType();
-            FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( v ) )
+            FluentActions.Invoking( () => TestHelper.SaveAndLoadAny( v ) )
                 .Should().Throw<InvalidOperationException>()
                 .WithMessage( "*must be decorated with a [SerializationVersion()]*" );
             
@@ -147,14 +147,14 @@ namespace CK.BinarySerialization.Tests
         public void constructor_with_IBinaryReader_and_int_version_is_required()
         {
             var v = new MissingCtorValueType();
-            FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( v ) )
+            FluentActions.Invoking( () => TestHelper.SaveAndLoadAny( v ) )
                 .Should().Throw<InvalidOperationException>()
-                .WithMessage( "*requires a constructor with ( ICKBinaryReader, Int32 ) parameters*" );
+                .WithMessage( "*has been serialized thanks to its Write( ICBinaryWriter )*" );
 
             var o = new MissingCtorReferenceType();
             FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( o ) )
                 .Should().Throw<InvalidOperationException>()
-                .WithMessage( "*requires a constructor with ( ICKBinaryReader, Int32 ) parameters*" );
+                .WithMessage( "*has been serialized thanks to its Write( ICBinaryWriter )*" );
         }
 
 

@@ -20,7 +20,7 @@ namespace CK.BinarySerialization.Tests
         {
 
             var o = GrantLevel.Administrator;
-            static void SetNewLocalType( IBinaryDeserializer r, IMutableTypeReadInfo i )
+            static void SetNewLocalType( IBinaryDeserializer d, IMutableTypeReadInfo i )
             {
                 if( i.ReadInfo.AssemblyName == "CK.Core" && i.ReadInfo.TypeName == "GrantLevel" )
                 {
@@ -30,7 +30,7 @@ namespace CK.BinarySerialization.Tests
             var dC = new BinaryDeserializerContext();
             dC.OnTypeReadInfo += SetNewLocalType;
 
-            object back = TestHelper.SaveAndLoadObject( o, deserializerContext: dC );
+            object back = TestHelper.SaveAndLoadAny( o, deserializerContext: dC );
             back.Should().BeOfType<NewGranteLevel>();
             back.Should().Be( NewGranteLevel.NewNameOfAdmin );
         }
@@ -45,7 +45,7 @@ namespace CK.BinarySerialization.Tests
         {
             var o = GrantLevel.Administrator;
 
-            static void SetNewLocalType( IBinaryDeserializer r, IMutableTypeReadInfo i )
+            static void SetNewLocalType( IBinaryDeserializer d, IMutableTypeReadInfo i )
             {
                 if( i.ReadInfo.AssemblyName == "CK.Core" && i.ReadInfo.TypeName == "GrantLevel" )
                 {
@@ -55,7 +55,7 @@ namespace CK.BinarySerialization.Tests
             var dC = new BinaryDeserializerContext();
             dC.OnTypeReadInfo += SetNewLocalType;
 
-            object back = TestHelper.SaveAndLoadObject( o, deserializerContext: dC );
+            object back = TestHelper.SaveAndLoadAny( o, deserializerContext: dC );
             back.Should().BeOfType<NewGranteLevelIsNowAnInt>();
             back.Should().Be( NewGranteLevelIsNowAnInt.NewNameOfAdmin );
         }
@@ -76,7 +76,7 @@ namespace CK.BinarySerialization.Tests
         [Test]
         public void enum_changed_its_underlying_type_to_a_narrower_type_must_not_overflow()
         {
-            static void SetNewLocalType( IBinaryDeserializer r, IMutableTypeReadInfo i )
+            static void SetNewLocalType( IBinaryDeserializer d, IMutableTypeReadInfo i )
             {
                 if( i.ReadInfo.TypeName == "MutationTests+BeforeItWasALong" )
                 {
@@ -88,17 +88,17 @@ namespace CK.BinarySerialization.Tests
 
             var noWay = BeforeItWasALong.FitInLongOnly;
 
-            FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( noWay, deserializerContext: dC ) )
+            FluentActions.Invoking( () => TestHelper.SaveAndLoadAny( noWay, deserializerContext: dC ) )
                 .Should().Throw<OverflowException>();
 
             var canDoIt = BeforeItWasALong.FitInInt;
             var canAlsoDoIt = BeforeItWasALong.FitInByte;
 
-            object back = TestHelper.SaveAndLoadObject( canDoIt, deserializerContext: dC );
+            object back = TestHelper.SaveAndLoadAny( canDoIt, deserializerContext: dC );
             back.Should().BeOfType<NowItsAInt>();
             back.Should().Be( NowItsAInt.FitInInt );
-            
-            back = TestHelper.SaveAndLoadObject( canAlsoDoIt, deserializerContext: dC );
+
+            back = TestHelper.SaveAndLoadAny( canAlsoDoIt, deserializerContext: dC );
             back.Should().BeOfType<NowItsAInt>();
             back.Should().Be( NowItsAInt.FitInByte );
         }

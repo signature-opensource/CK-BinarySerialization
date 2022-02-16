@@ -29,13 +29,13 @@ namespace CK.BinarySerialization
 
             INonNullableDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
 
-            public object? ReadAsObject( IBinaryDeserializer r, TypeReadInfo readInfo ) => ReadInstance( r, readInfo );
+            public object? ReadAsObject( IBinaryDeserializer d, TypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 
-            public T? ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo )
+            public T? ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo )
             {
-                if( r.Reader.ReadBoolean() )
+                if( d.Reader.ReadBoolean() )
                 {
-                    return _deserializer.ReadInstance( r.Reader, readInfo );
+                    return _deserializer.ReadInstance( d.Reader, readInfo );
                 }
                 return default;
             }
@@ -51,7 +51,7 @@ namespace CK.BinarySerialization
             _reader = ReadInstance;
         }
 
-        T ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo ) => ReadInstance( r.Reader, readInfo );
+        T ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo ) => ReadInstance( d.Reader, readInfo );
 
         /// <summary>
         /// Must read a non null instance from the binary reader.
@@ -71,7 +71,7 @@ namespace CK.BinarySerialization
 
         INonNullableDeserializationDriver IDeserializationDriver.ToNonNullable => this;
 
-        object INonNullableDeserializationDriver.ReadAsObject( IBinaryDeserializer r, TypeReadInfo readInfo ) => ReadInstance( r.Reader, readInfo );
+        object INonNullableDeserializationDriver.ReadAsObject( IBinaryDeserializer d, TypeReadInfo readInfo ) => ReadInstance( d.Reader, readInfo );
 
     }
 }

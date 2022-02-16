@@ -261,7 +261,7 @@ namespace CK.BinarySerialization
             {
                 marker = SerializationMarker.Struct;
             }
-            ISerializationDriver driver = _context.FindDriver( t );
+            ISerializationDriver driver = _context.FindDriver( t ).ToNonNullable;
             if( _recurseCount > MaxRecurse 
                 && marker == SerializationMarker.Object
                 && driver is ISerializationDriverAllowDeferredRead )

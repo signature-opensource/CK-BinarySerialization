@@ -37,7 +37,7 @@ namespace CK.BinarySerialization.Tests
                 if( s == "DateTime.UtcNow" ) o = DateTime.UtcNow;
                 if( s == "DateTime.Now" ) o = DateTime.Now;
             }
-            object? backO = TestHelper.SaveAndLoadObject( o );
+            object? backO = TestHelper.SaveAndLoadAny( o );
             backO.Should().Be( o );
         }
 
@@ -86,6 +86,7 @@ namespace CK.BinarySerialization.Tests
         static char? iN = 'c';
         static DateTime? jN = DateTime.UtcNow;
         static DateTimeOffset? kN = DateTimeOffset.UtcNow;
+        static GrantLevel? lN = GrantLevel.Editor;
 
 
         [Test]
@@ -102,6 +103,7 @@ namespace CK.BinarySerialization.Tests
             Check( iN ); Check( default( char? ) );
             Check( jN ); Check( default( DateTime? ) );
             Check( kN ); Check( default( DateTimeOffset? ) );
+            Check( lN ); Check( default( GrantLevel? ) );
 
             static void Check<T>( in T? x ) where T : struct
             {
@@ -129,11 +131,11 @@ namespace CK.BinarySerialization.Tests
                 b.Should().Be( oNN );
             }
             {
-                object? b = TestHelper.SaveAndLoadObject( oN );
+                object? b = TestHelper.SaveAndLoadAny( oN );
                 b.Should().Be( oN );
             }
             {
-                object? b = TestHelper.SaveAndLoadObject( oNN );
+                object? b = TestHelper.SaveAndLoadAny( oNN );
                 b.Should().Be( oNN );
             }
         }

@@ -24,7 +24,7 @@ namespace CK.BinarySerialization
         /// For incompatible types, <see cref="SetDriver(IDeserializationDriver)"/> should be used.
         /// </para>
         /// <para>
-        /// Can be called multiple times (by different event handlers).
+        /// Can be called multiple times (by different hooks).
         /// </para>
         /// </summary>
         /// <param name="t">The target local type.</param>
@@ -34,11 +34,20 @@ namespace CK.BinarySerialization
         /// Assigns the deserialization driver that must be used for this <see cref="ReadInfo"/>.
         /// This driver takes complete control of the deserialization.
         /// <para>
-        /// Can be called multiple times (by different event handlers).
+        /// Can be called multiple times (by different hooks).
         /// </para>
         /// </summary>
         /// <param name="driver">The driver to use.</param>
         void SetDriver( IDeserializationDriver driver );
+
+        /// <summary>
+        /// Sets the deserialization driver name that must be used for this <see cref="ReadInfo"/>.
+        /// <para>
+        /// Can be called multiple times (by different hooks).
+        /// </para>
+        /// </summary>
+        /// <param name="driverName">The driver name to use.</param>
+        void SetDriverName( string driverName );
 
     }
 }

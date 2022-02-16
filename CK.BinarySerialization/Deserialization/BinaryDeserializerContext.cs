@@ -18,24 +18,23 @@ namespace CK.BinarySerialization
         readonly Dictionary<string,object> _knownObjects;
         readonly SharedBinaryDeserializerContext _shared;
         readonly SimpleServiceContainer _services;
-        Dictionary<Type, IDeserializationDriver> _localTypeDrivers;
         BinaryDeserializerImpl? _deserializer;
 
         /// <summary>
         /// Initializes a new <see cref="BinaryDeserializerContext"/>.
         /// </summary>
         /// <param name="shared">The shared context to use.</param>
+        /// <param name="services">Optional base services.</param>
         public BinaryDeserializerContext( SharedBinaryDeserializerContext shared, IServiceProvider? services )
         {
             _knownObjects = new Dictionary<string, object>();
             _shared = shared;
             _services = new SimpleServiceContainer( services );
-            _localTypeDrivers = new Dictionary<Type, IDeserializationDriver>();
         }
 
         /// <summary>
         /// Initializes a new <see cref="BinaryDeserializerContext"/> bound to the <see cref="BinaryDeserializer.DefaultSharedContext"/>
-        /// and with empty services.
+        /// and with empty <see cref="Services"/>.
         /// </summary>
         public BinaryDeserializerContext()
             : this( BinaryDeserializer.DefaultSharedContext, null )
@@ -56,13 +55,10 @@ namespace CK.BinarySerialization
             _deserializer = null;
         }
 
-        public void EnsureLocalTypeDeserializer( IDeserializationDriver driver )
-        {
-            var n = driver.ToNullable.ResolvedType;
-            _localTypeDrivers[n] = driver.ToNullable;
-            var nn = driver.ToNonNullable.ResolvedType;
-            if( nn != n ) _localTypeDrivers[n] = driver.ToNonNullable;
-        }
+        /// <summary>
+        /// Gets the shared deserializer context used by this context.
+        /// </summary>
+        public SharedBinaryDeserializerContext Shared => _shared;
 
         /// <summary>
         /// Raised for each <see cref="TypeReadInfo"/> read. See <see cref="IMutableTypeReadInfo"/>.
@@ -87,15 +83,8 @@ namespace CK.BinarySerialization
                 var r = info.CloseMutation();
                 if( r != null ) return r;
             }
-            var localType = info.TryResolveLocalType();
-            if( localType != null && _localTypeDrivers.TryGetValue( localType, out var localDriver ) )
-            {
-                return localDriver;
-            }
             return _shared.TryFindDriver( info );
         }
-
-
 
         /// <inheritdoc />
         public object? GetKnownObject( string instanceKey )

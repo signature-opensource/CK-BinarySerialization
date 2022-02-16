@@ -7,5 +7,5 @@ namespace CK.BinarySerialization
     /// <typeparam name="T">The type.</typeparam>
     /// <param name="r">The reader.</param>
     /// <param name="info">The type information.</param>
-    public delegate T TypedReader<T>( IBinaryDeserializer r, TypeReadInfo info );
+    public delegate T TypedReader<T>( IBinaryDeserializer d, TypeReadInfo info );
 }

@@ -9,7 +9,7 @@ using System.Text;
 namespace CK.BinarySerialization.Deserialization
 {
     class DEnumDiff<T,TLU,TU> : ValueTypeDeserializer<T> 
-        where T : struct, Enum
+        where T : struct
         where TLU : struct
         where TU : struct
     {
@@ -20,9 +20,9 @@ namespace CK.BinarySerialization.Deserialization
             _underlying = underlying;
         }
 
-        protected override T ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo )
+        protected override T ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo )
         {
-            TU u = _underlying( r, readInfo.ElementTypeReadInfo! );
+            TU u = _underlying( d, readInfo.ElementTypeReadInfo! );
             return (T)Convert.ChangeType( u, typeof(TLU) );
         }
     }

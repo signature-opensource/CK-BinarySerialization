@@ -29,7 +29,7 @@ namespace CK.BinarySerialization
         /// If type based serialization has been used (with versions and ancestors). 
         /// </param>
         /// <param name="o">The object to fill.</param>
-        void ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo, object o );
+        void ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo, object o );
 
     }
 }

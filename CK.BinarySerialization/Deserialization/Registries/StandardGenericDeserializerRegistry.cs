@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text;
 
 namespace CK.BinarySerialization
@@ -33,6 +34,28 @@ namespace CK.BinarySerialization
         readonly ConcurrentDictionary<object, IDeserializationDriver> _cache;
         readonly IDeserializerResolver _resolver;
 
+        class TupleKey : IEquatable<TupleKey>
+        {
+            public readonly IDeserializationDriver[] Drivers;
+            public readonly bool IsValueTuple;
+
+            public TupleKey( IDeserializationDriver[] d, bool isValueTuple )
+            {
+                Drivers = d;
+                IsValueTuple = isValueTuple;
+            }
+
+            public bool Equals( [AllowNull] TupleKey other ) => other is not null
+                                                                && IsValueTuple == other.IsValueTuple && Drivers.SequenceEqual( other.Drivers );
+            public override bool Equals( object? obj ) => Equals( obj as TupleKey );
+            public override int GetHashCode()
+            {
+                var hashCode = new HashCode();
+                Array.ForEach( Drivers, hashCode.Add );
+                return IsValueTuple ? hashCode.ToHashCode() : -hashCode.ToHashCode();
+            }
+        }
+
         /// <summary>
         /// Gets the default registry.
         /// </summary>
@@ -46,16 +69,41 @@ namespace CK.BinarySerialization
 
         public IDeserializationDriver? TryFindDriver( TypeReadInfo info )
         {
-            switch( info.DriverName )
+            var d = FindNonNullableDriver( info );
+            return info.IsNullable ? d?.ToNullable : d;
+        }
+
+        IDeserializationDriver? FindNonNullableDriver( TypeReadInfo info )
+        {
+            switch( info.NonNullableDriverName )
             {
                 case "Enum":
                     {
+                        if( info.IsNullable && info.Kind == TypeReadInfo.TypeKind.Generic )
+                        {
+                            Debug.Assert( info.GenericParameters.Count == 1 );
+                            info = info.GenericParameters[0];
+                        }
+                        // Enum is automatically adapted to its local type, including using any integral local type.
                         Debug.Assert( info.Kind == TypeReadInfo.TypeKind.Enum && info.ElementTypeReadInfo != null );
                         var uD = info.ElementTypeReadInfo.TryResolveDeserializationDriver();
                         if( uD == null ) return null;
                         var localType = info.TryResolveLocalType();
                         if( localType == null ) return null;
-                        return _cache.GetOrAdd( (localType,uD), CreateEnum );
+                        return _cache.GetOrAdd( (localType, uD), CreateEnum );
+                    }
+                case "ValueTuple":
+                    {
+                        if( info.IsNullable && info.Kind == TypeReadInfo.TypeKind.Generic )
+                        {
+                            Debug.Assert( info.GenericParameters.Count == 1 );
+                            info = info.GenericParameters[0];
+                        }
+                        return CreateTuple( info, true );
+                    }
+                case "Tuple":
+                    {
+                        return CreateTuple( info, false );
                     }
                 case "Array":
                     {
@@ -65,6 +113,7 @@ namespace CK.BinarySerialization
                         if( item == null ) return null;
                         return _cache.GetOrAdd( (item, info.ArrayRank), CreateArray );
                     }
+                case "Dictionary": return TryGetDoubleGenericParameter( info, typeof( Deserialization.DDictionary<,> ) );
                 case "List": return TryGetSingleGenericParameter( info, typeof( Deserialization.DList<> ) );
                 case "Stack": return TryGetSingleGenericParameter( info, typeof( Deserialization.DStack<> ) );
                 case "Queue": return TryGetSingleGenericParameter( info, typeof( Deserialization.DQueue<> ) );
@@ -72,19 +121,70 @@ namespace CK.BinarySerialization
             return null;
         }
 
-        private IDeserializationDriver? TryGetSingleGenericParameter( TypeReadInfo info, Type tGenD )
+        private IDeserializationDriver? CreateTuple( TypeReadInfo info, bool isValueTuple )
+        {
+            var tA = new IDeserializationDriver[info.GenericParameters.Count];
+            for( int i = 0; i < tA.Length; ++i )
+            {
+                var d = info.GenericParameters[i].TryResolveDeserializationDriver();
+                if( d == null ) return null;
+                tA[i] = d;
+            }
+            var key = new TupleKey( tA, isValueTuple );
+            return _cache.GetOrAdd( key, DoCreateTuple );
+
+            static IDeserializationDriver DoCreateTuple( object key )
+            {
+                var k = (TupleKey)key;
+                var types = k.Drivers.Select( d => d.ResolvedType ).ToArray();
+                var tG = types.Length switch
+                {
+                    1 => k.IsValueTuple ? typeof( Deserialization.DValueTuple<> ) : typeof( Deserialization.DTuple<> ),
+                    2 => k.IsValueTuple ? typeof( Deserialization.DValueTuple<,> ) : typeof( Deserialization.DTuple<,> ),
+                    3 => k.IsValueTuple ? typeof( Deserialization.DValueTuple<,,> ) : typeof( Deserialization.DTuple<,,> ),
+                    4 => k.IsValueTuple ? typeof( Deserialization.DValueTuple<,,,> ) : typeof( Deserialization.DTuple<,,,> ),
+                    5 => k.IsValueTuple ? typeof( Deserialization.DValueTuple<,,,,> ) : typeof( Deserialization.DTuple<,,,,> ),
+                    6 => k.IsValueTuple ? typeof( Deserialization.DValueTuple<,,,,,> ) : typeof( Deserialization.DTuple<,,,,,> ),
+                    7 => k.IsValueTuple ? typeof( Deserialization.DValueTuple<,,,,,,> ) : typeof( Deserialization.DTuple<,,,,,,> ),
+                    _ => throw new NotSupportedException( "Tuple or ValueTuple with 8 or more parameters are not supported." )
+                };
+                var tD = tG.MakeGenericType( types );
+                return (IDeserializationDriver)Activator.CreateInstance( tD, new object?[] { k.Drivers.Select( d => d.TypedReader ).ToArray() } )!;
+            }
+        }
+
+        IDeserializationDriver? TryGetSingleGenericParameter( TypeReadInfo info, Type tGenD )
         {
             Debug.Assert( info.GenericParameters.Count == 1 );
             var item = info.GenericParameters[0].TryResolveDeserializationDriver();
             if( item == null ) return null;
             var k = (item, tGenD);
-            return _cache.GetOrAdd( k, CreateSingleGenericTypeParam );
+            var d = _cache.GetOrAdd( k, CreateSingleGenericTypeParam );
+            return d;
 
             static IDeserializationDriver CreateSingleGenericTypeParam( object key )
             {
                 var k = ((IDeserializationDriver I, Type D))key;
                 var tS = k.D.MakeGenericType( k.I.ResolvedType );
                 return (IDeserializationDriver)Activator.CreateInstance( tS, k.I.TypedReader )!;
+            }
+        }
+
+        IDeserializationDriver? TryGetDoubleGenericParameter( TypeReadInfo info, Type tGenD )
+        {
+            Debug.Assert( info.GenericParameters.Count == 2 );
+            var item1 = info.GenericParameters[0].TryResolveDeserializationDriver();
+            if( item1 == null ) return null;
+            var item2 = info.GenericParameters[1].TryResolveDeserializationDriver();
+            if( item2 == null ) return null;
+            var k = (item1, item2, tGenD);
+            return _cache.GetOrAdd( k, CreateDoubleGenericTypeParam );
+
+            static IDeserializationDriver CreateDoubleGenericTypeParam( object key )
+            {
+                var k = ((IDeserializationDriver I1, IDeserializationDriver I2, Type D))key;
+                var tS = k.D.MakeGenericType( k.I1.ResolvedType, k.I2.ResolvedType );
+                return (IDeserializationDriver)Activator.CreateInstance( tS, k.I1.TypedReader, k.I2.TypedReader )!;
             }
         }
 
@@ -112,6 +212,14 @@ namespace CK.BinarySerialization
             }
             var tDiff = typeof( Deserialization.DEnumDiff<,,> ).MakeGenericType( k.L, uLocal, k.U.ResolvedType );
             return (IDeserializationDriver)Activator.CreateInstance( tDiff, k.U.TypedReader )!;
+            // If k.L.IsEnum is false (the local type is NOT an enum), we could do this (it works):
+            //
+            //   var tDiffOther = typeof( Deserialization.DEnumDiff<,,> ).MakeGenericType( k.L, k.L, k.U.ResolvedType );
+            //   return (IDeserializationDriver)Activator.CreateInstance( tDiffOther, k.U.TypedReader )!;
+            //
+            // However we don't to stay consistent. Mutations must be coherent, if we do this then we should also handle 
+            // the opposite (written integral types read as enums).
+            // Supporting mapping to different enums makes IMutableTypeReadInfo.SetLocalType a simple way to handle enum migrations.
         }
 
     }

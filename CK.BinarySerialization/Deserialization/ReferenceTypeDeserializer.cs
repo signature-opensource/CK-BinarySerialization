@@ -29,13 +29,13 @@ namespace CK.BinarySerialization
 
             INonNullableDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
 
-            public object? ReadAsObject( IBinaryDeserializer r, TypeReadInfo readInfo ) => ReadInstance( r, readInfo );
+            public object? ReadAsObject( IBinaryDeserializer d, TypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 
-            public T? ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo )
+            public T? ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo )
             {
-                if( r.Reader.ReadBoolean() )
+                if( d.Reader.ReadBoolean() )
                 {
-                    return _deserializer.ReadInstance( r, readInfo );
+                    return _deserializer.ReadInstance( d, readInfo );
                 }
                 return default;
             }
@@ -97,9 +97,9 @@ namespace CK.BinarySerialization
             readonly IBinaryDeserializer _d;
         }
 
-        T ReadInstance( IBinaryDeserializer r, TypeReadInfo readInfo )
+        T ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo )
         {
-            var c = new RefReader( r, readInfo );
+            var c = new RefReader( d, readInfo );
             ReadInstance( ref c );
             if( c.Instance == null ) throw new InvalidOperationException( "ReadInstance must set a non null instance." );
             return c.Instance;
@@ -122,7 +122,7 @@ namespace CK.BinarySerialization
 
         INonNullableDeserializationDriver IDeserializationDriver.ToNonNullable => this;
 
-        object INonNullableDeserializationDriver.ReadAsObject( IBinaryDeserializer r, TypeReadInfo readInfo ) => ReadInstance( r, readInfo );
+        object INonNullableDeserializationDriver.ReadAsObject( IBinaryDeserializer d, TypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 
     }
 }
