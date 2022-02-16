@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace CK.BinarySerialization
 {
@@ -36,9 +37,10 @@ namespace CK.BinarySerialization
 
             public T? ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo )
             {
+                Debug.Assert( readInfo.IsNullable && readInfo.GenericParameters.Count == 1 );
                 if( d.Reader.ReadBoolean() )
                 {
-                    return _deserializer.ReadInstance( d, readInfo );
+                    return _deserializer.ReadInstance( d, readInfo.GenericParameters[0] );
                 }
                 return default;
             }

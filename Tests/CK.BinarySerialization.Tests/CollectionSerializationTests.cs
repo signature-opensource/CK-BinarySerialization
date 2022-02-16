@@ -58,6 +58,22 @@ namespace CK.BinarySerialization.Tests
         }
 
         [Test]
+        public void nullable_ValueTuple_type_List_serialization()
+        {
+            var a = new List<(int, string?)?> { (3, null), null, (4, "four") };
+            object? backA = TestHelper.SaveAndLoadObject( a );
+            backA.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
+        }
+
+        [Test]
+        public void nullable_Tuple_type_List_serialization()
+        {
+            var a = new List<Tuple<int, string?>?> { Tuple.Create(3, (string?)null), null, Tuple.Create( 4, (string?)"four") };
+            object? backA = TestHelper.SaveAndLoadObject( a );
+            backA.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
+        }
+
+        [Test]
         public void value_type_Queue_serialization()
         {
             var a = new Queue<uint>();
@@ -171,17 +187,17 @@ namespace CK.BinarySerialization.Tests
                 object? backA = TestHelper.SaveAndLoadObject( a );
                 backA.Should().BeEquivalentTo( a );
             }
-            //{
-            //    var a = new Dictionary<int,string?>
-            //    {
-            //        {1, "2"}, 
-            //        {3, "4"},
-            //        {5, null!}, 
-            //        {7, "8"}
-            //    };
-            //    object? backA = TestHelper.SaveAndLoadObject( a );
-            //    backA.Should().BeEquivalentTo( a );
-            //}
+            {
+                var a = new Dictionary<int, string?>
+                {
+                    {1, "2"},
+                    {3, "4"},
+                    {5, null!},
+                    {7, "8"}
+                };
+                object? backA = TestHelper.SaveAndLoadObject( a );
+                backA.Should().BeEquivalentTo( a );
+            }
         }
 
         [Test]
