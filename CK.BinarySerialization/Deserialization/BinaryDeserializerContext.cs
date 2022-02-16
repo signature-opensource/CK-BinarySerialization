@@ -61,30 +61,12 @@ namespace CK.BinarySerialization
         public SharedBinaryDeserializerContext Shared => _shared;
 
         /// <summary>
-        /// Raised for each <see cref="TypeReadInfo"/> read. See <see cref="IMutableTypeReadInfo"/>.
-        /// <para>
-        /// This event enables setting the local type to deserialize and/or the <see cref="IDeserializationDriver"/> 
-        /// to use instead of calling <see cref="IDeserializerResolver.TryFindDriver(TypeReadInfo)"/>.
-        /// </para>
-        /// </summary>
-        public event Action<IBinaryDeserializer, IMutableTypeReadInfo>? OnTypeReadInfo;
-
-        /// <summary>
         /// Gets a mutable service container.
         /// </summary>
         public SimpleServiceContainer Services => _services;
 
         /// <inheritdoc />
-        public IDeserializationDriver? TryFindDriver( TypeReadInfo info )
-        {
-            if( OnTypeReadInfo != null && _deserializer != null )
-            {
-                OnTypeReadInfo( _deserializer, info.CreateMutation() );
-                var r = info.CloseMutation();
-                if( r != null ) return r;
-            }
-            return _shared.TryFindDriver( info );
-        }
+        public IDeserializationDriver? TryFindDriver( TypeReadInfo info ) => _shared.TryFindDriver( info );
 
         /// <inheritdoc cref="IDeserializerKnownObject.GetKnownObject(string)"/>
         public object? GetKnownObject( string instanceKey )

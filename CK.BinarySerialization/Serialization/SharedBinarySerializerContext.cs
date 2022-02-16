@@ -36,6 +36,10 @@ namespace CK.BinarySerialization
         /// Initializes a new independent shared context bound to an independent <see cref="SharedSerializerKnownObject"/>, 
         /// optionally with the <see cref="BasicTypeSerializerRegistry.Instance"/>, <see cref="SimpleBinarySerializableRegistry.Instance"/> 
         /// and an independent <see cref="StandardGenericSerializerRegistry"/>.
+        /// <para>
+        /// Caution: This is a completely independent shared cache: default comparers for dictionary keys will NOT be automatically
+        /// registered in the <see cref="KnownObjects"/> (they are only automatically registered in <see cref="SharedSerializerKnownObject.Default"/>).
+        /// </para>
         /// </summary>
         public SharedBinarySerializerContext( bool useDefaultResolvers = true )
         {

@@ -18,17 +18,18 @@ namespace CK.BinarySerialization.Tests
         [Test]
         public void enum_renamed_and_moved()
         {
-
             var o = GrantLevel.Administrator;
-            static void SetNewLocalType( IBinaryDeserializer d, IMutableTypeReadInfo i )
+            
+            static void SetNewLocalType( IMutableTypeReadInfo i )
             {
                 if( i.ReadInfo.AssemblyName == "CK.Core" && i.ReadInfo.TypeName == "GrantLevel" )
                 {
                     i.SetLocalType( typeof( NewGranteLevel ) );
                 }
             }
-            var dC = new BinaryDeserializerContext();
-            dC.OnTypeReadInfo += SetNewLocalType;
+            // Since we don't want to pollute the default shared cache, we use a brand new one.
+            var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
+            dC.Shared.AddDeserializationHook( SetNewLocalType );
 
             object back = TestHelper.SaveAndLoadAny( o, deserializerContext: dC );
             back.Should().BeOfType<NewGranteLevel>();
@@ -45,7 +46,7 @@ namespace CK.BinarySerialization.Tests
         {
             var o = GrantLevel.Administrator;
 
-            static void SetNewLocalType( IBinaryDeserializer d, IMutableTypeReadInfo i )
+            static void SetNewLocalType( IMutableTypeReadInfo i )
             {
                 if( i.ReadInfo.AssemblyName == "CK.Core" && i.ReadInfo.TypeName == "GrantLevel" )
                 {
@@ -53,7 +54,7 @@ namespace CK.BinarySerialization.Tests
                 }
             }
             var dC = new BinaryDeserializerContext();
-            dC.OnTypeReadInfo += SetNewLocalType;
+            dC.Shared.AddDeserializationHook( SetNewLocalType );
 
             object back = TestHelper.SaveAndLoadAny( o, deserializerContext: dC );
             back.Should().BeOfType<NewGranteLevelIsNowAnInt>();
@@ -76,7 +77,7 @@ namespace CK.BinarySerialization.Tests
         [Test]
         public void enum_changed_its_underlying_type_to_a_narrower_type_must_not_overflow()
         {
-            static void SetNewLocalType( IBinaryDeserializer d, IMutableTypeReadInfo i )
+            static void SetNewLocalType( IMutableTypeReadInfo i )
             {
                 if( i.ReadInfo.TypeName == "MutationTests+BeforeItWasALong" )
                 {
@@ -84,7 +85,7 @@ namespace CK.BinarySerialization.Tests
                 }
             }
             var dC = new BinaryDeserializerContext();
-            dC.OnTypeReadInfo += SetNewLocalType;
+            dC.Shared.AddDeserializationHook( SetNewLocalType );
 
             var noWay = BeforeItWasALong.FitInLongOnly;
 
