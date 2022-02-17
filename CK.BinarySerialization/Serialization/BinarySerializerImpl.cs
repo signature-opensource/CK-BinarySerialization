@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace CK.BinarySerialization
 {
-    class BinarySerializerImpl : IBinarySerializer
+    class BinarySerializerImpl : IDisposableBinarySerializer
     {
         readonly ICKBinaryWriter _writer;
         readonly Dictionary<Type, (int Idx, ISerializationDriver? D)> _types;
@@ -160,7 +160,8 @@ namespace CK.BinarySerialization
             // Write base types recursively. Skip it for enum only.
             // We don't tag ValueType (to KISS since it would require a bit flag rather
             // than a simple enumeration) and deserialization should be able to handle
-            // struct/class changes.
+            // as transparently as possible struct/class changes and SerializationMarker
+            // does this job.
             if( !t.IsEnum )
             {
                 var b = t.BaseType;

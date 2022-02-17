@@ -81,8 +81,8 @@ namespace CK.BinarySerialization
                     {
                         if( info.IsNullable && info.Kind == TypeReadInfo.TypeKind.Generic )
                         {
-                            Debug.Assert( info.GenericParameters.Count == 1 );
-                            info = info.GenericParameters[0];
+                            Debug.Assert( info.SubTypes.Count == 1 );
+                            info = info.SubTypes[0];
                         }
                         // Enum is automatically adapted to its local type, including using any integral local type.
                         Debug.Assert( info.Kind == TypeReadInfo.TypeKind.Enum && info.ElementTypeReadInfo != null );
@@ -96,8 +96,8 @@ namespace CK.BinarySerialization
                     {
                         if( info.IsNullable && info.Kind == TypeReadInfo.TypeKind.Generic )
                         {
-                            Debug.Assert( info.GenericParameters.Count == 1 );
-                            info = info.GenericParameters[0];
+                            Debug.Assert( info.SubTypes.Count == 1 );
+                            info = info.SubTypes[0];
                         }
                         return CreateTuple( info, true );
                     }
@@ -123,10 +123,10 @@ namespace CK.BinarySerialization
 
         private IDeserializationDriver? CreateTuple( TypeReadInfo info, bool isValueTuple )
         {
-            var tA = new IDeserializationDriver[info.GenericParameters.Count];
+            var tA = new IDeserializationDriver[info.SubTypes.Count];
             for( int i = 0; i < tA.Length; ++i )
             {
-                var d = info.GenericParameters[i].TryResolveDeserializationDriver();
+                var d = info.SubTypes[i].TryResolveDeserializationDriver();
                 if( d == null ) return null;
                 tA[i] = d;
             }
@@ -155,8 +155,8 @@ namespace CK.BinarySerialization
 
         IDeserializationDriver? TryGetSingleGenericParameter( TypeReadInfo info, Type tGenD )
         {
-            Debug.Assert( info.GenericParameters.Count == 1 );
-            var item = info.GenericParameters[0].TryResolveDeserializationDriver();
+            Debug.Assert( info.SubTypes.Count == 1 );
+            var item = info.SubTypes[0].TryResolveDeserializationDriver();
             if( item == null ) return null;
             var k = (item, tGenD);
             var d = _cache.GetOrAdd( k, CreateSingleGenericTypeParam );
@@ -172,10 +172,10 @@ namespace CK.BinarySerialization
 
         IDeserializationDriver? TryGetDoubleGenericParameter( TypeReadInfo info, Type tGenD )
         {
-            Debug.Assert( info.GenericParameters.Count == 2 );
-            var item1 = info.GenericParameters[0].TryResolveDeserializationDriver();
+            Debug.Assert( info.SubTypes.Count == 2 );
+            var item1 = info.SubTypes[0].TryResolveDeserializationDriver();
             if( item1 == null ) return null;
-            var item2 = info.GenericParameters[1].TryResolveDeserializationDriver();
+            var item2 = info.SubTypes[1].TryResolveDeserializationDriver();
             if( item2 == null ) return null;
             var k = (item1, item2, tGenD);
             return _cache.GetOrAdd( k, CreateDoubleGenericTypeParam );

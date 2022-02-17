@@ -2,8 +2,8 @@
 using System;
 using System.Collections.Generic;
 using CK.Core;
-using static CK.Testing.MonitorTestHelper;
 using FluentAssertions;
+using static CK.Testing.MonitorTestHelper;
 
 namespace CK.BinarySerialization.Tests
 {

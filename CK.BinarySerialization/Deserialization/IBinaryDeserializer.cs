@@ -1,18 +1,15 @@
 ﻿using CK.Core;
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace CK.BinarySerialization
 {
-    public interface IBinaryDeserializer : IDisposable
+    /// <summary>
+    /// Main interface that handles object graph deserialization.
+    /// </summary>
+    public interface IBinaryDeserializer
     {
-        /// <summary>
-        /// Gets the basic binary reader.
-        /// </summary>
-        ICKBinaryReader Reader { get; }
-
         /// <summary>
         /// Gets the version of the serializer used to serialize this data.
         /// </summary>
@@ -22,6 +19,17 @@ namespace CK.BinarySerialization
         /// Gets the context of this deserializer.
         /// </summary>
         BinaryDeserializerContext Context { get; }
+
+        /// <summary>
+        /// Gets the basic binary reader.
+        /// </summary>
+        ICKBinaryReader Reader { get; }
+
+        /// <summary>
+        /// Reads a <see cref="TypeReadInfo"/> written by <see cref="IBinarySerializer.WriteTypeInfo(Type)"/>.
+        /// </summary>
+        /// <returns>The type information.</returns>
+        TypeReadInfo ReadTypeInfo();
 
         /// <summary>
         /// Reads a non null object or value type previously written by <see cref="IBinarySerializer.WriteAnyNullable(object?)"/>
@@ -35,12 +43,6 @@ namespace CK.BinarySerialization
         /// </summary>
         /// <returns>The object read, possibly in an intermediate state.</returns>
         object ReadAny();
-
-        /// <summary>
-        /// Reads a <see cref="TypeReadInfo"/> written by <see cref="IBinarySerializer.WriteTypeInfo(Type)"/>.
-        /// </summary>
-        /// <returns>The type information.</returns>
-        TypeReadInfo ReadTypeInfo();
 
         /// <summary>
         /// Reads a non null object reference written by <see cref="IBinarySerializer.WriteObject{T}(T)"/> 
@@ -97,7 +99,7 @@ namespace CK.BinarySerialization
         /// When <see cref="IsDebugMode"/> is false, returns null.
         /// </summary>
         /// <param name="ctx">The stacked message.</param>
-        /// <returns>A disposable that will pop the message or null is not in debug mode.</returns>
+        /// <returns>A disposable that will pop the message or null if not in debug mode.</returns>
         IDisposable? OpenDebugPushContext( string ctx );
     }
 }

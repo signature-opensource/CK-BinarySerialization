@@ -21,11 +21,28 @@ namespace CK.BinarySerialization
         {
             DefaultSharedContext = new SharedBinaryDeserializerContext( 0 );
             DefaultSharedContext.Register( StandardGenericDeserializerRegistry.Default, false );
+#if NETCOREAPP3_1
+            // Works around the lack of [ModuleInitializer] by an awful trick.
+            Type? tSliced = Type.GetType( "CK.BinarySerialization.SlicedDeserializableRegistry, CK.BinarySerialization.Sliced", throwOnError: false );
+            if( tSliced != null )
+            {
+                var sliced = (IDeserializerResolver)tSliced.GetField( "Default", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static )!.GetValue( null )!;
+                DefaultSharedContext.Register( sliced, false );
+            }
+#endif
         }
 
-        public static IBinaryDeserializer Create( Stream s,
-                                                  bool leaveOpen,
-                                                  BinaryDeserializerContext context )
+        /// <summary>
+        /// Creates a new disposable deserializer bound to a <see cref="BinaryDeserializerContext"/>
+        /// that can be reused when the deserializer is disposed.
+        /// </summary>
+        /// <param name="s">The stream.</param>
+        /// <param name="leaveOpen">True to leave the stream opened, false to close it when the deserializer is disposed.</param>
+        /// <param name="context">The context to use.</param>
+        /// <returns>A disposable deserializer.</returns>
+        public static IDisposableBinaryDeserializer Create( Stream s,
+                                                            bool leaveOpen,
+                                                            BinaryDeserializerContext context )
         {
             var reader = new CKBinaryReader( s, Encoding.UTF8, leaveOpen );
             var v = reader.ReadSmallInt32();

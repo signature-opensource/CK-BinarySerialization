@@ -4,7 +4,10 @@ using System.Runtime.CompilerServices;
 
 namespace CK.BinarySerialization
 {
-    public interface IBinarySerializer : IDisposable
+    /// <summary>
+    /// Primary interface that supports serialization of object graphs.
+    /// </summary>
+    public interface IBinarySerializer
     {
         /// <summary>
         /// Gets the basic binary writer.

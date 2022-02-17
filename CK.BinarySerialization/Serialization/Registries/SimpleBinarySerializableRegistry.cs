@@ -7,7 +7,7 @@ using System.Text;
 namespace CK.BinarySerialization
 {
     /// <summary>
-    /// Static thread safe singleton for <see cref="ICKSimpleBinarySerializable"/> and <see cref="ISealedVersionedSimpleSerializable"/>
+    /// Static thread safe singleton for <see cref="ICKSimpleBinarySerializable"/> and <see cref="ICKVersionedBinarySerializable"/>
     /// serializers.
     /// <para>
     /// Since this kind on serialization don't need any other resolvers (drivers only depends on the actual type), a singleton
@@ -30,7 +30,7 @@ namespace CK.BinarySerialization
             {
                 return InternalShared.Serialization.GetOrAdd( t, CreateSimple );
             }
-            if( typeof( ISealedVersionedSimpleSerializable ).IsAssignableFrom( t ) )
+            if( typeof( ICKVersionedBinarySerializable ).IsAssignableFrom( t ) )
             {
                 if( !t.IsValueType && !t.IsSealed )
                 {
@@ -70,7 +70,7 @@ namespace CK.BinarySerialization
             return ((ISerializationDriver)Activator.CreateInstance( tR )!).ToNullable;
         }
 
-        sealed class SealedBinarySerializableDriverR<T> : ReferenceTypeSerializer<T> where T : class, ISealedVersionedSimpleSerializable
+        sealed class SealedBinarySerializableDriverR<T> : ReferenceTypeSerializer<T> where T : class, ICKVersionedBinarySerializable
         {
             public override string DriverName => "SealedVersionBinarySerializable";
 
@@ -81,7 +81,7 @@ namespace CK.BinarySerialization
             protected internal override void Write( IBinarySerializer w, in T o ) => o.Write( w.Writer );
         }
 
-        sealed class SealedBinarySerializableDriverV<T> : ValueTypeSerializer<T> where T : struct, ISealedVersionedSimpleSerializable
+        sealed class SealedBinarySerializableDriverV<T> : ValueTypeSerializer<T> where T : struct, ICKVersionedBinarySerializable
         {
             public override string DriverName => "SealedVersionBinarySerializable";
 

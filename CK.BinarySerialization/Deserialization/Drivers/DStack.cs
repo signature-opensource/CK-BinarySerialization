@@ -18,7 +18,7 @@ namespace CK.BinarySerialization.Deserialization
 
         protected override void ReadInstance( ref RefReader r )
         {
-            Debug.Assert( r.ReadInfo.GenericParameters.Count == 1 );
+            Debug.Assert( r.ReadInfo.SubTypes.Count == 1 );
             int len = r.Reader.ReadNonNegativeSmallInt32();
             var s = new Stack<T>( len );
             var d = r.SetInstance( s );
@@ -27,7 +27,7 @@ namespace CK.BinarySerialization.Deserialization
             {
                 for( int i = 0; i < len; i++ )
                 {
-                    a[i] = _item( d, r.ReadInfo.GenericParameters[0] );
+                    a[i] = _item( d, r.ReadInfo.SubTypes[0] );
                 }
                 for( int i = len-1; i >= 0; i-- )
                 {

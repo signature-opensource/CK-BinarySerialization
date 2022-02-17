@@ -22,13 +22,14 @@ namespace CK.BinarySerialization
         string _driverName;
 
         bool _driverLookupDone;
+        private TypeReadInfo? _elementTypeReadInfo;
 
         internal TypeReadInfo( BinaryDeserializerImpl deserializer, TypeKind k )
         {
             _deserializer = deserializer;
             Kind = k;
             SerializationVersion = -1;
-            GenericParameters = Array.Empty<TypeReadInfo>();
+            SubTypes = Array.Empty<TypeReadInfo>();
         }
 
         #region Read methods called after instantiation by BinaryDeserializerImpl.ReadTypeInfo().
@@ -55,7 +56,7 @@ namespace CK.BinarySerialization
             {
                 t[i] = _deserializer.ReadTypeInfo();
             }
-            GenericParameters = t;
+            SubTypes = t;
         }
 
         internal void ReadArray()
@@ -76,7 +77,7 @@ namespace CK.BinarySerialization
             {
                 Kind = TypeKind.OpenArray;
                 eName = "T";
-                _localType = typeof(Array);
+                _localType = typeof( Array );
             }
             TypeName = eName + '[' + new string( ',', ArrayRank - 1 ) + ']';
         }
@@ -135,7 +136,7 @@ namespace CK.BinarySerialization
                 _closed = true;
                 if( _info._driver != null ) _info._driverLookupDone = true;
                 _info._mutating = null;
-                return _info._driver; 
+                return _info._driver;
             }
         }
 
@@ -169,6 +170,7 @@ namespace CK.BinarySerialization
             /// <summary>
             /// "Generic" array (see <see cref="Type.ContainsGenericParameters"/> is true).
             /// Instances cannot be deserialized.
+            /// <see cref="ResolveLocalType()"/> returns the system type <see cref="System.Array"/>.
             /// </summary>
             OpenArray,
 
@@ -210,15 +212,15 @@ namespace CK.BinarySerialization
         /// (like <see cref="TypeKind.OpenGeneric"/> for instance).
         /// </para>
         /// </summary>
-        public string? DriverName 
-        { 
-            get => _driverName; 
+        public string? DriverName
+        {
+            get => _driverName;
             private set
             {
                 if( value != null && value != _driverName )
                 {
                     _driverName = value;
-                    if( IsNullable = (value[value.Length - 1] == '?' ) )
+                    if( IsNullable = (value[value.Length - 1] == '?') )
                     {
                         NonNullableDriverName = value.Substring( 0, value.Length - 1 );
                     }
@@ -230,8 +232,14 @@ namespace CK.BinarySerialization
             }
         }
 
+        /// <summary>
+        /// Gets the non nullable driver name (without the trailing '?').
+        /// </summary>
         public string? NonNullableDriverName { get; private set; }
 
+        /// <summary>
+        /// Gets whether this type information describes a nullable type.
+        /// </summary>
         public bool IsNullable { get; private set; }
 
         /// <summary>
@@ -244,7 +252,7 @@ namespace CK.BinarySerialization
         /// For generic type, it is suffixed with a backtick and the number of generic parameters.
         /// </summary>
         public string TypeName { get; private set; }
-        
+
         /// <summary>
         /// Gets the simple assembly name of the type (without version, culture, etc.).
         /// </summary>
@@ -264,7 +272,16 @@ namespace CK.BinarySerialization
         /// Gets the element type information if this is an array, pointer or reference
         /// or the underlying type for an Enum.
         /// </summary>
-        public TypeReadInfo? ElementTypeReadInfo { get; private set; }
+        public TypeReadInfo? ElementTypeReadInfo 
+        { 
+            get => _elementTypeReadInfo; 
+            private set
+            {
+                Debug.Assert( value != null );
+                _elementTypeReadInfo = value;
+                SubTypes = new[] { _elementTypeReadInfo };
+            }
+        }
 
         /// <summary>
         /// Gets the base type information if any (object and ValueType are skipped).
@@ -272,9 +289,11 @@ namespace CK.BinarySerialization
         public TypeReadInfo? BaseTypeReadInfo { get; private set; }
 
         /// <summary>
-        /// Gets the type informations for the generic parameters if any.
+        /// Gets the type informations for the generic parameters if any or
+        /// the element type information if this is an array, pointer or reference
+        /// or the underlying type for an Enum.
         /// </summary>
-        public IReadOnlyList<TypeReadInfo> GenericParameters { get; private set; }
+        public IReadOnlyList<TypeReadInfo> SubTypes { get; private set; }
 
         /// <summary>
         /// Tries to resolve the local type.
@@ -296,7 +315,7 @@ namespace CK.BinarySerialization
                     _localType = typeof( void );
                 }
             }
-            return _localType != typeof(void) ? _localType : null;
+            return _localType != typeof( void ) ? _localType : null;
         }
 
         /// <summary>
@@ -315,10 +334,10 @@ namespace CK.BinarySerialization
                     if( Kind == TypeKind.Generic )
                     {
                         t = CreateTypeFromNames();
-                        var p = new Type[GenericParameters.Count];
+                        var p = new Type[SubTypes.Count];
                         for( int i = 0; i < p.Length; i++ )
                         {
-                            p[i] = GenericParameters[i].ResolveLocalType();
+                            p[i] = SubTypes[i].ResolveLocalType();
                         }
                         _localType = t.MakeGenericType( p );
                     }
@@ -393,8 +412,8 @@ namespace CK.BinarySerialization
 
         public override string ToString()
         {
-            var gen = GenericParameters.Count > 0
-                        ? '[' + GenericParameters.Select( p => p.ToString() ).Concatenate() + ']'
+            var gen = SubTypes.Count > 0
+                        ? '[' + SubTypes.Select( p => p.ToString() ).Concatenate() + ']'
                         : "";
             return $"DriverName = {DriverName}, Type '{TypeNamespace}.{TypeName}{gen},{AssemblyName}'";
         }

@@ -8,7 +8,7 @@ using System.Text;
 
 namespace CK.BinarySerialization
 {
-    class BinaryDeserializerImpl : IBinaryDeserializer
+    class BinaryDeserializerImpl : IDisposableBinaryDeserializer
     {
         readonly ICKBinaryReader _reader;
         readonly BinaryDeserializerContext _context;

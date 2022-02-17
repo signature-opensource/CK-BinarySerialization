@@ -16,13 +16,13 @@ namespace CK.BinarySerialization.Deserialization
 
         protected override void ReadInstance( ref RefReader r )
         {
-            Debug.Assert( r.ReadInfo.GenericParameters.Count == 1 );
+            Debug.Assert( r.ReadInfo.SubTypes.Count == 1 );
             int len = r.Reader.ReadNonNegativeSmallInt32();
             var a = new Queue<T>( len );
             var d = r.SetInstance( a );
             while( --len >= 0 )
             {
-                a.Enqueue( _item( d, r.ReadInfo.GenericParameters[0] ) );
+                a.Enqueue( _item( d, r.ReadInfo.SubTypes[0] ) );
             }
         }
     }

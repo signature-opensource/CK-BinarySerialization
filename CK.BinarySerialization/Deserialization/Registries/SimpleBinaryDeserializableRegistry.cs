@@ -12,7 +12,7 @@ using System.Text;
 namespace CK.BinarySerialization
 {
     /// <summary>
-    /// Static thread safe registry for <see cref="ICKSimpleBinarySerializable"/> and <see cref="ISealedVersionedSimpleSerializable"/>
+    /// Static thread safe registry for <see cref="ICKSimpleBinarySerializable"/> and <see cref="ICKVersionedBinarySerializable"/>
     /// deserializers.
     /// <para>
     /// Since this kind on serialization don't need any other resolvers (drivers only depends on the actual type), a singleton
@@ -46,7 +46,7 @@ namespace CK.BinarySerialization
             return info.IsNullable ? d?.ToNullable : d;
         }
 
-        private static IDeserializationDriver FindNonNullableDriver( Type t )
+        private static IDeserializationDriver? FindNonNullableDriver( Type t )
         {
             // We allow Simple to be read back as Sealed and the opposite.
             try
@@ -65,7 +65,7 @@ namespace CK.BinarySerialization
                 if( ex.InnerException != null ) throw ex.InnerException;
                 else throw;
             }
-            throw new InvalidOperationException( $"Type '{t}' has been serialized thanks to its Write( ICBinaryWriter ) method but it has no constructor( ICBinaryReader r ) or (ICBinaryWriter r, int version)." );
+            return null;
         }
 
         static readonly Type[] _simpleCPTypes = new Type[] { typeof( ICKBinaryReader ) };

@@ -11,7 +11,7 @@ namespace CK.BinarySerialization.Tests
     public class SealedVersionSimpleSerializableTests
     {
         [SerializationVersion(1)]
-        readonly struct ValueType : ISealedVersionedSimpleSerializable
+        readonly struct ValueType : ICKVersionedBinarySerializable
         {
             public readonly int Power;
             public readonly string Name;
@@ -55,7 +55,7 @@ namespace CK.BinarySerialization.Tests
         }
 
         [SerializationVersion( 0 )]
-        sealed class SimpleSealed : ISealedVersionedSimpleSerializable
+        sealed class SimpleSealed : ICKVersionedBinarySerializable
         {
             public int Power { get; set; }
 
@@ -82,14 +82,14 @@ namespace CK.BinarySerialization.Tests
             backB.Should().BeEquivalentTo( b );
         }
 
-        struct MissingVersionValueType : ISealedVersionedSimpleSerializable
+        struct MissingVersionValueType : ICKVersionedBinarySerializable
         {
             public void Write( ICKBinaryWriter w )
             {
             }
         }
 
-        sealed class MissingVersionReferenceType : ISealedVersionedSimpleSerializable
+        sealed class MissingVersionReferenceType : ICKVersionedBinarySerializable
         {
             public void Write( ICKBinaryWriter w )
             {
@@ -110,7 +110,7 @@ namespace CK.BinarySerialization.Tests
                 .WithMessage( "*must be decorated with a [SerializationVersion()]*" );
         }
 
-        class MissingSealedReferenceType : ISealedVersionedSimpleSerializable
+        class MissingSealedReferenceType : ICKVersionedBinarySerializable
         {
             public void Write( ICKBinaryWriter w )
             {
@@ -128,7 +128,7 @@ namespace CK.BinarySerialization.Tests
 
 
         [SerializationVersion(0)]
-        struct MissingCtorValueType : ISealedVersionedSimpleSerializable
+        struct MissingCtorValueType : ICKVersionedBinarySerializable
         {
             public void Write( ICKBinaryWriter w )
             {
@@ -136,7 +136,7 @@ namespace CK.BinarySerialization.Tests
         }
 
         [SerializationVersion( 0 )]
-        sealed class MissingCtorReferenceType : ISealedVersionedSimpleSerializable
+        sealed class MissingCtorReferenceType : ICKVersionedBinarySerializable
         {
             public void Write( ICKBinaryWriter w )
             {

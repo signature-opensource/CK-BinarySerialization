@@ -25,7 +25,7 @@ namespace CK.BinarySerialization.Deserialization
 
         protected override void ReadInstance( ref RefReader r )
         {
-            Debug.Assert( r.ReadInfo.GenericParameters.Count == 2 );
+            Debug.Assert( r.ReadInfo.SubTypes.Count == 2 );
             int len = r.Reader.ReadNonNegativeSmallInt32();
             var (d,dict) = r.SetInstance( d =>
             {
@@ -34,7 +34,7 @@ namespace CK.BinarySerialization.Deserialization
             } );
             while( --len >= 0 )
             {
-                dict.Add( _key( d, r.ReadInfo.GenericParameters[0] ), _value( d, r.ReadInfo.GenericParameters[1] ) );
+                dict.Add( _key( d, r.ReadInfo.SubTypes[0] ), _value( d, r.ReadInfo.SubTypes[1] ) );
             }
         }
     }
