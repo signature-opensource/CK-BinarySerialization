@@ -7,6 +7,9 @@ using System.Text;
 
 namespace CK.BinarySerialization
 {
+    /// <summary>
+    /// Factory for "Sliced" serialization drivers.
+    /// </summary>
     public class SlicedSerializerFactory : ISerializerResolver
     {
         readonly SharedBinarySerializerContext _resolver;

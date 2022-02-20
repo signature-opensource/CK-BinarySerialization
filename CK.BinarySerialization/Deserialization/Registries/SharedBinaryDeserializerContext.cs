@@ -9,6 +9,11 @@ namespace CK.BinarySerialization
 {
     /// <summary>
     /// Thread safe composite implementation for <see cref="IDeserializerResolver"/>.
+    /// <para>
+    /// Caching deserialization drivers is not as easy as caching serializers: two serialized types
+    /// can perfectly be deserialized into the same local type. The actual cache is the <see cref="ITypeReadInfo"/>
+    /// itself that is resolved once per deserialization session.
+    /// </para>
     /// </summary>
     public class SharedBinaryDeserializerContext : IDeserializerResolver
     {
@@ -18,36 +23,27 @@ namespace CK.BinarySerialization
         Action<IMutableTypeReadInfo>[] _hooks;
 
         /// <summary>
-        /// Called by static BinaryDeserializer constructor to setup the <see cref="BinaryDeserializer.DefaultSharedContext"/>.
-        /// Only independent resolvers can be registered here: resolvers that depend
-        /// on the BinarySerializer.DefaultResolver cannot be referenced here and are 
-        /// registered after the instance creation.
+        /// Public cache for drivers that depend only on the local type to deserialize.
+        /// This is the case for <see cref="ICKSimpleBinarySerializable"/>, <see cref="ICKVersionedBinarySerializable"/>
+        /// and other like the "Sliced" serialization. Since deserialization context is irrelevant for these
+        /// drivers, this dictionary is exposed to avoid creating too much concurrent dictionaries.
         /// </summary>
-        internal SharedBinaryDeserializerContext( int _ )
-        {
-            _knownObjects = SharedDeserializerKnownObject.Default;
-            _typedDrivers = new ConcurrentDictionary<Type, IDeserializationDriver>();
-            _hooks = Array.Empty<Action<IMutableTypeReadInfo>>();
-            _resolvers = new IDeserializerResolver[]
-            {
-                BasicTypeDeserializerRegistry.Instance,
-                SimpleBinaryDeserializableRegistry.Instance,
-            };
-        }
+        static public readonly ConcurrentDictionary<Type, IDeserializationDriver> PureLocalTypeDependentDrivers = new();
 
         /// <summary>
-        /// Initializes a new registry bound to an independent <see cref="SharedDeserializerKnownObject"/> with 
+        /// Initializes a new registry bound to a possibly independent <see cref="SharedDeserializerKnownObject"/> and
         /// the <see cref="BasicTypeDeserializerRegistry.Instance"/>, <see cref="SimpleBinaryDeserializableRegistry.Instance"/> 
-        /// and an independent <see cref="StandardGenericDeserializerRegistry.Default"/>.
+        /// and a <see cref="StandardGenericDeserializerRegistry"/>.
         /// <para>
-        /// Caution: This is a completely independent shared cache: default comparers for dictionary keys will NOT be automatically
+        /// Caution: if <see cref="SharedDeserializerKnownObject.Default"/> is not used, default comparers for dictionary keys will NOT be automatically
         /// registered in the <see cref="KnownObjects"/> (they are only automatically registered in <see cref="SharedDeserializerKnownObject.Default"/>).
         /// </para>
         /// </summary>
         /// <param name="useDefaultResolvers">True to register the default resolvers.</param>
-        public SharedBinaryDeserializerContext( bool useDefaultResolvers = true )
+        /// <param name="knownObjects">By default the <see cref="SharedDeserializerKnownObject.Default"/> is used.</param>
+        public SharedBinaryDeserializerContext( bool useDefaultResolvers = true, SharedDeserializerKnownObject? knownObjects = null )
         {
-            _knownObjects = new SharedDeserializerKnownObject();
+            _knownObjects = knownObjects ?? SharedDeserializerKnownObject.Default;
             _typedDrivers = new ConcurrentDictionary<Type, IDeserializationDriver>();
             _hooks = Array.Empty<Action<IMutableTypeReadInfo>>();
             _resolvers = useDefaultResolvers
@@ -76,12 +72,17 @@ namespace CK.BinarySerialization
         /// <inheritdoc />
         public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
+            // The added local type drivers have the priority.
             if( _typedDrivers.TryGetValue( info.LocalType, out var d ) )
             {
                 return d;
             }
             // Do not cache ResolvedType in _typedDrivers here: the same type may be
             // built by more than one driver.
+            // We must not lookup the PureLocalTypeDependentDrivers here: some drivers may be resolved
+            // based on different informations from the TypeReadInfo (typically the DriverName) that 
+            // handle a Type that has such an associated PureLocalTypeDependentDriver.
+            // It's up to the resolver to decide.
             foreach( var resolver in _resolvers )
             {
                 var r = resolver.TryFindDriver( ref info );
@@ -104,7 +105,10 @@ namespace CK.BinarySerialization
         /// Registers an explicit deserialization driver that will be used 
         /// when <see cref="ITypeReadInfo.TryResolveLocalType()"/> is its <see cref="IDeserializationDriver.ResolvedType"/>.
         /// <para>
-        /// The local type MUST not already exists otherwise an <see cref="InvalidOperationException"/> is raised.
+        /// The local type MUST not already be mapped otherwise an <see cref="InvalidOperationException"/> is raised.
+        /// </para>
+        /// <para>
+        /// These drivers explicitly registered takes precedence over all other resolvers.
         /// </para>
         /// </summary>
         /// <param name="driver">The driver to register.</param>
@@ -126,7 +130,7 @@ namespace CK.BinarySerialization
         /// and a deserialization driver must be resolved. See <see cref="IMutableTypeReadInfo"/>.
         /// <para>
         /// This hook enables setting the local type to deserialize or the driver name or the <see cref="IDeserializationDriver"/> 
-        /// to use instead of calling <see cref="IDeserializerResolver.TryFindDriver(ITypeReadInfo)"/>.
+        /// to use instead of calling <see cref="IDeserializerResolver.TryFindDriver(ref DeserializerResolverArg)"/>.
         /// </para>
         /// </summary>
         /// <param name="hook">The hook to register.</param>

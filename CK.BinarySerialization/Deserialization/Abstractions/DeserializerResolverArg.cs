@@ -28,19 +28,26 @@ namespace CK.BinarySerialization
         public string DriverName => Info.DriverName!;
 
         /// <summary>
+        /// Gets the shared context. 
+        /// This is used only to detect mismatch of resolution context.
+        /// </summary>
+        public readonly SharedBinaryDeserializerContext Context;
+
+        /// <summary>
         /// Initializes a new <see cref="DeserializerResolverArg"/>.
         /// </summary>
-        /// <param name="info"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentException"></exception>
-        public DeserializerResolverArg( ITypeReadInfo info )
+        /// <param name="info">The type info for which a deserialization driver must be resolved.</param>
+        /// <param name="context">The shared context is used only to detect mismatch of resolution context.</param>
+        public DeserializerResolverArg( ITypeReadInfo info, SharedBinaryDeserializerContext context )
         {
             if( info == null ) throw new ArgumentNullException( nameof( info ) );
             if( info.IsNullable ) throw new ArgumentException( "Type must not be nullable.", nameof( info ) );
             if( info.DriverName == null ) throw new ArgumentException( "Must have a driver name.", nameof( info ) );
             if( info.HasResolvedDeserializationDriver ) throw new ArgumentException( "Deserialization driver must not be already resolved.", nameof( info ) );
+            if( context == null ) throw new ArgumentNullException( nameof(context) );
             Info = info;
             LocalType = info.ResolveLocalType();
+            Context = context;
         }
 
     }

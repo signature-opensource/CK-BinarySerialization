@@ -19,14 +19,13 @@ namespace CK.BinarySerialization
 
         static BinaryDeserializer()
         {
-            DefaultSharedContext = new SharedBinaryDeserializerContext( 0 );
-            DefaultSharedContext.Register( StandardGenericDeserializerRegistry.Default, false );
+            DefaultSharedContext = new SharedBinaryDeserializerContext();
 #if NETCOREAPP3_1
             // Works around the lack of [ModuleInitializer] by an awful trick.
-            Type? tSliced = Type.GetType( "CK.BinarySerialization.SlicedDeserializableRegistry, CK.BinarySerialization.Sliced", throwOnError: false );
+            Type? tSliced = Type.GetType( "CK.BinarySerialization.SlicedDeserializerRegistry, CK.BinarySerialization.Sliced", throwOnError: false );
             if( tSliced != null )
             {
-                var sliced = (IDeserializerResolver)tSliced.GetField( "Default", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static )!.GetValue( null )!;
+                var sliced = (IDeserializerResolver)tSliced.GetField( "Instance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static )!.GetValue( null )!;
                 DefaultSharedContext.Register( sliced, false );
             }
 #endif

@@ -16,7 +16,8 @@ namespace CK.BinarySerialization
     /// deserializers.
     /// <para>
     /// Since this kind on serialization don't need any other resolvers (drivers only depends on the actual type), a singleton
-    /// cache is fine.
+    /// cache is fine and it uses the <see cref="SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers"/>
+    /// cache since the synthesized drivers only depends on the local type.
     /// </para>
     /// </summary>
     public class SimpleBinaryDeserializableRegistry : IDeserializerResolver
@@ -36,15 +37,17 @@ namespace CK.BinarySerialization
             if( !isSimple && !isSealed ) return null;
 
             // We allow Simple to be read back as Sealed and the opposite.
+            // We may have duplicate calls to Create here (that should barely happen but who knows), but GetOrAdd
+            // will return the winner.
             var ctor = info.LocalType.GetConstructor( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, _sealedCPTypes, null );
             if( ctor != null )
             {
-                return InternalShared.Deserialization.GetOrAdd( info.LocalType, CreateSealed, ctor );
+                return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.LocalType, CreateSealed, ctor );
             }
             ctor = info.LocalType.GetConstructor( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, _simpleCPTypes, null );
             if( ctor != null )
             {
-                return InternalShared.Deserialization.GetOrAdd( info.LocalType, CreateSimple, ctor );
+                return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.LocalType, CreateSimple, ctor );
             }
             return null;
         }

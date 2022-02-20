@@ -6,32 +6,30 @@ using System.Text;
 
 namespace CK.BinarySerialization
 {
-    public class SlicedDeserializableRegistry : IDeserializerResolver
+    /// <summary>
+    /// Registry for "Sliced" deserializers. 
+    /// <para>
+    /// Since the synthesized drivers only depends on the local type and don't directly need any other resolvers, 
+    /// a singleton cache is fine and it uses the <see cref="SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers"/>.
+    /// </para>
+    /// </summary>
+    public class SlicedDeserializerRegistry : IDeserializerResolver
     {
-        readonly IDeserializerResolver _resolver;
-
         /// <summary>
-        /// Gets the default registry.
+        /// Gets the registry.
         /// </summary>
-        public static readonly SlicedDeserializableRegistry Default = new SlicedDeserializableRegistry( BinaryDeserializer.DefaultSharedContext );
+        public static readonly SlicedDeserializerRegistry Instance = new SlicedDeserializerRegistry();
+
+        SlicedDeserializerRegistry() { }
 
 #if NET6_0_OR_GREATER
         [ModuleInitializer]
         internal static void AutoSharedRegister()
         {
-            BinaryDeserializer.DefaultSharedContext.Register( Default, false );
+            BinaryDeserializer.DefaultSharedContext.Register( Instance, false );
         }
 #endif
 
-        /// <summary>
-        /// Initializes a new registry.
-        /// </summary>
-        /// <param name="resolver">The root resolver to use.</param>
-        public SlicedDeserializableRegistry( IDeserializerResolver resolver )
-        {
-            _resolver = resolver;
-        }
-        
         /// <inheritdoc />
         public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {

@@ -11,6 +11,11 @@ namespace CK.BinarySerialization
     /// <summary>
     /// Handles standard generic types. This registry relies on the <see cref="ITypeReadInfo.DriverName"/>
     /// to try to resolve and cache the deserializers.
+    /// <para>
+    /// The cache key of the already resolved deserializers depends on the resolved type and can only 
+    /// be managed by each instance of this registry since the deserializers relies on other ones provided
+    /// by the bound <see cref="SharedBinaryDeserializerContext"/>.
+    /// </para>
     /// </summary>
     public class StandardGenericDeserializerRegistry : IDeserializerResolver
     {
@@ -18,22 +23,22 @@ namespace CK.BinarySerialization
         // List<SuperCar>.
         // We can use a simple ConcurrentDictionary and its simple GetOrAdd method since 2
         // deserializers of the same TypeReadInfo are identical: we can accept the concurrency issue
-        // and live with some duplicated deserializers (this should barely happen).
+        // and duplicated calls to create functions (this should barely happen) and the GetOrAdd will
+        // always return the winner.
         // The key is an object that contains the resolved items drivers (and may be an
         // optional type indicator) to the resolved driver.
         // Only if all the subtypes drivers are available do we build the final driver.
         // This lookup obviously costs but this is done only once per deserialization session
         // since the TypeReadInfo caches the final driver (including unresolved ones).
-        // Note that subtypes driver resolution sollicitates the whole set of resolvers (including this one).
         // The object key is:
         //  - The (Type LocalType, IDeserializationDriver WrittenUnderlyingDriverType) for an enum: the target enum
         //    must exist locally but its current underlying type may not be the same as the written one.
+        //  - TupleKey below for ValueTuple and Tuple.
         //  - Boxed ValueTuple for other types:
-        //     - TupleKey below for ValueTuple and Tuple.
         //     - (IDeserializationDriver Item, int Rank) for array (Rank >= 1).
         //     - (IDeserializationDriver Item, Type D) where D is the generic type definition for DList<>, DStack<> or DQueue<>.  
         readonly ConcurrentDictionary<object, IDeserializationDriver> _cache;
-        readonly IDeserializerResolver _resolver;
+        readonly SharedBinaryDeserializerContext _context;
 
         class TupleKey : IEquatable<TupleKey>
         {
@@ -58,18 +63,18 @@ namespace CK.BinarySerialization
         }
 
         /// <summary>
-        /// Gets the default registry.
+        /// Initializes a new <see cref="StandardGenericDeserializerRegistry"/>.
         /// </summary>
-        public static readonly IDeserializerResolver Default = new StandardGenericDeserializerRegistry( BinaryDeserializer.DefaultSharedContext );
-
-        public StandardGenericDeserializerRegistry( IDeserializerResolver resolver ) 
+        /// <param name="context">The bound shared context. Used only to detect mismatch of resolution context.</param>
+        public StandardGenericDeserializerRegistry( SharedBinaryDeserializerContext context ) 
         {
             _cache = new ConcurrentDictionary<object, IDeserializationDriver>();
-            _resolver = resolver;
+            _context = context;
         }
 
         public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
+            if( _context != info.Context ) throw new ArgumentException( "Deserialization context mismatch." );
             switch( info.DriverName )
             {
                 case "Enum":
