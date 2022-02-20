@@ -17,7 +17,7 @@ namespace CK.BinarySerialization
     /// by the bound <see cref="SharedBinaryDeserializerContext"/>.
     /// </para>
     /// </summary>
-    public class StandardGenericDeserializerRegistry : IDeserializerResolver
+    public sealed class StandardGenericDeserializerRegistry : IDeserializerResolver
     {
         // We cannot use the final Type as a key: a List<Car> may be deserialized as a 
         // List<SuperCar>.

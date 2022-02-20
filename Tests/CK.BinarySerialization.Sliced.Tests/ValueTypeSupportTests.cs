@@ -3,7 +3,7 @@ using CK.Core;
 using FluentAssertions;
 using static CK.Testing.MonitorTestHelper;
 
-namespace CK.BinarySerialization.Sliced.Tests
+namespace CK.BinarySerialization.Tests
 {
     [TestFixture]
     public class ValueTypeSupportTests

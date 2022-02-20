@@ -49,7 +49,8 @@ namespace CK.BinarySerialization
             {
                 throw new InvalidDataException( $"Invalid deserializer version: {v}. Minimal is 10 and current is {BinarySerializer.SerializerVersion}." );
             }
-            return new BinaryDeserializerImpl( v, reader, leaveOpen, context );
+            var sameEndianness = reader.ReadBoolean() == BitConverter.IsLittleEndian;
+            return new BinaryDeserializerImpl( v, reader, leaveOpen, context, sameEndianness );
         }
 
     }

@@ -11,7 +11,7 @@ namespace CK.BinarySerialization
     /// A simple dictionary is enough since it is only read.
     /// </para>
     /// </summary>
-    public class BasicTypeDeserializerRegistry : IDeserializerResolver
+    public sealed class BasicTypeDeserializerRegistry : IDeserializerResolver
     {
         static readonly Dictionary<string, IDeserializationDriver> _byName;
 

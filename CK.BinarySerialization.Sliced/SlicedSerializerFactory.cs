@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -35,7 +36,7 @@ namespace CK.BinarySerialization
         public ISerializationDriver? TryFindDriver( Type t )
         {
             if( t.ContainsGenericParameters || !typeof(ICKSlicedSerializable).IsAssignableFrom( t ) ) return null;
-            return TryCreate( t );
+            return Create( t );
         }
 
         sealed class SlicedValueTypeSerializableDriver<T> : StaticValueTypeSerializer<T> where T : struct, ICKSlicedSerializable
@@ -51,18 +52,69 @@ namespace CK.BinarySerialization
             public override int SerializationVersion { get; }
         }
 
-        ISerializationDriver? TryCreate( Type t )
+        /// <summary>
+        /// Serializer don't rely on base type serializers for 2 reasons: there's no gain
+        /// to reuse the base serializers to call their static write method (especially with generated 
+        /// delegates) and base types may be abstract: there will be no serializer for them.
+        /// If a base type must be serialized, it will have its own dedicated serializer.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        sealed class SlicedReferenceTypeSerializableDriver<T> : ReferenceTypeSerializer<T> where T : class
         {
-            var version = SerializationVersionAttribute.GetRequiredVersion( t );
-            if( t.IsClass )
+            public override string DriverName => "Sliced";
+
+            readonly List<MethodInfo> _writers;
+            readonly bool _isDestroyable;
+
+            public SlicedReferenceTypeSerializableDriver( int version, List<MethodInfo> writers, bool isDestroyable )
             {
-                return null;
+                SerializationVersion = version;
+                _writers = writers;
+                _isDestroyable = isDestroyable;
             }
-            var tS = typeof( SlicedValueTypeSerializableDriver<> ).MakeGenericType( t );
-            return (ISerializationDriver?)Activator.CreateInstance( tS, version );
+
+            public override int SerializationVersion { get; }
+
+            protected override void Write( IBinarySerializer w, in T o )
+            {
+                var p = new object[] { w, o };  
+                _writers[0].Invoke( null, p );
+                if( _writers.Count > 1 && (!_isDestroyable || !((IDestroyable)o).IsDestroyed) )
+                {
+                    for( int i = 1; i < _writers.Count; i++ )
+                    {
+                        _writers[0].Invoke( null, p );
+                    }
+                }
+            }
         }
 
+        ISerializationDriver Create( Type t )
+        {
+            var version = SerializationVersionAttribute.GetRequiredVersion( t );
+            if( t.IsValueType )
+            {
+                var tV = typeof( SlicedValueTypeSerializableDriver<> ).MakeGenericType( t );
+                return (ISerializationDriver)Activator.CreateInstance( tV, version )!;
+            }
+            List<MethodInfo> writers = new();
+            GetWritersTopDown( t, writers );
+            var tR = typeof( SlicedReferenceTypeSerializableDriver<> ).MakeGenericType( t );
+            return ((ISerializationDriver)Activator.CreateInstance( tR, version, writers, typeof( IDestroyable ).IsAssignableFrom( t ) )!).ToNullable;
+        }
 
+        static void GetWritersTopDown( Type t, List<MethodInfo> w )
+        {
+            var b = t.BaseType;
+            Debug.Assert( b != null );
+            if( b != typeof( object )
+                && b != typeof( ValueType )
+                && typeof( ICKSlicedSerializable ).IsAssignableFrom( b ) )
+            {
+                GetWritersTopDown( b, w );
+            }
+            w.Add( SharedBinarySerializerContext.GetStaticWriter( t, t ) );
+        }
 
     }
 }

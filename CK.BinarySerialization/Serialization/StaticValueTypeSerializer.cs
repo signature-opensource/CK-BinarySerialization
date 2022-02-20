@@ -7,11 +7,11 @@ namespace CK.BinarySerialization
     /// <summary>
     /// Serializer for value type <typeparamref name="T"/> that must expose a static writer method:
     /// <para>
-    /// <c>public static Write( IBinarySerializer s, in T o ) { ... }</c>
+    /// <c>public static void Write( IBinarySerializer s, in T o ) { ... }</c>
     /// </para>
     /// <para>
     /// This is the most efficient driver implementation but it can be used only when writing the type 
-    /// doesn't require any states (typically like subordinated types drivers).
+    /// doesn't require any states (typically subordinated types drivers).
     /// </para>
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
@@ -99,11 +99,7 @@ namespace CK.BinarySerialization
 
         static TypedWriter<T> GetTypedWriter( Type writerHost )
         {
-            var writer = writerHost.GetMethod( "Write", BindingFlags.Static | BindingFlags.DeclaredOnly | BindingFlags.Public, null, new[] { typeof( IBinarySerializer ), typeof( T ).MakeByRefType() }, null );
-            if( writer == null )
-            {
-                throw new InvalidOperationException( $"ValueTypeSerializer '{writerHost}' must have a public static Write( IBinarySerializer s, in {typeof( T ).Name} o ) static writer." );
-            }
+            MethodInfo? writer = SharedBinarySerializerContext.GetStaticWriter( writerHost, typeof(T) );
             return (TypedWriter<T>)writer.CreateDelegate( typeof( TypedWriter<T> ) );
         }
 

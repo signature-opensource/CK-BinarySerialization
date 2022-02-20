@@ -55,6 +55,7 @@ namespace CK.BinarySerialization
         {
             var writer = new CKBinaryWriter( s, Encoding.UTF8, leaveOpen );
             writer.WriteSmallInt32( SerializerVersion );
+            writer.Write( BitConverter.IsLittleEndian );
             return new BinarySerializerImpl( writer, leaveOpen, context );
         }
 

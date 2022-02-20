@@ -15,7 +15,7 @@ namespace CK.BinarySerialization
     /// itself that is resolved once per deserialization session.
     /// </para>
     /// </summary>
-    public class SharedBinaryDeserializerContext : IDeserializerResolver
+    public sealed class SharedBinaryDeserializerContext : IDeserializerResolver
     {
         IDeserializerResolver[] _resolvers;
         readonly IDeserializerKnownObject _knownObjects;

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CK.Core;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -52,6 +53,5 @@ namespace CK.BinarySerialization
         /// Gets the non nullable driver.
         /// </summary>
         INonNullableSerializationDriver ToNonNullable { get; }
-
     }
 }

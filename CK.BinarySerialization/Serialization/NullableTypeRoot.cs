@@ -8,7 +8,7 @@ namespace CK.BinarySerialization
         public NullableTypeRoot( Type t, bool? nullable )
         {
             if( t == null ) throw new ArgumentNullException( "t" );
-            if( t.IsByRef || t.IsPointer || t.IsByRefLike )
+            if( t.IsByRef || t.IsPointer )
             {
                 // ByRef, pointer or ref struct.
                 // They are non nullable since only the type itself

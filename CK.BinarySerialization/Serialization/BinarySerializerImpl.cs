@@ -79,7 +79,7 @@ namespace CK.BinarySerialization
                     _writer.Write( false );
                     return false;
                 }
-                if( !mustExist )_writer.Write( true );
+                if( !mustExist ) _writer.Write( true );
                 WriteTypeInfo( e );
                 return true;
             }
@@ -224,11 +224,11 @@ namespace CK.BinarySerialization
 
         public void WriteValue<T>( in T value ) where T : struct
         {
-            var d = _context.FindWriter<T>();
+            var d = _context.FindDriver( typeof( T ) );
             // Writing the Struct marker enables this to be read as any object.
             _writer.Write( (byte)SerializationMarker.Struct );
-            WriteTypeInfo( typeof( T ) );
-            d( this, value );
+            WriteTypeInfo( new NullableTypeRoot( typeof( T ), false ), d, true );
+            ((TypedWriter<T>)d.TypedWriter)( this, value );
         }
 
         public bool WriteAnyNullable( object? o )
@@ -301,13 +301,13 @@ namespace CK.BinarySerialization
                 if( _deferred == null ) _deferred = new Stack<(ISerializationDriver D, object O)>( 200 );
                 _deferred.Push( (driver, o) );
                 _writer.Write( (byte)SerializationMarker.DeferredObject );
-                WriteTypeInfo( t, false );
+                WriteTypeInfo( new NullableTypeRoot( driver.Type, false ), driver, true );
             }
             else
             {
                 ++_recurseCount;
                 _writer.Write( (byte)marker );
-                WriteTypeInfo( t, false );
+                WriteTypeInfo( new NullableTypeRoot( driver.Type, false ), driver, true );
                 driver.UntypedWriter( this, o );
                 --_recurseCount;
             }

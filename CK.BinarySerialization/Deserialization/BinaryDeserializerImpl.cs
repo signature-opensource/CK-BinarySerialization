@@ -25,12 +25,14 @@ namespace CK.BinarySerialization
         Stack<string>? _debugContext;
         public const string ExceptionPrefixContext = "[WithContext]";
 
+        bool _sameEndianness;
         bool _leaveOpen;
 
         internal BinaryDeserializerImpl( int version,
                                          ICKBinaryReader reader,
                                          bool leaveOpen,
-                                         BinaryDeserializerContext context )
+                                         BinaryDeserializerContext context,
+                                         bool sameEndianness )
         {
             (_context = context).Acquire( this );
             SerializerVersion = version;
@@ -38,6 +40,7 @@ namespace CK.BinarySerialization
             _leaveOpen = leaveOpen;
             _types = new List<ITypeReadInfo>();
             _objects = new List<object>();
+            _sameEndianness = sameEndianness;
         }
 
         public void Dispose()

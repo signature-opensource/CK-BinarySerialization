@@ -20,7 +20,7 @@ namespace CK.BinarySerialization
     /// cache since the synthesized drivers only depends on the local type.
     /// </para>
     /// </summary>
-    public class SimpleBinaryDeserializableRegistry : IDeserializerResolver
+    public sealed class SimpleBinaryDeserializableRegistry : IDeserializerResolver
     {
         /// <summary>
         /// Gets the default registry.
@@ -128,7 +128,15 @@ namespace CK.BinarySerialization
             return (IDeserializationDriver)Activator.CreateInstance( tR , ctor )!;
         }
 
-        static Delegate CreateNewDelegate<T>( Type delegateType, ParameterExpression[] expressionParameters, ConstructorInfo c )
+        /// <summary>
+        /// Helper that generates a new call.
+        /// </summary>
+        /// <typeparam name="T">The instance type.</typeparam>
+        /// <param name="delegateType">The signature of the delegate.</param>
+        /// <param name="expressionParameters">The parameters of the delegate.</param>
+        /// <param name="c">The constructor to call.</param>
+        /// <returns>The delegate.</returns>
+        public static Delegate CreateNewDelegate<T>( Type delegateType, ParameterExpression[] expressionParameters, ConstructorInfo c )
         {
             var newExpression = Expression.Lambda( delegateType,
                                                    Expression.Convert( Expression.New( c, expressionParameters ), typeof( T ) ),

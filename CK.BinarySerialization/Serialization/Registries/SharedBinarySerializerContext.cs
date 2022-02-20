@@ -1,8 +1,7 @@
 ﻿using CK.Core;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
+using System.Reflection;
 
 namespace CK.BinarySerialization
 {
@@ -107,5 +106,20 @@ namespace CK.BinarySerialization
             if( !done ) throw new InvalidOperationException( $"A serialization driver for type '{n}' is already registered." );
         }
 
+        /// <summary>
+        /// Helper methods that gets the public static void Write( IBinarySerializer s, in T o ) method
+        /// or throws an <see cref="InvalidOperationException"/>.
+        /// </summary>
+        /// <param name="writerHost">The type that must contain the method.</param>
+        /// <returns>The writer method.</returns>
+        public static MethodInfo GetStaticWriter( Type writerHost, Type instanceType )
+        {
+            var writer = writerHost.GetMethod( "Write", BindingFlags.Static | BindingFlags.DeclaredOnly | BindingFlags.Public, null, new[] { typeof( IBinarySerializer ), instanceType.MakeByRefType() }, null );
+            if( writer == null )
+            {
+                throw new InvalidOperationException( $"Type '{writerHost}' must have a public static void Write( IBinarySerializer s, in {instanceType.Name} o ) static writer." );
+            }
+            return writer;
+        }
     }
 }

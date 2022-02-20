@@ -7,7 +7,7 @@ namespace CK.BinarySerialization
 
     /// <summary>
     /// Encapsulates a <see cref="ITypeReadInfo"/> that is not null, not a nullable type,
-    /// has a driver name and a valid resolved local type and has not yet a 
+    /// has a driver name and a valid resolved concrete local type and has not yet a 
     /// resolved <see cref="ISerializationDriver"/>.
     /// </summary>
     public readonly ref struct DeserializerResolverArg
@@ -47,6 +47,7 @@ namespace CK.BinarySerialization
             if( context == null ) throw new ArgumentNullException( nameof(context) );
             Info = info;
             LocalType = info.ResolveLocalType();
+            if( LocalType.IsAbstract ) throw new ArgumentException( $"Cannot deserialize an abstract type '{LocalType}'.", nameof( info ) );
             Context = context;
         }
 
