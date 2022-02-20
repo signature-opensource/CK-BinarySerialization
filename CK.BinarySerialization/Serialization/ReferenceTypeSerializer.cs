@@ -3,12 +3,12 @@
 namespace CK.BinarySerialization
 {
     /// <summary>
-    /// Serializer for type <typeparamref name="T"/> that serializes nullable as well as non nullable instances.
+    /// Serializer for reference type <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
     public abstract class ReferenceTypeSerializer<T> : IReferenceTypeNonNullableSerializationDriver<T> where T : class
     {
-        class ReferenceTypeNullable : IReferenceTypeNullableSerializationDriver<T>
+        sealed class ReferenceTypeNullable : IReferenceTypeNullableSerializationDriver<T>
         {
             readonly ReferenceTypeSerializer<T> _serializer;
             readonly UntypedWriter _uWriter;
@@ -21,6 +21,8 @@ namespace CK.BinarySerialization
                 _tWriter = WriteNullable;
                 _uWriter = WriteNullableObject;
             }
+
+            public bool IsNullable => true;
 
             public UntypedWriter UntypedWriter => _uWriter;
 
@@ -64,9 +66,9 @@ namespace CK.BinarySerialization
 
         public ReferenceTypeSerializer()
         {
-            _nullable = new ReferenceTypeNullable( this );
             _uWriter = WriteUntyped;
             _tWriter = Write;
+            _nullable = new ReferenceTypeNullable( this );
         }
 
         /// <summary>
@@ -80,8 +82,13 @@ namespace CK.BinarySerialization
         /// <inheritdoc />
         public Type Type => typeof( T );
 
+        /// <inheritdoc />
+        public bool IsNullable => false;
+
+        /// <inheritdoc />
         public UntypedWriter UntypedWriter => _uWriter;
 
+        /// <inheritdoc />
         public TypedWriter<T> TypedWriter => _tWriter;
 
         Delegate ISerializationDriver.TypedWriter => _tWriter;
@@ -99,8 +106,6 @@ namespace CK.BinarySerialization
         public abstract string DriverName { get; }
 
         public abstract int SerializationVersion { get; }
-
-        void IReferenceTypeNonNullableSerializationDriver<T>.Write( IBinarySerializer w, in T o ) => Write( w, in o );
 
         void WriteUntyped( IBinarySerializer w, in object o ) => Write( w, (T)o );
 

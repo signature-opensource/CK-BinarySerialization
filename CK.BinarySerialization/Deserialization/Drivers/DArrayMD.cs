@@ -17,7 +17,7 @@ namespace CK.BinarySerialization.Deserialization
 
         protected override void ReadInstance( ref RefReader r )
         {
-            Debug.Assert( r.ReadInfo.ElementTypeReadInfo != null );
+            Debug.Assert( r.ReadInfo.SubTypes.Count == 1 );
             
             bool isEmpty = false;
             var lengths = new int[r.ReadInfo.ArrayRank];
@@ -32,11 +32,12 @@ namespace CK.BinarySerialization.Deserialization
                 var array = Unsafe.As<Array>( a );
                 var coords = new int[lengths.Length];
                 coords[coords.Length - 1] = -1;
-                while( InternalShared.NextInArray( coords, lengths ) )
+                while( BinarySerializerImpl.NextInArray( coords, lengths ) )
                 {
-                    array.SetValue( _item( d, r.ReadInfo.ElementTypeReadInfo ), coords );
+                    array.SetValue( _item( d, r.ReadInfo.SubTypes[0] ), coords );
                 }
             }
         }
+
     }
 }

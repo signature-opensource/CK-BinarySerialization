@@ -11,7 +11,7 @@ namespace CK.BinarySerialization
         /// Gets the externally immutable information that can be 
         /// changed through this interface.
         /// </summary>
-        TypeReadInfo ReadInfo { get; }
+        ITypeReadInfo ReadInfo { get; }
 
         /// <summary>
         /// Sets the local type that will be resolved.

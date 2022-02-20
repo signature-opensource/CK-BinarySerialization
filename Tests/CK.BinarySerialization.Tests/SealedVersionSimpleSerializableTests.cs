@@ -148,13 +148,11 @@ namespace CK.BinarySerialization.Tests
         {
             var v = new MissingCtorValueType();
             FluentActions.Invoking( () => TestHelper.SaveAndLoadAny( v ) )
-                .Should().Throw<InvalidOperationException>()
-                .WithMessage( "*has been serialized thanks to its Write( ICBinaryWriter )*" );
+                .Should().Throw<InvalidOperationException>();
 
             var o = new MissingCtorReferenceType();
             FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( o ) )
-                .Should().Throw<InvalidOperationException>()
-                .WithMessage( "*has been serialized thanks to its Write( ICBinaryWriter )*" );
+                .Should().Throw<InvalidOperationException>();
         }
 
 

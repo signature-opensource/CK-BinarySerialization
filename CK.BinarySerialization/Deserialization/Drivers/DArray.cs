@@ -16,12 +16,12 @@ namespace CK.BinarySerialization.Deserialization
 
         protected override void ReadInstance( ref RefReader r )
         {
-            Debug.Assert( r.ReadInfo.ElementTypeReadInfo != null );
+            Debug.Assert( r.ReadInfo.SubTypes.Count == 1 );
             var a = new T[r.Reader.ReadNonNegativeSmallInt32()];
             var d = r.SetInstance( a );
             for( int i = 0; i < a.Length; i++ )
             {
-                a[i] = _item( d, r.ReadInfo.ElementTypeReadInfo );
+                a[i] = _item( d, r.ReadInfo.SubTypes[0] );
             }
         }
     }

@@ -10,20 +10,20 @@ namespace CK.BinarySerialization.Tests
     [TestFixture]
     public class SimpleSerializableTests
     {
-        readonly struct ValueType : ICKSimpleBinarySerializable
+        readonly struct Sample : ICKSimpleBinarySerializable
         {
             public readonly int Power;
             public readonly string Name;
             public readonly short? Age;
 
-            public ValueType( int power, string name, short? age )
+            public Sample( int power, string name, short? age )
             {
                 Power = power;
                 Name = name;
                 Age = age;
             }
 
-            public ValueType( ICKBinaryReader r )
+            public Sample( ICKBinaryReader r )
             {
                 r.ReadByte(); // Version
                 Power = r.ReadInt32();
@@ -43,9 +43,17 @@ namespace CK.BinarySerialization.Tests
         [Test]
         public void value_type_simple_serializable()
         {
-            ValueType v = new ValueType( 31, "Albert", 12 );
+            Sample v = new Sample( 31, "Albert", 12 );
             object? backO = TestHelper.SaveAndLoadAny( v );
             backO.Should().Be( v );
+        }
+
+        [Test]
+        public void nullable_value_type_as_a_subtype()
+        {
+            var l = new List<Sample?>() { null, new Sample( 31, "Albert", 12 ) };
+            object? backL = TestHelper.SaveAndLoadAny( l );
+            backL.Should().BeEquivalentTo( l, o => o.WithStrictOrdering() );
         }
 
         class SimpleBase : ICKSimpleBinarySerializable
@@ -123,13 +131,11 @@ namespace CK.BinarySerialization.Tests
         {
             var v = new MissingCtorValueType();
             FluentActions.Invoking( () => TestHelper.SaveAndLoadAny( v ) )
-                .Should().Throw<InvalidOperationException>()
-                .WithMessage( "*has been serialized thanks to its Write( ICBinaryWriter )*" );
+                .Should().Throw<InvalidOperationException>();
 
             var o = new MissingCtorReferenceType();
             FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( o ) )
-                .Should().Throw<InvalidOperationException>()
-                .WithMessage( "*has been serialized thanks to its Write( ICBinaryWriter )*" );
+                .Should().Throw<InvalidOperationException>();
         }
 
         class XA<T1, T2> : ICKSimpleBinarySerializable

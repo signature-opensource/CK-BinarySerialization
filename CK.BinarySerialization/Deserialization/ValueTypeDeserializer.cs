@@ -33,14 +33,14 @@ namespace CK.BinarySerialization
 
             INonNullableDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
 
-            public object? ReadAsObject( IBinaryDeserializer d, TypeReadInfo readInfo ) => ReadInstance( d, readInfo );
+            public object? ReadAsObject( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 
-            public T? ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo )
+            public T? ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
             {
-                Debug.Assert( readInfo.IsNullable && readInfo.SubTypes.Count == 1 );
+                Debug.Assert( readInfo.IsNullable );
                 if( d.Reader.ReadBoolean() )
                 {
-                    return _deserializer.ReadInstance( d, readInfo.SubTypes[0] );
+                    return _deserializer.ReadInstance( d, readInfo.ToNonNullable );
                 }
                 return default;
             }
@@ -62,7 +62,7 @@ namespace CK.BinarySerialization
         /// <param name="r">The binary reader.</param>
         /// <param name="readInfo">The read type info.</param>
         /// <returns>The new instance.</returns>
-        protected abstract T ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo );
+        protected abstract T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo );
 
         /// <inheritdoc />
         public Type ResolvedType => typeof( T );
@@ -80,9 +80,9 @@ namespace CK.BinarySerialization
 
         INonNullableDeserializationDriver IDeserializationDriver.ToNonNullable => this;
 
-        T IValueTypeNonNullableDeserializationDriver<T>.ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo ) => ReadInstance( d, readInfo );
+        T IValueTypeNonNullableDeserializationDriver<T>.ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 
-        object INonNullableDeserializationDriver.ReadAsObject( IBinaryDeserializer d, TypeReadInfo readInfo ) => ReadInstance( d, readInfo );
+        object INonNullableDeserializationDriver.ReadAsObject( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 
     }
 }

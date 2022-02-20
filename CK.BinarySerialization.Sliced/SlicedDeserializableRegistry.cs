@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace CK.BinarySerialization
@@ -32,9 +33,23 @@ namespace CK.BinarySerialization
         }
         
         /// <inheritdoc />
-        public IDeserializationDriver? TryFindDriver( TypeReadInfo info )
+        public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
-            throw new NotImplementedException();
+            // Only the "SimpleBinarySerializable" or "SealedVersionBinarySerializable" drivers are handled here.
+            // Reading from SimpleBinarySerializable is dangerous but since SimpleBinaryDeserializableRegistry didn't resolve it,
+            // we can accept to try...
+            bool isSimple = info.DriverName == "SimpleBinarySerializable";
+            // Same for SealedVersionBinarySerializable (at least we will have a version).
+            bool isSealed = !isSimple && info.DriverName == "SealedVersionBinarySerializable";
+            // Serialized as a Sliced.
+            bool isSliced = !isSimple && !isSealed && info.DriverName == "Sliced";
+            if( !isSimple && !isSealed && !isSliced ) return null;
+
+            switch( info.DriverName )
+            {
+                case "Sliced": return null;
+            }
+            return null;
         }
     }
 }

@@ -20,9 +20,9 @@ namespace CK.BinarySerialization.Deserialization
             _underlying = underlying;
         }
 
-        protected override T ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo )
+        protected override T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
         {
-            TU u = _underlying( d, readInfo.ElementTypeReadInfo! );
+            TU u = _underlying( d, readInfo.SubTypes[0] );
             return (T)Convert.ChangeType( u, typeof(TLU) );
         }
     }

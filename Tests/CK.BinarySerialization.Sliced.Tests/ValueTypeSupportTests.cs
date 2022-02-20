@@ -8,19 +8,20 @@ namespace CK.BinarySerialization.Sliced.Tests
     [TestFixture]
     public class ValueTypeSupportTests
     {
-        [SerializationVersion(0)]
+        [SerializationVersion(3712)]
         struct Simple : ICKSlicedSerializable
         {
             public int One;
             public int Two;
 
-            public Simple( IBinaryDeserializer d, TypeReadInfo info )
+            public Simple( IBinaryDeserializer d, ITypeReadInfo info )
             {
+                info.SerializationVersion.Should().Be( 3712 );
                 One = d.Reader.ReadInt32();
                 Two = d.Reader.ReadInt32();
             }
 
-            public static void Write( Simple o, IBinarySerializer s )
+            public static void Write( IBinarySerializer s, in Simple o )
             {
                 s.Writer.Write( o.One );
                 s.Writer.Write( o.Two );

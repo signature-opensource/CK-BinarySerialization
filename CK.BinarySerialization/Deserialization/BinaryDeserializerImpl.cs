@@ -12,10 +12,10 @@ namespace CK.BinarySerialization
     {
         readonly ICKBinaryReader _reader;
         readonly BinaryDeserializerContext _context;
-        readonly List<TypeReadInfo> _types;
+        readonly List<ITypeReadInfo> _types;
         readonly List<object> _objects;
 
-        Stack<(IDeserializationDeferredDriver D, TypeReadInfo T, object O)>? _deferred;
+        Stack<(IDeserializationDeferredDriver D, ITypeReadInfo T, object O)>? _deferred;
         int _recurseCount;
 
         int _debugModeCounter;
@@ -36,7 +36,7 @@ namespace CK.BinarySerialization
             SerializerVersion = version;
             _reader = reader;
             _leaveOpen = leaveOpen;
-            _types = new List<TypeReadInfo>();
+            _types = new List<ITypeReadInfo>();
             _objects = new List<object>();
         }
 
@@ -117,7 +117,7 @@ namespace CK.BinarySerialization
                     ThrowInvalidDataException( $"Type '{info.TypeName}' has been serialized as a deferred object but its deserializer ({d.GetType().FullName}) is not a {nameof( IDeserializationDeferredDriver )}." );
                     return null!; // never
                 }
-                if( _deferred == null ) _deferred = new Stack<(IDeserializationDeferredDriver D, TypeReadInfo T, object O)>( 100 );
+                if( _deferred == null ) _deferred = new Stack<(IDeserializationDeferredDriver D, ITypeReadInfo T, object O)>( 100 );
 
                 result = RuntimeHelpers.GetUninitializedObject( d.ResolvedType );
                 _deferred.Push( (defer, info, result) );
@@ -141,16 +141,23 @@ namespace CK.BinarySerialization
             return result;
         }
 
-        public TypeReadInfo ReadTypeInfo()
+        public ITypeReadInfo ReadTypeInfo()
         {
             int idx = _reader.ReadNonNegativeSmallInt32();
             if( idx < _types.Count ) return _types[idx];
+            if( _reader.ReadByte() == '?' )
+            {
+                var t = new NullableTypeReadInfo();
+                _types.Add( t );
+                t.Init( ReadTypeInfo() );
+                return t;
+            }
             var k = _reader.ReadByte();
             switch( k )
             {
                 case 0: 
                     {
-                        var t = new TypeReadInfo( this, TypeReadInfo.TypeKind.Regular );
+                        var t = new TypeReadInfo( this, TypeReadInfoKind.Regular );
                         _types.Add( t );
                         t.ReadNames( _reader );
                         t.ReadBaseType();
@@ -158,7 +165,7 @@ namespace CK.BinarySerialization
                     }
                 case 1:
                     {
-                        var t = new TypeReadInfo( this, TypeReadInfo.TypeKind.Enum );
+                        var t = new TypeReadInfo( this, TypeReadInfoKind.Enum );
                         _types.Add( t );
                         t.ReadEnum();
                         t.ReadNames( _reader );
@@ -167,8 +174,7 @@ namespace CK.BinarySerialization
                 case 2:
                     {
                         var args = _reader.ReadNonNegativeSmallInt32();
-                        TypeReadInfo t;
-                        t = new TypeReadInfo( this, args == 0 ? TypeReadInfo.TypeKind.OpenGeneric : TypeReadInfo.TypeKind.Generic );
+                        TypeReadInfo t = new TypeReadInfo( this, args == 0 ? TypeReadInfoKind.OpenGeneric : TypeReadInfoKind.Generic );
                         _types.Add( t );
                         if( args != 0 ) t.ReadGenericParameters( args );
                         t.ReadNames( _reader );
@@ -177,21 +183,21 @@ namespace CK.BinarySerialization
                     }
                 case 3:
                     {
-                        var t = new TypeReadInfo( this, TypeReadInfo.TypeKind.Array );
+                        var t = new TypeReadInfo( this, TypeReadInfoKind.Array );
                         _types.Add( t );
                         t.ReadArray();
                         return t;
                     }
                 case 4:
                     {
-                        var t = new TypeReadInfo( this, TypeReadInfo.TypeKind.Ref );
+                        var t = new TypeReadInfo( this, TypeReadInfoKind.Ref );
                         _types.Add( t );
                         t.ReadRefOrPointerInfo();
                         return t;
                     }
                 case 5:
                     {
-                        var t = new TypeReadInfo( this, TypeReadInfo.TypeKind.Pointer );
+                        var t = new TypeReadInfo( this, TypeReadInfoKind.Pointer );
                         _types.Add( t );
                         t.ReadRefOrPointerInfo();
                         return t;
@@ -296,5 +302,6 @@ namespace CK.BinarySerialization
         }
 
         #endregion
+
     }
 }

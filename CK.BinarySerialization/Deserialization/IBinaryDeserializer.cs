@@ -26,10 +26,10 @@ namespace CK.BinarySerialization
         ICKBinaryReader Reader { get; }
 
         /// <summary>
-        /// Reads a <see cref="TypeReadInfo"/> written by <see cref="IBinarySerializer.WriteTypeInfo(Type)"/>.
+        /// Reads a <see cref="ITypeReadInfo"/> written by <see cref="IBinarySerializer.WriteTypeInfo(Type)"/>.
         /// </summary>
         /// <returns>The type information.</returns>
-        TypeReadInfo ReadTypeInfo();
+        ITypeReadInfo ReadTypeInfo();
 
         /// <summary>
         /// Reads a non null object or value type previously written by <see cref="IBinarySerializer.WriteAnyNullable(object?)"/>

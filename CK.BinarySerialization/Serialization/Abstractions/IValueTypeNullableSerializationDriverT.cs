@@ -10,13 +10,6 @@ namespace CK.BinarySerialization
     /// </summary>
     public interface IValueTypeNullableSerializationDriver<T> : IValueTypeSerializationDriver<T>, INullableSerializationDriver where T : struct
     {
-        /// <summary>
-        /// Writes a potentially null instance.
-        /// </summary>
-        /// <param name="w">The serializer.</param>
-        /// <param name="o">The nullable instance.</param>
-        void WriteNullable( IBinarySerializer w, in T? o );
-
         new TypedWriter<T?> TypedWriter { get; }
     }
 }

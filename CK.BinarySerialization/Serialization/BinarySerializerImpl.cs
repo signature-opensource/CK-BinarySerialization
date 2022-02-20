@@ -5,10 +5,13 @@ using System.Collections.Generic;
 
 namespace CK.BinarySerialization
 {
+
     class BinarySerializerImpl : IDisposableBinarySerializer
     {
         readonly ICKBinaryWriter _writer;
-        readonly Dictionary<Type, (int Idx, ISerializationDriver? D)> _types;
+        // Waiting for NullableTypeTree: the bool is for notNullable reference type which is 
+        // currently only true for reference types that appear as a dictionary key.
+        readonly Dictionary<NullableTypeRoot, (int Idx, ISerializationDriver? D)> _types;
         readonly Dictionary<object, int> _seen;
         readonly BinarySerializerContext _context;
 
@@ -27,7 +30,7 @@ namespace CK.BinarySerialization
             (_context = context).Acquire();
             _writer = writer;
             _leaveOpen = leaveOpen;
-            _types = new Dictionary<Type, (int, ISerializationDriver?)>();
+            _types = new Dictionary<NullableTypeRoot, (int, ISerializationDriver?)>();
             _seen = new Dictionary<object, int>( PureObjectRefEqualityComparer<object>.Default );
         }
 
@@ -47,24 +50,23 @@ namespace CK.BinarySerialization
 
         public event Action<IDestroyable>? OnDestroyedObject;
 
-        public bool WriteTypeInfo( Type t )
+        public bool WriteTypeInfo( Type t, bool? nullable = null )
         {
-            if( t == null ) throw new ArgumentNullException( nameof( t ) );
-            return WriteTypeInfo( t, null );
+            return WriteTypeInfo( new NullableTypeRoot( t, nullable ), null, false );
         }
 
-        bool WriteTypeInfo( Type t, ISerializationDriver? knownDriver )
+        bool WriteTypeInfo( NullableTypeRoot nT, ISerializationDriver? driver, bool driverLookupDone )
         {
-            if( _types.TryGetValue( t, out var info ) )
+            if( _types.TryGetValue( nT, out var info ) )
             {
                 _writer.WriteNonNegativeSmallInt32( info.Idx );
                 return false;
             }
 
-            void RegisterAndWriteIndex( Type t, ISerializationDriver? d )
+            void RegisterAndWriteIndex( NullableTypeRoot nT, ISerializationDriver? d )
             {
                 var i = (_types.Count, d);
-                _types.Add( t, i );
+                _types.Add( nT, i );
                 _writer.WriteNonNegativeSmallInt32( i.Item1 );
             }
 
@@ -88,31 +90,49 @@ namespace CK.BinarySerialization
                 return decl != null ? GetNotSoSimpleName( decl ) + '+' + t.Name : t.Name;
             }
 
+            // Here t is the non nullable value type or the reference type (or a byref/pointer but these will be handled right below).
+            var t = nT.Type;
             // Handles special types that have no drivers nor base types.
             if( t.IsPointer )
             {
-                RegisterAndWriteIndex( t, null );
+                _writer.Write( (byte)'!' );
+                RegisterAndWriteIndex( nT, null );
                 _writer.Write( (byte)5 );
                 WriteElementTypeInfo( t, true );
                 return true;
             }
             if( t.IsByRef )
             {
-                RegisterAndWriteIndex( t, null );
+                _writer.Write( (byte)'!' );
+                RegisterAndWriteIndex( nT, null );
                 _writer.Write( (byte)4 );
                 WriteElementTypeInfo( t, true );
                 return true;
             }
             // Now we may have a driver names.
-            var d = knownDriver ?? _context.TryFindDriver( t );
-            RegisterAndWriteIndex( t, d );
+            if( driver == null && !driverLookupDone )
+            {
+                driver = _context.TryFindDriver( t );
+                if( driver != null ) driver = nT.IsNullable ? driver.ToNullable : driver.ToNonNullable;
+            }
+            RegisterAndWriteIndex( nT, driver );
+            // We don't write nullable types, we just emit a '?' and then the 
+            // non nullable type info.
+            if( nT.IsNullable )
+            {
+                _writer.Write( (byte)'?' );
+                WriteTypeInfo( nT.ToNonNullable(), driver?.ToNonNullable, true );
+                return true;
+            }
+            // Now we only write the non nullable info after a '!'.
+            _writer.Write( (byte)'!' );
             if( t.IsArray )
             {
                 _writer.Write( (byte)3 );
                 _writer.WriteSmallInt32( t.GetArrayRank(), 1 );
                 if( WriteElementTypeInfo( t, false ) )
                 {
-                    _writer.WriteSharedString( d?.DriverName );
+                    _writer.WriteSharedString( driver?.DriverName );
                 }
                 return true;
             }
@@ -128,10 +148,21 @@ namespace CK.BinarySerialization
                 else
                 {
                     var args = t.GetGenericArguments();
-                    _writer.WriteNonNegativeSmallInt32( args.Length );
-                    foreach( var p in args )
+                    // Currently we work in oblivious nullable mode: all reference types are de facto nullable,
+                    // except one: the dictionary key.
+                    if( args.Length == 2 && t.GetGenericTypeDefinition() == typeof( Dictionary<,> ) )
                     {
-                        WriteTypeInfo( p );
+                        _writer.WriteNonNegativeSmallInt32( 2 );
+                        WriteTypeInfo( args[0], false );
+                        WriteTypeInfo( args[1] );
+                    }
+                    else
+                    {
+                        _writer.WriteNonNegativeSmallInt32( args.Length );
+                        foreach( var p in args )
+                        {
+                            WriteTypeInfo( p );
+                        }
                     }
                 }
             }
@@ -145,10 +176,10 @@ namespace CK.BinarySerialization
                 _writer.Write( (byte)0 );
             }
             // Write Names.
-            if( d != null )
+            if( driver != null )
             {
-                _writer.WriteSharedString( d.DriverName );
-                _writer.WriteSmallInt32( d.SerializationVersion );
+                _writer.WriteSharedString( driver.DriverName );
+                _writer.WriteSmallInt32( driver.SerializationVersion );
             }
             else
             {
@@ -270,13 +301,13 @@ namespace CK.BinarySerialization
                 if( _deferred == null ) _deferred = new Stack<(ISerializationDriver D, object O)>( 200 );
                 _deferred.Push( (driver, o) );
                 _writer.Write( (byte)SerializationMarker.DeferredObject );
-                WriteTypeInfo( t, driver );
+                WriteTypeInfo( t, false );
             }
             else
             {
                 ++_recurseCount;
                 _writer.Write( (byte)marker );
-                WriteTypeInfo( t, driver );
+                WriteTypeInfo( t, false );
                 driver.UntypedWriter( this, o );
                 --_recurseCount;
             }
@@ -323,7 +354,18 @@ namespace CK.BinarySerialization
             }
         }
 
-        #endregion 
+        #endregion
+
+        internal static bool NextInArray( int[] coords, int[] lengths )
+        {
+            int i = coords.Length - 1;
+            while( ++coords[i] >= lengths[i] )
+            {
+                if( i == 0 ) return false;
+                coords[i--] = 0;
+            }
+            return true;
+        }
 
 
     }

@@ -1,42 +1,53 @@
 ﻿using CK.Core;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CK.BinarySerialization
 {
     /// <summary>
-    /// Static thread safe singleton for <see cref="ICKSimpleBinarySerializable"/> and <see cref="ICKVersionedBinarySerializable"/>
+    /// Static thread safe singleton factory for <see cref="ICKSimpleBinarySerializable"/> and <see cref="ICKVersionedBinarySerializable"/>
     /// serializers.
     /// <para>
     /// Since this kind on serialization don't need any other resolvers (drivers only depends on the actual type), a singleton
-    /// cache is fine.
+    /// is fine. We could have cached the drivers in a static global concurrent dictionary. However, since using independent 
+    /// <see cref="SharedBinarySerializerContext"/> is rather theoretical (in practice, only the <see cref="BinarySerializer.DefaultSharedContext"/>
+    /// will be used), introducing another level of cache would be quite pointless.
     /// </para>
     /// </summary>
-    public class SimpleBinarySerializableRegistry : ISerializerResolver
+    public class SimpleBinarySerializableFactory : ISerializerResolver
     {
         /// <summary>
         /// Gets the singleton instance.
         /// </summary>
-        public static readonly SimpleBinarySerializableRegistry Instance = new SimpleBinarySerializableRegistry();
+        public static readonly SimpleBinarySerializableFactory Instance = new SimpleBinarySerializableFactory();
 
-        SimpleBinarySerializableRegistry() { }
+        SimpleBinarySerializableFactory() { }
 
+        /// <summary>
+        /// Handles the type if it implements <see cref="ICKSimpleBinarySerializable"/> or <see cref="ICKVersionedBinarySerializable"/>.
+        /// </summary>
+        /// <param name="t">The type for which a serialization driver must be resolved.</param>
+        /// <returns>A new driver or null.</returns>
         public ISerializationDriver? TryFindDriver( Type t )
         {
-            // Cache only the driver if the type is a ICKSimpleBinarySerializable or a .
-            if( typeof( ICKSimpleBinarySerializable ).IsAssignableFrom( t ) )
+            try
             {
-                return InternalShared.Serialization.GetOrAdd( t, CreateSimple );
-            }
-            if( typeof( ICKVersionedBinarySerializable ).IsAssignableFrom( t ) )
-            {
-                if( !t.IsValueType && !t.IsSealed )
+                if( typeof( ICKSimpleBinarySerializable ).IsAssignableFrom( t ) )
                 {
-                    throw new InvalidOperationException( $"Type '{t}' cannot implement ISealedVersionedSimpleSerializable interface. It must be a sealed class or a value type." );
+                    return CreateSimple( t );
                 }
-                return InternalShared.Serialization.GetOrAdd( t, CreateSealed );
+                if( typeof( ICKVersionedBinarySerializable ).IsAssignableFrom( t ) )
+                {
+                    if( !t.IsValueType && !t.IsSealed )
+                    {
+                        throw new InvalidOperationException( $"Type '{t}' cannot implement {nameof(ICKVersionedBinarySerializable)} interface. It must be a sealed class or a value type." );
+                    }
+                    return CreateSealed( t );
+                }
+            }
+            catch( System.Reflection.TargetInvocationException ex )
+            {
+                if( ex.InnerException != null ) throw ex.InnerException;
+                throw;
             }
             return null;
         }
@@ -50,13 +61,13 @@ namespace CK.BinarySerialization
             protected internal override void Write( IBinarySerializer w, in T o ) => o.Write( w.Writer );
         }
 
-        sealed class SimpleBinarySerializableDriverV<T> : ValueTypeSerializer<T> where T : struct, ICKSimpleBinarySerializable
+        sealed class SimpleBinarySerializableDriverV<T> : StaticValueTypeSerializer<T> where T : struct, ICKSimpleBinarySerializable
         {
             public override string DriverName => "SimpleBinarySerializable";
 
             public override int SerializationVersion => -1;
 
-            protected internal override void Write( IBinarySerializer w, in T o ) => o.Write( w.Writer );
+            public static void Write( IBinarySerializer w, in T o ) => o.Write( w.Writer );
         }
 
         static ISerializationDriver CreateSimple( Type t )
@@ -81,7 +92,7 @@ namespace CK.BinarySerialization
             protected internal override void Write( IBinarySerializer w, in T o ) => o.Write( w.Writer );
         }
 
-        sealed class SealedBinarySerializableDriverV<T> : ValueTypeSerializer<T> where T : struct, ICKVersionedBinarySerializable
+        sealed class SealedBinarySerializableDriverV<T> : StaticValueTypeSerializer<T> where T : struct, ICKVersionedBinarySerializable
         {
             public override string DriverName => "SealedVersionBinarySerializable";
 
@@ -89,7 +100,7 @@ namespace CK.BinarySerialization
 
             public override int SerializationVersion { get; }
 
-            protected internal override void Write( IBinarySerializer w, in T o ) => o.Write( w.Writer );
+            public static void Write( IBinarySerializer w, in T o ) => o.Write( w.Writer );
         }
 
         static ISerializationDriver CreateSealed( Type t )

@@ -42,8 +42,8 @@ namespace CK.Core
             return SaveAndLoad<T?>( @this, v, ( x, w ) => w.WriteNullableValue( x ), r => r.ReadNullableValue<T>(), serializerContext, deserializerContext );
         }
 
-        public static T SaveAndLoad<T>( this IBasicTestHelper @this, in T o, 
-                                                                     Action<T, IBinarySerializer> w, 
+        public static T SaveAndLoad<T>( this IBasicTestHelper @this, in T o,
+                                                                     Action<T, IBinarySerializer> w,
                                                                      Func<IBinaryDeserializer, T> r,
                                                                      BinarySerializerContext? serializerContext = null,
                                                                      BinaryDeserializerContext? deserializerContext = null )
@@ -61,6 +61,27 @@ namespace CK.Core
                     T result = r( reader );
                     reader.DebugCheckSentinel();
                     return result;
+                }
+            }
+        }
+
+        public static void SaveAndLoad( this IBasicTestHelper @this, Action<IBinarySerializer> w,
+                                                                     Action<IBinaryDeserializer> r,
+                                                                     BinarySerializerContext? serializerContext = null,
+                                                                     BinaryDeserializerContext? deserializerContext = null )
+        {
+            using( var s = new MemoryStream() )
+            using( var writer = BinarySerializer.Create( s, true, serializerContext ?? new BinarySerializerContext() ) )
+            {
+                writer.DebugWriteSentinel();
+                w( writer );
+                writer.DebugWriteSentinel();
+                s.Position = 0;
+                using( var reader = BinaryDeserializer.Create( s, true, deserializerContext ?? new BinaryDeserializerContext() ) )
+                {
+                    reader.DebugCheckSentinel();
+                    r( reader );
+                    reader.DebugCheckSentinel();
                 }
             }
         }

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace CK.BinarySerialization
@@ -64,26 +65,26 @@ namespace CK.BinarySerialization
         /// </summary>
         public IDeserializerKnownObject KnownObjects => _knownObjects;
 
-
-        /// <inheritdoc />
-        public IDeserializationDriver? TryFindDriver( TypeReadInfo info )
+        internal void CallHooks( IMutableTypeReadInfo m )
         {
             foreach( var h in _hooks )
             {
-                h( info.CreateMutation() );
-                IDeserializationDriver? d = info.CloseMutation();
-                if( d != null ) return d;
+                h( m );
             }
-            var localType = info.TryResolveLocalType();
-            if( localType != null && _typedDrivers.TryGetValue( localType, out var localDriver ) )
+        }
+
+        /// <inheritdoc />
+        public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
+        {
+            if( _typedDrivers.TryGetValue( info.LocalType, out var d ) )
             {
-                return localDriver;
+                return d;
             }
-            // Do not cache ResolvedType in _typedDrivers here: a TypeReadInfo use
-            // its ResolvedType's deserializer only if it's explicitly added by AddLocalTypeDeserializer.
+            // Do not cache ResolvedType in _typedDrivers here: the same type may be
+            // built by more than one driver.
             foreach( var resolver in _resolvers )
             {
-                var r = resolver.TryFindDriver( info );
+                var r = resolver.TryFindDriver( ref info );
                 if( r != null ) return r;
             }
             return null;
@@ -101,7 +102,7 @@ namespace CK.BinarySerialization
 
         /// <summary>
         /// Registers an explicit deserialization driver that will be used 
-        /// when <see cref="TypeReadInfo.TryResolveLocalType()"/> is its <see cref="IDeserializationDriver.ResolvedType"/>.
+        /// when <see cref="ITypeReadInfo.TryResolveLocalType()"/> is its <see cref="IDeserializationDriver.ResolvedType"/>.
         /// <para>
         /// The local type MUST not already exists otherwise an <see cref="InvalidOperationException"/> is raised.
         /// </para>
@@ -121,11 +122,11 @@ namespace CK.BinarySerialization
         }
 
         /// <summary>
-        /// Registers a deserialization hook that will called each time a <see cref="TypeReadInfo"/> is read
+        /// Registers a deserialization hook that will called each time a <see cref="ITypeReadInfo"/> is read
         /// and a deserialization driver must be resolved. See <see cref="IMutableTypeReadInfo"/>.
         /// <para>
         /// This hook enables setting the local type to deserialize or the driver name or the <see cref="IDeserializationDriver"/> 
-        /// to use instead of calling <see cref="IDeserializerResolver.TryFindDriver(TypeReadInfo)"/>.
+        /// to use instead of calling <see cref="IDeserializerResolver.TryFindDriver(ITypeReadInfo)"/>.
         /// </para>
         /// </summary>
         /// <param name="hook">The hook to register.</param>

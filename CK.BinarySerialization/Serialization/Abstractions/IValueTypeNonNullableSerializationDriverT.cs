@@ -7,13 +7,6 @@ namespace CK.BinarySerialization
     /// </summary>
     public interface IValueTypeNonNullableSerializationDriver<T> : IValueTypeSerializationDriver<T>, INonNullableSerializationDriver where T : struct
     {
-        /// <summary>
-        /// Writes an instance.
-        /// </summary>
-        /// <param name="w">The serializer.</param>
-        /// <param name="o">The instance.</param>
-        void Write( IBinarySerializer w, in T o );
-
         new TypedWriter<T> TypedWriter { get; }  
     }
 }

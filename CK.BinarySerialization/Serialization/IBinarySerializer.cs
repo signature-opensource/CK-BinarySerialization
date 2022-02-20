@@ -46,11 +46,12 @@ namespace CK.BinarySerialization
         /// The serializer doesn't need to be resolved (the type itself doesn't need to be serializable).
         /// </summary>
         /// <param name="t">The type to write.</param>
+        /// <param name="nullable">When not null, ignores the actual type nullability and considers it either nullable or not nullable.</param>
         /// <returns>
         /// True if it has been written, false if the object has already been
         /// written and only a reference has been written.
         /// </returns>
-        bool WriteTypeInfo( Type t );
+        bool WriteTypeInfo( Type t, bool? nullable = null );
 
         /// <summary>
         /// Writes a non null object reference.

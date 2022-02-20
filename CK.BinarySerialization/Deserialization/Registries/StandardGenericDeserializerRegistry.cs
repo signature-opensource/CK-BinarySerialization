@@ -9,7 +9,7 @@ using System.Text;
 namespace CK.BinarySerialization
 {
     /// <summary>
-    /// Handles standard generic types. This registry relies on the <see cref="TypeReadInfo.DriverName"/>
+    /// Handles standard generic types. This registry relies on the <see cref="ITypeReadInfo.DriverName"/>
     /// to try to resolve and cache the deserializers.
     /// </summary>
     public class StandardGenericDeserializerRegistry : IDeserializerResolver
@@ -29,6 +29,7 @@ namespace CK.BinarySerialization
         //  - The (Type LocalType, IDeserializationDriver WrittenUnderlyingDriverType) for an enum: the target enum
         //    must exist locally but its current underlying type may not be the same as the written one.
         //  - Boxed ValueTuple for other types:
+        //     - TupleKey below for ValueTuple and Tuple.
         //     - (IDeserializationDriver Item, int Rank) for array (Rank >= 1).
         //     - (IDeserializationDriver Item, Type D) where D is the generic type definition for DList<>, DStack<> or DQueue<>.  
         readonly ConcurrentDictionary<object, IDeserializationDriver> _cache;
@@ -67,68 +68,46 @@ namespace CK.BinarySerialization
             _resolver = resolver;
         }
 
-        public IDeserializationDriver? TryFindDriver( TypeReadInfo info )
+        public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
-            var d = FindNonNullableDriver( info );
-            return info.IsNullable ? d?.ToNullable : d;
-        }
-
-        IDeserializationDriver? FindNonNullableDriver( TypeReadInfo info )
-        {
-            switch( info.NonNullableDriverName )
+            switch( info.DriverName )
             {
                 case "Enum":
                     {
-                        if( info.IsNullable && info.Kind == TypeReadInfo.TypeKind.Generic )
-                        {
-                            Debug.Assert( info.SubTypes.Count == 1 );
-                            info = info.SubTypes[0];
-                        }
                         // Enum is automatically adapted to its local type, including using any integral local type.
-                        Debug.Assert( info.Kind == TypeReadInfo.TypeKind.Enum && info.ElementTypeReadInfo != null );
-                        var uD = info.ElementTypeReadInfo.TryResolveDeserializationDriver();
-                        if( uD == null ) return null;
-                        var localType = info.TryResolveLocalType();
-                        if( localType == null ) return null;
-                        return _cache.GetOrAdd( (localType, uD), CreateEnum );
+                        Debug.Assert( info.Info.Kind == TypeReadInfoKind.Enum && info.Info.SubTypes.Count == 1 );
+                        var uD = info.Info.SubTypes[0].GetDeserializationDriver();
+                        return _cache.GetOrAdd( (info.LocalType, uD), CreateEnum );
                     }
                 case "ValueTuple":
                     {
-                        if( info.IsNullable && info.Kind == TypeReadInfo.TypeKind.Generic )
-                        {
-                            Debug.Assert( info.SubTypes.Count == 1 );
-                            info = info.SubTypes[0];
-                        }
-                        return CreateTuple( info, true );
+                        return CreateTuple( info.Info, true );
                     }
                 case "Tuple":
                     {
-                        return CreateTuple( info, false );
+                        return CreateTuple( info.Info, false );
                     }
                 case "Array":
                     {
-                        Debug.Assert( info.Kind == TypeReadInfo.TypeKind.Array );
-                        Debug.Assert( info.ElementTypeReadInfo != null );
-                        var item = info.ElementTypeReadInfo.TryResolveDeserializationDriver();
-                        if( item == null ) return null;
-                        return _cache.GetOrAdd( (item, info.ArrayRank), CreateArray );
+                        Debug.Assert( info.Info.Kind == TypeReadInfoKind.Array );
+                        Debug.Assert( info.Info.SubTypes.Count == 1 );
+                        var item = info.Info.SubTypes[0].GetDeserializationDriver();
+                        return _cache.GetOrAdd( (item, info.Info.ArrayRank), CreateArray );
                     }
-                case "Dictionary": return TryGetDoubleGenericParameter( info, typeof( Deserialization.DDictionary<,> ) );
-                case "List": return TryGetSingleGenericParameter( info, typeof( Deserialization.DList<> ) );
-                case "Stack": return TryGetSingleGenericParameter( info, typeof( Deserialization.DStack<> ) );
-                case "Queue": return TryGetSingleGenericParameter( info, typeof( Deserialization.DQueue<> ) );
+                case "Dictionary": return TryGetDoubleGenericParameter( info.Info, typeof( Deserialization.DDictionary<,> ) );
+                case "List": return TryGetSingleGenericParameter( info.Info, typeof( Deserialization.DList<> ) );
+                case "Stack": return TryGetSingleGenericParameter( info.Info, typeof( Deserialization.DStack<> ) );
+                case "Queue": return TryGetSingleGenericParameter( info.Info, typeof( Deserialization.DQueue<> ) );
             }
             return null;
         }
 
-        private IDeserializationDriver? CreateTuple( TypeReadInfo info, bool isValueTuple )
+        private IDeserializationDriver? CreateTuple( ITypeReadInfo info, bool isValueTuple )
         {
             var tA = new IDeserializationDriver[info.SubTypes.Count];
             for( int i = 0; i < tA.Length; ++i )
             {
-                var d = info.SubTypes[i].TryResolveDeserializationDriver();
-                if( d == null ) return null;
-                tA[i] = d;
+                tA[i] = info.SubTypes[i].GetDeserializationDriver();
             }
             var key = new TupleKey( tA, isValueTuple );
             return _cache.GetOrAdd( key, DoCreateTuple );
@@ -153,11 +132,10 @@ namespace CK.BinarySerialization
             }
         }
 
-        IDeserializationDriver? TryGetSingleGenericParameter( TypeReadInfo info, Type tGenD )
+        IDeserializationDriver? TryGetSingleGenericParameter( ITypeReadInfo info, Type tGenD )
         {
             Debug.Assert( info.SubTypes.Count == 1 );
-            var item = info.SubTypes[0].TryResolveDeserializationDriver();
-            if( item == null ) return null;
+            var item = info.SubTypes[0].GetDeserializationDriver();
             var k = (item, tGenD);
             var d = _cache.GetOrAdd( k, CreateSingleGenericTypeParam );
             return d;
@@ -170,13 +148,11 @@ namespace CK.BinarySerialization
             }
         }
 
-        IDeserializationDriver? TryGetDoubleGenericParameter( TypeReadInfo info, Type tGenD )
+        IDeserializationDriver? TryGetDoubleGenericParameter( ITypeReadInfo info, Type tGenD )
         {
             Debug.Assert( info.SubTypes.Count == 2 );
-            var item1 = info.SubTypes[0].TryResolveDeserializationDriver();
-            if( item1 == null ) return null;
-            var item2 = info.SubTypes[1].TryResolveDeserializationDriver();
-            if( item2 == null ) return null;
+            var item1 = info.SubTypes[0].GetDeserializationDriver();
+            var item2 = info.SubTypes[1].GetDeserializationDriver();
             var k = (item1, item2, tGenD);
             return _cache.GetOrAdd( k, CreateDoubleGenericTypeParam );
 
@@ -210,8 +186,6 @@ namespace CK.BinarySerialization
                 var tSame = typeof( Deserialization.DEnum<,> ).MakeGenericType( k.L, k.U.ResolvedType );
                 return (IDeserializationDriver)Activator.CreateInstance( tSame, k.U.TypedReader )!;
             }
-            var tDiff = typeof( Deserialization.DEnumDiff<,,> ).MakeGenericType( k.L, uLocal, k.U.ResolvedType );
-            return (IDeserializationDriver)Activator.CreateInstance( tDiff, k.U.TypedReader )!;
             // If k.L.IsEnum is false (the local type is NOT an enum), we could do this (it works):
             //
             //   var tDiffOther = typeof( Deserialization.DEnumDiff<,,> ).MakeGenericType( k.L, k.L, k.U.ResolvedType );
@@ -219,7 +193,10 @@ namespace CK.BinarySerialization
             //
             // However we don't to stay consistent. Mutations must be coherent, if we do this then we should also handle 
             // the opposite (written integral types read as enums).
-            // Supporting mapping to different enums makes IMutableTypeReadInfo.SetLocalType a simple way to handle enum migrations.
+            // Supporting mapping to different enums makes deserialization hooks and IMutableTypeReadInfo.SetLocalType
+            // a simple way to handle enum migrations.
+            var tDiff = typeof( Deserialization.DEnumDiff<,,> ).MakeGenericType( k.L, uLocal, k.U.ResolvedType );
+            return (IDeserializationDriver)Activator.CreateInstance( tDiff, k.U.TypedReader )!;
         }
 
     }

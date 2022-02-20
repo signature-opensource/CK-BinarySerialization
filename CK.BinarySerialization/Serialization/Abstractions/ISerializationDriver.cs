@@ -16,6 +16,11 @@ namespace CK.BinarySerialization
         Type Type { get; }
 
         /// <summary>
+        /// Gets whether this driver is a <see cref="INullableSerializationDriver"/> or a <see cref="INonNullableSerializationDriver"/>.
+        /// </summary>
+        bool IsNullable { get; }
+
+        /// <summary>
         /// Gets the driver's name that will be serialized.
         /// </summary>
         string DriverName { get; }

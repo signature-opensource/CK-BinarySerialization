@@ -32,7 +32,7 @@ namespace CK.BinarySerialization.Serialization
             {
                 var coords = new int[a.Rank];
                 coords[coords.Length - 1] = -1;
-                while( InternalShared.NextInArray( coords, lengths ) )
+                while( BinarySerializerImpl.NextInArray( coords, lengths ) )
                 {
                     var i = (TItem)a.GetValue( coords )!;
                     _item( w, in i );

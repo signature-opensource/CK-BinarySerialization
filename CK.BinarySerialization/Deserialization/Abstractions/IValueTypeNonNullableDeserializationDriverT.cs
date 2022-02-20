@@ -13,6 +13,6 @@ namespace CK.BinarySerialization
         /// <param name="r">The deserializer.</param>
         /// <param name="readInfo">The type information read.</param>
         /// <returns>The new instance.</returns>
-        T ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo );
+        T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo );
     }
 }

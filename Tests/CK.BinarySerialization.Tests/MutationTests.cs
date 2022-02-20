@@ -53,7 +53,7 @@ namespace CK.BinarySerialization.Tests
                     i.SetLocalType( typeof( NewGranteLevelIsNowAnInt ) );
                 }
             }
-            var dC = new BinaryDeserializerContext();
+            var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
             dC.Shared.AddDeserializationHook( SetNewLocalType );
 
             object back = TestHelper.SaveAndLoadAny( o, deserializerContext: dC );

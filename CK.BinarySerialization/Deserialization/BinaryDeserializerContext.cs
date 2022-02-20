@@ -13,7 +13,7 @@ namespace CK.BinarySerialization
     /// that must be disposed to free the context (otherwise a <see cref="InvalidOperationException"/> is raised).
     /// </para>
     /// </summary>
-    public class BinaryDeserializerContext : IDeserializerResolver
+    public class BinaryDeserializerContext
     {
         readonly Dictionary<string,object> _knownObjects;
         readonly SharedBinaryDeserializerContext _shared;
@@ -65,11 +65,21 @@ namespace CK.BinarySerialization
         /// </summary>
         public SimpleServiceContainer Services => _services;
 
-        /// <inheritdoc />
-        public IDeserializationDriver? TryFindDriver( TypeReadInfo info ) => _shared.TryFindDriver( info );
 
-        /// <inheritdoc cref="IDeserializerKnownObject.GetKnownObject(string)"/>
-        public object? GetKnownObject( string instanceKey )
+        internal IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
+        {
+            try
+            {
+                return _shared.TryFindDriver( ref info );
+            }
+            catch( System.Reflection.TargetInvocationException ex )
+            {
+                if( ex.InnerException != null ) throw ex.InnerException;
+                else throw;
+            }
+        }
+
+        internal object? GetKnownObject( string instanceKey )
         {
             if( !_knownObjects.TryGetValue( instanceKey, out var r ) )
             {

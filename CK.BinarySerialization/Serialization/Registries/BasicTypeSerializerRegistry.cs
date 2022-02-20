@@ -5,6 +5,9 @@ namespace CK.BinarySerialization
 {
     /// <summary>
     /// Immutable singleton that contains default serializers for well-known types.
+    /// <para>
+    /// A simple dictionary is enough since it is only read.
+    /// </para>
     /// </summary>
     public class BasicTypeSerializerRegistry : ISerializerResolver
     {
@@ -21,6 +24,8 @@ namespace CK.BinarySerialization
         {
             _byType = new Dictionary<Type, ISerializationDriver>();
             Register( new Serialization.DString() );
+            Register( new Serialization.DByteArray() );
+
             Register( new Serialization.DBool() );
             Register( new Serialization.DInt32() );
             Register( new Serialization.DUInt32() );
@@ -35,9 +40,12 @@ namespace CK.BinarySerialization
             Register( new Serialization.DChar() );
             Register( new Serialization.DDateTime() );
             Register( new Serialization.DDateTimeOffset() );
+            Register( new Serialization.DTimeSpan() );
+            Register( new Serialization.DGuid() );
+            Register( new Serialization.DDecimal() );
         }
 
-        static void Register<T>( ValueTypeSerializer<T> driver ) where T : struct
+        static void Register<T>( StaticValueTypeSerializer<T> driver ) where T : struct
         {
             _byType.Add( driver.Type, driver );
             _byType.Add( driver.ToNullable.Type, driver.ToNullable );
@@ -47,7 +55,6 @@ namespace CK.BinarySerialization
         {
             _byType.Add( driver.Type, driver.ToNullable );
         }
-
 
         /// <inheritdoc />
         public IValueTypeSerializationDriver<T>? TryFindValueTypeDriver<T>() where T : struct

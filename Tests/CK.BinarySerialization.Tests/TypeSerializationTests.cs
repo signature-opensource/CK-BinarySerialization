@@ -86,6 +86,51 @@ namespace CK.BinarySerialization.Tests
         }
 
 
+        [Test]
+        public void nullability_type_writing()
+        {
+            TestHelper.SaveAndLoad(
+                w =>
+                {
+                    w.WriteTypeInfo( typeof( int ) );
+                    w.WriteTypeInfo( typeof( int ), true );
+                    w.WriteTypeInfo( typeof( int? ), false );
+
+                    w.WriteTypeInfo( typeof( string ) );
+                    w.WriteTypeInfo( typeof( string ), true );
+                    w.WriteTypeInfo( typeof( string ), false );
+                },
+                r =>
+                {
+                    ITypeReadInfo info;
+                    // int
+                    info = r.ReadTypeInfo();
+                    info.IsNullable.Should().BeFalse();
+                    info.ResolveLocalType().Should().BeSameAs( typeof(int) );
+                    // int, nullable = true
+                    info = r.ReadTypeInfo();
+                    info.IsNullable.Should().BeTrue();
+                    info.ResolveLocalType().Should().BeSameAs( typeof( int? ) );
+                    // int?, nullable = false
+                    info = r.ReadTypeInfo();
+                    info.IsNullable.Should().BeFalse();
+                    info.ResolveLocalType().Should().BeSameAs( typeof( int ) );
+                    // string
+                    info = r.ReadTypeInfo();
+                    info.IsNullable.Should().BeTrue();
+                    info.ResolveLocalType().Should().BeSameAs( typeof( string ) );
+                    // string, nullable = true (no change since we work in oblivious nullable context)
+                    info = r.ReadTypeInfo();
+                    info.IsNullable.Should().BeTrue();
+                    info.ResolveLocalType().Should().BeSameAs( typeof( string ) );
+                    // string, nullable = false
+                    info = r.ReadTypeInfo();
+                    info.IsNullable.Should().BeFalse();
+                    info.ResolveLocalType().Should().BeSameAs( typeof( string ) );
+                } );
+
+        }
+
 
     }
 }

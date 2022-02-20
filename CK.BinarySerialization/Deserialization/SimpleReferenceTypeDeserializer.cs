@@ -29,9 +29,9 @@ namespace CK.BinarySerialization
 
             INonNullableDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
 
-            public object? ReadAsObject( IBinaryDeserializer d, TypeReadInfo readInfo ) => ReadInstance( d, readInfo );
+            public object? ReadAsObject( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 
-            public T? ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo )
+            public T? ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
             {
                 if( d.Reader.ReadBoolean() )
                 {
@@ -51,7 +51,7 @@ namespace CK.BinarySerialization
             _reader = ReadInstance;
         }
 
-        T ReadInstance( IBinaryDeserializer d, TypeReadInfo readInfo ) => ReadInstance( d.Reader, readInfo );
+        T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d.Reader, readInfo );
 
         /// <summary>
         /// Must read a non null instance from the binary reader.
@@ -59,7 +59,7 @@ namespace CK.BinarySerialization
         /// <param name="r">The binary reader.</param>
         /// <param name="readInfo">The read type info.</param>
         /// <returns>The new instance.</returns>
-        protected abstract T ReadInstance( ICKBinaryReader r, TypeReadInfo readInfo );
+        protected abstract T ReadInstance( ICKBinaryReader r, ITypeReadInfo readInfo );
 
         /// <inheritdoc />
         public Type ResolvedType => typeof( T );
@@ -71,7 +71,7 @@ namespace CK.BinarySerialization
 
         INonNullableDeserializationDriver IDeserializationDriver.ToNonNullable => this;
 
-        object INonNullableDeserializationDriver.ReadAsObject( IBinaryDeserializer d, TypeReadInfo readInfo ) => ReadInstance( d.Reader, readInfo );
+        object INonNullableDeserializationDriver.ReadAsObject( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d.Reader, readInfo );
 
     }
 }

@@ -2,33 +2,25 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 
 namespace CK.BinarySerialization
 {
     /// <summary>
-    /// Thread safe registry that handles Array, List, Dictionary, Tuple, ValueTuple, KeyValuePair and other generics.
+    /// Thread safe factory that handles Array, List, Dictionary, Tuple, ValueTuple, KeyValuePair and other generics.
     /// <para>
-    /// This registry is bound to a root resolver (that must also be thread safe).
+    /// This registry doesn't cache anything: caching is handled by the <see cref="SharedBinaryDeserializerContext"/>.
     /// </para>
     /// </summary>
-    public class StandardGenericSerializerRegistry : ISerializerResolver
+    public class StandardGenericSerializerFactory : ISerializerResolver
     {
-        readonly ConcurrentDictionary<Type, ISerializationDriver?> _cache;
-        readonly ISerializerResolver _resolver;
+        readonly SharedBinarySerializerContext _resolver;
 
         /// <summary>
-        /// Gets the default registry.
-        /// </summary>
-        public static readonly StandardGenericSerializerRegistry Default = new StandardGenericSerializerRegistry( BinarySerializer.DefaultSharedContext );
-
-        /// <summary>
-        /// Initializes a new registry.
+        /// Initializes a new factory.
         /// </summary>
         /// <param name="resolver">The root resolver to use.</param>
-        public StandardGenericSerializerRegistry( ISerializerResolver resolver ) 
+        public StandardGenericSerializerFactory( SharedBinarySerializerContext resolver ) 
         {
-            _cache = new ConcurrentDictionary<Type, ISerializationDriver?>();
             _resolver = resolver;
         }
 
@@ -38,11 +30,11 @@ namespace CK.BinarySerialization
             if( t.ContainsGenericParameters ) return null;
             if( t.IsArray )
             {
-                return _cache.GetOrAdd( t, CreateArray );
+                return TryCreateArray( t );
             }
             if( t.IsEnum )
             {
-                return _cache.GetOrAdd( t, CreateEnum );
+                return TryCreateEnum( t );
             }
             if( t.IsGenericType )
             {
@@ -52,40 +44,38 @@ namespace CK.BinarySerialization
                     if( tGen == typeof( Nullable<> ) )
                     {
                         var u = Nullable.GetUnderlyingType( t )!;
-                        var d = _resolver.TryFindDriver( u, true );
-                        _cache.TryAdd( t, d );
-                        return d;
+                        return _resolver.TryFindDriver( u )?.ToNullable;
                     }
                     if( tGen.Name.StartsWith( "ValueTuple`" ) )
                     {
-                        return _cache.GetOrAdd( t, CreateTuple, true );
+                        return TryCreateTuple( t, true );
                     }
                     if( tGen.Name.StartsWith( "Tuple`") )
                     {
-                        return _cache.GetOrAdd( t, CreateTuple, false );
+                        return TryCreateTuple( t, false );
                     }
                 }
                 if( tGen == typeof( List<> ) )
                 {
-                    return _cache.GetOrAdd( t, CreateSingleGenericParam, typeof( Serialization.DList<> ) );
+                    return TryCreateSingleGenericParam( t, typeof( Serialization.DList<> ) );
                 }
                 if( tGen == typeof( Dictionary<,> ) )
                 {
-                    return _cache.GetOrAdd( t, CreateDoubleGenericParam, typeof( Serialization.DDictionary<,> ) );
+                    return TryCreateDoubleGenericParam( t, typeof( Serialization.DDictionary<,> ) );
                 }
                 if( tGen == typeof( Stack<> ) )
                 {
-                    return _cache.GetOrAdd( t, CreateSingleGenericParam, typeof( Serialization.DStack<> ) );
+                    return TryCreateSingleGenericParam( t, typeof( Serialization.DStack<> ) );
                 }
                 if( tGen == typeof( Queue<> ) )
                 {
-                    return _cache.GetOrAdd( t, CreateSingleGenericParam, typeof( Serialization.DQueue<> ) );
+                    return TryCreateSingleGenericParam( t, typeof( Serialization.DQueue<> ) );
                 }
             }
             return null;
         }
 
-        ISerializationDriver? CreateArray( Type t )
+        ISerializationDriver? TryCreateArray( Type t )
         {
             var tE = t.GetElementType()!;
             var dItem = _resolver.TryFindDriver( tE );
@@ -100,7 +90,7 @@ namespace CK.BinarySerialization
             return ((ISerializationDriver)Activator.CreateInstance( tM, dItem.TypedWriter )!).ToNullable;
         }
 
-        ISerializationDriver? CreateEnum( Type t )
+        ISerializationDriver? TryCreateEnum( Type t )
         {
             var tU = Enum.GetUnderlyingType( t );
             var dU = _resolver.TryFindDriver( tU );
@@ -109,7 +99,7 @@ namespace CK.BinarySerialization
             return (ISerializationDriver)Activator.CreateInstance( tS, dU.TypedWriter )!;
         }
 
-        ISerializationDriver? CreateSingleGenericParam( Type t, Type tGenD )
+        ISerializationDriver? TryCreateSingleGenericParam( Type t, Type tGenD )
         {
             var tE = t.GetGenericArguments()[0];
             var dItem = _resolver.TryFindDriver( tE );
@@ -119,13 +109,13 @@ namespace CK.BinarySerialization
             return ((ISerializationDriver)Activator.CreateInstance( tS, dItem.TypedWriter )!).ToNullable;
         }
 
-        ISerializationDriver? CreateDoubleGenericParam( Type t, Type tGenD )
+        ISerializationDriver? TryCreateDoubleGenericParam( Type t, Type tGenD )
         {
-            Debug.Assert( t.IsClass, "All single generics are reference type: oblivious rules for now except for the Dictionary key that is hard coded here." );
-            
             var tE1 = t.GetGenericArguments()[0];
             var dItem1 = _resolver.TryFindDriver( tE1 );
             if( dItem1 == null ) return null;
+            Debug.Assert( tGenD == typeof( Serialization.DDictionary<,> ), "Dictionary is currently the only Double params." );
+            dItem1 = dItem1.ToNonNullable;
 
             var tE2 = t.GetGenericArguments()[1];
             var dItem2 = _resolver.TryFindDriver( tE2 );
@@ -134,12 +124,10 @@ namespace CK.BinarySerialization
             var tS = tGenD.MakeGenericType( tE1, tE2 );
             
             var d = (ISerializationDriver)Activator.CreateInstance( tS, dItem1.TypedWriter, dItem2.TypedWriter )!;
-            return tGenD == typeof( Dictionary<,> )
-                    ? d
-                    : d.ToNullable;
+            return d.ToNullable;
         }
 
-        ISerializationDriver? CreateTuple( Type t, bool isValue )
+        ISerializationDriver? TryCreateTuple( Type t, bool isValue )
         {
             var parameters = t.GetGenericArguments();
             var p = new UntypedWriter[parameters.Length];

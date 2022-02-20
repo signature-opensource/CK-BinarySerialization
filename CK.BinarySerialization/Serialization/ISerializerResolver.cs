@@ -6,6 +6,12 @@ namespace CK.BinarySerialization
 {
     /// <summary>
     /// Finds a serializer for a type.
+    /// <para>
+    /// Not all the resolvers are the same: <see cref="BasicTypeSerializerRegistry.Instance"/> relies on 
+    /// immutable mappings and is exposed as a singleton, <see cref="SimpleBinarySerializableFactory"/> is 
+    /// a pure factory (doesn't cache its result) that relies on the <see cref="SharedBinarySerializerContext"/>
+    /// 
+    /// </para>
     /// </summary>
     public interface ISerializerResolver
     {
@@ -33,16 +39,16 @@ namespace CK.BinarySerialization
         /// <param name="r">This resolver.</param>
         /// <param name="t">The type for which a driver must be resolved.</param>
         /// <param name="nullable">
-        /// Requests the <see cref="INullableSerializationDriver"/> or <see cref="INonNullableSerializationDriver"/>
+        /// When not null, requests the <see cref="INullableSerializationDriver"/> or <see cref="INonNullableSerializationDriver"/>
         /// regardless of the nullability of type itself.
         /// </param>
         /// <returns>The driver or null.</returns>
-        public static ISerializationDriver? TryFindDriver( this ISerializerResolver r, Type t, bool nullable )
+        public static ISerializationDriver? TryFindDriver( this ISerializerResolver r, Type t, bool? nullable )
         {
             var d = r.TryFindDriver( t );
-            return d == null 
-                    ? null 
-                    : nullable
+            return d == null || !nullable.HasValue
+                    ? d 
+                    : nullable.Value
                         ? d.ToNullable
                         : d.ToNonNullable;
         }

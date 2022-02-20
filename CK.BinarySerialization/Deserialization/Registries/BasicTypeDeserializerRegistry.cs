@@ -5,6 +5,12 @@ using System.Text;
 
 namespace CK.BinarySerialization
 {
+    /// <summary>
+    /// Immutable singleton that contains default deserializers for well-known types.
+    /// <para>
+    /// A simple dictionary is enough since it is only read.
+    /// </para>
+    /// </summary>
     public class BasicTypeDeserializerRegistry : IDeserializerResolver
     {
         static readonly Dictionary<string, IDeserializationDriver> _byName;
@@ -14,37 +20,35 @@ namespace CK.BinarySerialization
         /// </summary>
         public static readonly IDeserializerResolver Instance = new BasicTypeDeserializerRegistry();
 
-        static BasicTypeDeserializerRegistry()
-        {
-            _byName = new Dictionary<string, IDeserializationDriver>();
-            Register( "string", new Deserialization.DString() );
-            Register( "bool", new Deserialization.DBool() );
-            Register( "int", new Deserialization.DInt32() );
-            Register( "uint", new Deserialization.DUInt32() );
-            Register( "sbyte", new Deserialization.DInt8() );
-            Register( "byte", new Deserialization.DUInt8() );
-            Register( "short", new Deserialization.DInt16() );
-            Register( "ushort", new Deserialization.DUInt16() );
-            Register( "long", new Deserialization.DInt64() );
-            Register( "ulong", new Deserialization.DUInt64() );
-            Register( "float", new Deserialization.DSingle() );
-            Register( "double", new Deserialization.DDouble() );
-            Register( "char", new Deserialization.DChar() );
-            Register( "DateTime", new Deserialization.DDateTime() );
-            Register( "DateTimeOffset", new Deserialization.DDateTimeOffset() );
-
-            void Register( string driverName, IDeserializationDriver driver )
-            {
-                _byName.Add( driverName, driver.ToNonNullable );
-                _byName.Add( driverName + '?', driver.ToNullable );
-            }
-        }
-
         BasicTypeDeserializerRegistry() { }
 
-        public IDeserializationDriver? TryFindDriver( TypeReadInfo info )
+        static BasicTypeDeserializerRegistry()
         {
-            return info.DriverName != null ? _byName.GetValueOrDefault( info.DriverName ) : null;
+            _byName = new Dictionary<string, IDeserializationDriver>()
+            {
+                { "string", new Deserialization.DString() },
+                { "byte[]", new Deserialization.DByteArray() },
+                { "bool", new Deserialization.DBool() },
+                { "int", new Deserialization.DInt32() },
+                { "uint", new Deserialization.DUInt32() },
+                { "sbyte", new Deserialization.DInt8() },
+                { "byte", new Deserialization.DUInt8() },
+                { "short", new Deserialization.DInt16() },
+                { "ushort", new Deserialization.DUInt16() },
+                { "long", new Deserialization.DInt64() },
+                { "ulong", new Deserialization.DUInt64() },
+                { "float", new Deserialization.DSingle() },
+                { "double", new Deserialization.DDouble() },
+                { "char", new Deserialization.DChar() },
+                { "DateTime", new Deserialization.DDateTime() },
+                { "DateTimeOffset", new Deserialization.DDateTimeOffset() },
+                { "TimeSpan", new Deserialization.DTimeSpan() },
+                { "Guid", new Deserialization.DGuid() },
+                { "decimal", new Deserialization.DDecimal() },
+            };
         }
+
+        public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info ) => _byName.GetValueOrDefault( info.DriverName );
+
     }
 }

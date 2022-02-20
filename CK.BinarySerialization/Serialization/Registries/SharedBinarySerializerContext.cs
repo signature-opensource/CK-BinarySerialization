@@ -7,50 +7,40 @@ using System.Text;
 namespace CK.BinarySerialization
 {
     /// <summary>
-    /// Thread safe composite implementation for <see cref="ISerializerResolver"/>.
+    /// Thread safe composite implementation for <see cref="ISerializerResolver"/> and concurrent 
+    /// cache of type to <see cref="ISerializationDriver"/> mappings.
+    /// <para>
+    /// Unresolved serializers are cached (by definitely storing a null driver): a driver must be resolved
+    /// the first time or it will never be by this shared context.
+    /// </para>
     /// </summary>
     public class SharedBinarySerializerContext : ISerializerResolver
     {
         ISerializerResolver[] _resolvers;
-        readonly ConcurrentDictionary<Type, ISerializationDriver> _typedDrivers;
+        readonly ConcurrentDictionary<Type, ISerializationDriver?> _typedDrivers;
         readonly ISerializerKnownObject _knownObjects;
 
         /// <summary>
-        /// Called by static BinarySerializer constructor to setup the <see cref="BinarySerializer.DefaultSharedContext"/>.
-        /// Only independent resolvers can be registered in this constructor: resolvers that depend
-        /// on the BinarySerializer.DefaultSharedContext cannot be referenced here and are 
-        /// registered after the instance creation.
-        /// </summary>
-        internal SharedBinarySerializerContext( int _ )
-        {
-            _knownObjects = SharedSerializerKnownObject.Default;
-            _typedDrivers = new ConcurrentDictionary<Type, ISerializationDriver>();
-            _resolvers = new ISerializerResolver[]
-            {
-                BasicTypeSerializerRegistry.Instance,
-                SimpleBinarySerializableRegistry.Instance,
-            };
-        }
-
-        /// <summary>
-        /// Initializes a new independent shared context bound to an independent <see cref="SharedSerializerKnownObject"/>, 
-        /// optionally with the <see cref="BasicTypeSerializerRegistry.Instance"/>, <see cref="SimpleBinarySerializableRegistry.Instance"/> 
-        /// and an independent <see cref="StandardGenericSerializerRegistry"/>.
+        /// Initializes a new independent shared context bound to a possibly independent <see cref="SharedSerializerKnownObject"/>, 
+        /// optionally with the <see cref="BasicTypeSerializerRegistry.Instance"/>, <see cref="SimpleBinarySerializableFactory.Instance"/> 
+        /// and a <see cref="StandardGenericSerializerFactory"/>.
         /// <para>
-        /// Caution: This is a completely independent shared cache: default comparers for dictionary keys will NOT be automatically
+        /// Caution: if <see cref="SharedSerializerKnownObject.Default"/> is not used, default comparers for dictionary keys will NOT be automatically
         /// registered in the <see cref="KnownObjects"/> (they are only automatically registered in <see cref="SharedSerializerKnownObject.Default"/>).
         /// </para>
         /// </summary>
-        public SharedBinarySerializerContext( bool useDefaultResolvers = true )
+        /// <param name="useDefaultResolvers">False to include no resolvers.</param>
+        /// <param name="knownObjects">By default the <see cref="SharedSerializerKnownObject.Default"/> is used.</param>
+        public SharedBinarySerializerContext( bool useDefaultResolvers = true, SharedSerializerKnownObject? knownObjects = null )
         {
-            _knownObjects = new SharedSerializerKnownObject();
-            _typedDrivers = new ConcurrentDictionary<Type, ISerializationDriver>();
+            _knownObjects = knownObjects ?? SharedSerializerKnownObject.Default;
+            _typedDrivers = new ConcurrentDictionary<Type, ISerializationDriver?>();
             _resolvers = useDefaultResolvers
                             ? new ISerializerResolver[]
                                 {
                                     BasicTypeSerializerRegistry.Instance,
-                                    SimpleBinarySerializableRegistry.Instance,
-                                    new StandardGenericSerializerRegistry( this )
+                                    SimpleBinarySerializableFactory.Instance,
+                                    new StandardGenericSerializerFactory( this )
                                 }
                             : Array.Empty<ISerializerResolver>();
         }
@@ -65,13 +55,20 @@ namespace CK.BinarySerialization
         {
             if( !_typedDrivers.TryGetValue( t, out var driver ) )
             {
-                foreach( var resolver in _resolvers )
+                // We avoid duplicate instantiation: as soon as a driver must be resolved
+                // we lock this shared context and rely on the reentrancy of the lock 
+                // to allow subordinate types resolution.
+                lock( _resolvers )
                 {
-                    driver = resolver.TryFindDriver( t );
-                    if( driver != null )
+                    // Double check the lock.
+                    if( !_typedDrivers.TryGetValue( t, out driver ) )
                     {
-                        _typedDrivers[ t ] = driver;
-                        break;
+                        foreach( var resolver in _resolvers )
+                        {
+                            driver = resolver.TryFindDriver( t );
+                            if( driver != null ) break;
+                        }
+                        _typedDrivers.TryAdd( t, driver );
                     }
                 }
             }

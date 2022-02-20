@@ -1,21 +1,29 @@
 ﻿using System;
+using System.Reflection;
 
 namespace CK.BinarySerialization
 {
 
     /// <summary>
-    /// Serializer for type <typeparamref name="T"/> that serializes nullable as well as non nullable instances.
+    /// Serializer for value type <typeparamref name="T"/> that must expose a static writer method:
+    /// <para>
+    /// <c>public static Write( IBinarySerializer s, in T o ) { ... }</c>
+    /// </para>
+    /// <para>
+    /// This is the most efficient driver implementation but it can be used only when writing the type 
+    /// doesn't require any states (typically like subordinated types drivers).
+    /// </para>
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
-    public abstract class ValueTypeSerializer<T> : IValueTypeNonNullableSerializationDriver<T> where T : struct
+    public abstract class StaticValueTypeSerializer<T> : IValueTypeNonNullableSerializationDriver<T> where T : struct
     {
-        sealed class ValueTypeNullable : IValueTypeNullableSerializationDriver<T>
+        class ValueTypeNullable : IValueTypeNullableSerializationDriver<T>
         {
-            readonly ValueTypeSerializer<T> _serializer;
+            readonly StaticValueTypeSerializer<T> _serializer;
             readonly UntypedWriter _uWriter;
             readonly TypedWriter<T?> _tWriter;
 
-            public ValueTypeNullable( ValueTypeSerializer<T> serializer )
+            public ValueTypeNullable( StaticValueTypeSerializer<T> serializer )
             {
                 _serializer = serializer;
                 DriverName = _serializer.DriverName + '?';
@@ -51,7 +59,7 @@ namespace CK.BinarySerialization
                 if( o.HasValue )
                 {
                     w.Writer.Write( (byte)SerializationMarker.Struct );
-                    _serializer.Write( w, o.Value );
+                    _serializer._tWriter( w, o.Value );
                 }
                 else
                 {
@@ -66,20 +74,38 @@ namespace CK.BinarySerialization
         readonly UntypedWriter _uWriter;
         readonly TypedWriter<T> _tWriter;
 
-        public ValueTypeSerializer()
+        /// <summary>
+        /// Initializes a <see cref="StaticValueTypeSerializer{T}"/> where the public static Write method must be 
+        /// declared in the specialized type.
+        /// </summary>
+        public StaticValueTypeSerializer()
         {
-            _nullable = new ValueTypeNullable( this );
-            _tWriter = Write;
+            _tWriter = GetTypedWriter( GetType() );
             _uWriter = WriteUntyped;
+            _nullable = new ValueTypeNullable( this );
         }
 
         /// <summary>
-        /// Must write the instance data.
+        /// Initializes a <see cref="StaticValueTypeSerializer{T}"/> where the public static Write method must be 
+        /// declared in the <paramref name="writerHost"/> type.
         /// </summary>
-        /// <param name="r">The binary reader.</param>
-        /// <param name="readInfo">The read type info.</param>
-        /// <returns>The new instance.</returns>
-        internal protected abstract void Write( IBinarySerializer w, in T o );
+        /// <param name="writerHost"></param>
+        public StaticValueTypeSerializer( Type writerHost )
+        {
+            _tWriter = GetTypedWriter( writerHost );
+            _uWriter = WriteUntyped;
+            _nullable = new ValueTypeNullable( this );
+        }
+
+        static TypedWriter<T> GetTypedWriter( Type writerHost )
+        {
+            var writer = writerHost.GetMethod( "Write", BindingFlags.Static | BindingFlags.DeclaredOnly | BindingFlags.Public, null, new[] { typeof( IBinarySerializer ), typeof( T ).MakeByRefType() }, null );
+            if( writer == null )
+            {
+                throw new InvalidOperationException( $"ValueTypeSerializer '{writerHost}' must have a public static Write( IBinarySerializer s, in {typeof( T ).Name} o ) static writer." );
+            }
+            return (TypedWriter<T>)writer.CreateDelegate( typeof( TypedWriter<T> ) );
+        }
 
         /// <inheritdoc />
         public Type Type => typeof( T );
@@ -87,8 +113,10 @@ namespace CK.BinarySerialization
         /// <inheritdoc />
         public bool IsNullable => false;
 
+        /// <inheritdoc />
         public UntypedWriter UntypedWriter => _uWriter;
 
+        /// <inheritdoc />
         public TypedWriter<T> TypedWriter => _tWriter;
 
         Delegate ISerializationDriver.TypedWriter => _tWriter;
@@ -103,12 +131,14 @@ namespace CK.BinarySerialization
 
         INonNullableSerializationDriver ISerializationDriver.ToNonNullable => this;
 
+        /// <inheritdoc />
         public abstract string DriverName { get; }
 
+        /// <inheritdoc />
         public abstract int SerializationVersion { get; }
 
-        void WriteUntyped( IBinarySerializer w, in object o ) => Write( w, (T)o );
+        void WriteUntyped( IBinarySerializer w, in object o ) => _tWriter( w, (T)o );
         
-        void INonNullableSerializationDriver.WriteObject( IBinarySerializer w, in object o ) => Write( w, (T)o );
+        void INonNullableSerializationDriver.WriteObject( IBinarySerializer w, in object o ) => _tWriter( w, (T)o );
     }
 }

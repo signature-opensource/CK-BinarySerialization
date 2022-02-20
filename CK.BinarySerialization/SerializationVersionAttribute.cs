@@ -25,7 +25,13 @@ namespace CK.BinarySerialization
         /// </summary>
         public int Version { get; }
 
-        internal static int GetRequiredVersion( Type t )
+        /// <summary>
+        /// Public helper that retrieves the version on a type or throws an <see cref="InvalidOperationException"/> if the 
+        /// attribute is not defined.
+        /// </summary>
+        /// <param name="t">The type that must be decorated with the SerializationVersion attribute.</param>
+        /// <returns>The version number.</returns>
+        public static int GetRequiredVersion( Type t )
         {
             var a = (SerializationVersionAttribute?)GetCustomAttribute( t, typeof( SerializationVersionAttribute ) );
             if( a == null ) throw new InvalidOperationException( $"Type '{t}' must be decorated with a [SerializationVersion()] attribute." );

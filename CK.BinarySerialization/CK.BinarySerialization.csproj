@@ -14,10 +14,6 @@
 <!---->  </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="UnifiedTypes\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="Deserialization\Drivers\DDTuple.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>DDTuple.cs</LastGenOutput>

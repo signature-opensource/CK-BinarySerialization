@@ -38,7 +38,7 @@ namespace CK.BinarySerialization.Deserialization
             _item1 = (TypedReader<T1>)d[0];
         }
 
-        protected override ValueTuple<T1> ReadInstance( IBinaryDeserializer d, TypeReadInfo info )
+        protected override ValueTuple<T1> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )
         {
             return new ValueTuple<T1>( _item1( d, info.SubTypes[0] ) );
         }
@@ -79,7 +79,7 @@ readonly TypedReader<T2> _item2;
 _item2 = (TypedReader<T2>)d[1];
         }
 
-        protected override ValueTuple<T1, T2> ReadInstance( IBinaryDeserializer d, TypeReadInfo info )
+        protected override ValueTuple<T1, T2> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )
         {
             return new ValueTuple<T1, T2>( _item1( d, info.SubTypes[0] ),
 _item2( d, info.SubTypes[1] ) );
@@ -126,7 +126,7 @@ _item2 = (TypedReader<T2>)d[1];
 _item3 = (TypedReader<T3>)d[2];
         }
 
-        protected override ValueTuple<T1, T2, T3> ReadInstance( IBinaryDeserializer d, TypeReadInfo info )
+        protected override ValueTuple<T1, T2, T3> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )
         {
             return new ValueTuple<T1, T2, T3>( _item1( d, info.SubTypes[0] ),
 _item2( d, info.SubTypes[1] ),
@@ -179,7 +179,7 @@ _item3 = (TypedReader<T3>)d[2];
 _item4 = (TypedReader<T4>)d[3];
         }
 
-        protected override ValueTuple<T1, T2, T3, T4> ReadInstance( IBinaryDeserializer d, TypeReadInfo info )
+        protected override ValueTuple<T1, T2, T3, T4> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )
         {
             return new ValueTuple<T1, T2, T3, T4>( _item1( d, info.SubTypes[0] ),
 _item2( d, info.SubTypes[1] ),
@@ -238,7 +238,7 @@ _item4 = (TypedReader<T4>)d[3];
 _item5 = (TypedReader<T5>)d[4];
         }
 
-        protected override ValueTuple<T1, T2, T3, T4, T5> ReadInstance( IBinaryDeserializer d, TypeReadInfo info )
+        protected override ValueTuple<T1, T2, T3, T4, T5> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )
         {
             return new ValueTuple<T1, T2, T3, T4, T5>( _item1( d, info.SubTypes[0] ),
 _item2( d, info.SubTypes[1] ),
@@ -303,7 +303,7 @@ _item5 = (TypedReader<T5>)d[4];
 _item6 = (TypedReader<T6>)d[5];
         }
 
-        protected override ValueTuple<T1, T2, T3, T4, T5, T6> ReadInstance( IBinaryDeserializer d, TypeReadInfo info )
+        protected override ValueTuple<T1, T2, T3, T4, T5, T6> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )
         {
             return new ValueTuple<T1, T2, T3, T4, T5, T6>( _item1( d, info.SubTypes[0] ),
 _item2( d, info.SubTypes[1] ),
@@ -374,7 +374,7 @@ _item6 = (TypedReader<T6>)d[5];
 _item7 = (TypedReader<T7>)d[6];
         }
 
-        protected override ValueTuple<T1, T2, T3, T4, T5, T6, T7> ReadInstance( IBinaryDeserializer d, TypeReadInfo info )
+        protected override ValueTuple<T1, T2, T3, T4, T5, T6, T7> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )
         {
             return new ValueTuple<T1, T2, T3, T4, T5, T6, T7>( _item1( d, info.SubTypes[0] ),
 _item2( d, info.SubTypes[1] ),

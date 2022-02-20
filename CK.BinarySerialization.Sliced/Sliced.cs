@@ -12,7 +12,5 @@ namespace CK.BinarySerialization
         public static readonly Sliced Instance = new Sliced();
 
         Sliced() {}
-
-
     }
 }

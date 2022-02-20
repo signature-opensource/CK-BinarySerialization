@@ -10,7 +10,6 @@ namespace CK.BinarySerialization.Tests
     [TestFixture]
     public class CollectionSerializationTests
     {
-
         [Test]
         public void value_type_array_serialization()
         {
