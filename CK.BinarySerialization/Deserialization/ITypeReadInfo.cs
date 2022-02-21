@@ -36,6 +36,7 @@ namespace CK.BinarySerialization
 
         /// <summary>
         /// Gets the base type information if any (root object and ValueType are skipped).
+        /// This base type is non nullable.
         /// </summary>
         ITypeReadInfo? BaseTypeReadInfo { get; }
 
@@ -95,9 +96,17 @@ namespace CK.BinarySerialization
         Type ResolveLocalType();
 
         /// <summary>
+        /// Gets the type's path from the first base that is not Object nor ValueType
+        /// up to and including this one.
+        /// Base types are non nullable.
+        /// </summary>
+        IReadOnlyList<ITypeReadInfo> TypePath { get; }
+
+        /// <summary>
         /// Gets whether a deserialization driver has been resolved.
         /// </summary>
         bool HasResolvedDeserializationDriver { get; }
+
         /// <summary>
         /// Gets the deserialization driver. If the type cannot be 
         /// locally resolved or a driver cannot be resolved, an exception is thrown.

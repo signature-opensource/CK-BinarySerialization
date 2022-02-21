@@ -25,8 +25,9 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Public cache for drivers that depend only on the local type to deserialize.
         /// This is the case for <see cref="ICKSimpleBinarySerializable"/>, <see cref="ICKVersionedBinarySerializable"/>
-        /// and other like the "Sliced" serialization. Since deserialization context is irrelevant for these
-        /// drivers, this dictionary is exposed to avoid creating too much concurrent dictionaries.
+        /// and may be the case for others like the "Sliced" serialization.
+        /// Since deserialization context is irrelevant for these drivers, this dictionary is exposed to avoid 
+        /// creating too much concurrent dictionaries.
         /// </summary>
         static public readonly ConcurrentDictionary<Type, IDeserializationDriver> PureLocalTypeDependentDrivers = new();
 

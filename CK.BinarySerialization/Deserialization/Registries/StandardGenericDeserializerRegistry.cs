@@ -19,13 +19,12 @@ namespace CK.BinarySerialization
     /// </summary>
     public sealed class StandardGenericDeserializerRegistry : IDeserializerResolver
     {
-        // We cannot use the final Type as a key: a List<Car> may be deserialized as a 
-        // List<SuperCar>.
+        // Caching here relies on the subordinated deserializers and the generic type to synthesize.
         // We can use a simple ConcurrentDictionary and its simple GetOrAdd method since 2
-        // deserializers of the same TypeReadInfo are identical: we can accept the concurrency issue
+        // deserializers with the same subordinated deserializers: we can accept the concurrency issue
         // and duplicated calls to create functions (this should barely happen) and the GetOrAdd will
         // always return the winner.
-        // The key is an object that contains the resolved items drivers (and may be an
+        // The key is an object that contains the resolved subordinated items drivers (and may be an
         // optional type indicator) to the resolved driver.
         // Only if all the subtypes drivers are available do we build the final driver.
         // This lookup obviously costs but this is done only once per deserialization session
@@ -33,7 +32,7 @@ namespace CK.BinarySerialization
         // The object key is:
         //  - The (Type LocalType, IDeserializationDriver WrittenUnderlyingDriverType) for an enum: the target enum
         //    must exist locally but its current underlying type may not be the same as the written one.
-        //  - TupleKey below for ValueTuple and Tuple.
+        //  - TupleKey (see below) for ValueTuple and Tuple.
         //  - Boxed ValueTuple for other types:
         //     - (IDeserializationDriver Item, int Rank) for array (Rank >= 1).
         //     - (IDeserializationDriver Item, Type D) where D is the generic type definition for DList<>, DStack<> or DQueue<>.  

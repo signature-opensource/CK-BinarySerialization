@@ -19,6 +19,7 @@ namespace CK.BinarySerialization
         IDeserializationDriver? _driver;
         Type? _localType;
         Mutable? _mutating;
+        ITypeReadInfo[]? _typePath;
 
         bool _hooked;
         bool _driverLookupDone;
@@ -147,7 +148,6 @@ namespace CK.BinarySerialization
 
         public ITypeReadInfo ToNonNullable => this;
 
-
         public string TypeNamespace { get; private set; }
 
         public string TypeName { get; private set; }
@@ -161,6 +161,34 @@ namespace CK.BinarySerialization
         public ITypeReadInfo? BaseTypeReadInfo { get; private set; }
 
         public IReadOnlyList<ITypeReadInfo> SubTypes { get; private set; }
+
+        public IReadOnlyList<ITypeReadInfo> TypePath 
+        { 
+            get
+            {
+                if( _typePath == null )
+                {
+                    if( BaseTypeReadInfo == null )
+                    {
+                        _typePath = new ITypeReadInfo[] { this };
+                    }
+                    else
+                    {
+                        List<ITypeReadInfo> p = new() { this };
+                        var a = BaseTypeReadInfo;
+                        while( a != null )
+                        {
+                            p.Add( a );
+                            a = a.BaseTypeReadInfo;
+                        }
+                        _typePath = new ITypeReadInfo[p.Count];
+                        p.CopyTo( _typePath );
+                        Array.Reverse( _typePath );
+                    }
+                }
+                return _typePath;
+            }
+        }
 
         public Type? TryResolveLocalType()
         {

@@ -11,6 +11,7 @@ namespace CK.BinarySerialization
     {
         ITypeReadInfo _nonNull;
         Type? _localType;
+        ITypeReadInfo[]? _typePath;
 
         internal void Init( ITypeReadInfo nonNull ) => _nonNull = nonNull;
 
@@ -23,6 +24,27 @@ namespace CK.BinarySerialization
         public int ArrayRank => _nonNull.ArrayRank;
 
         public ITypeReadInfo? BaseTypeReadInfo => _nonNull.BaseTypeReadInfo;
+
+        public IReadOnlyList<ITypeReadInfo> TypePath
+        {
+            get
+            {
+                if( _typePath == null )
+                {
+                    if( BaseTypeReadInfo == null )
+                    {
+                        _typePath = new ITypeReadInfo[] { this };
+                    }
+                    else
+                    {
+                        var pN = (ITypeReadInfo[])_nonNull.TypePath;
+                        _typePath = new ITypeReadInfo[pN.Length];
+                        _typePath[_typePath.Length-1] = this;
+                    }
+                }
+                return _typePath;
+            }
+        }
 
         public string? DriverName => _nonNull.DriverName;
 
