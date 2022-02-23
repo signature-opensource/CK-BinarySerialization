@@ -29,13 +29,20 @@ namespace CK.BinarySerialization.Deserialization
             int len = r.Reader.ReadNonNegativeSmallInt32();
             var (d,dict) = r.SetInstance( d =>
             {
+                d.DebugCheckSentinel();
                 var comparer = d.ReadObject<IEqualityComparer<TKey>>();
+                d.DebugCheckSentinel();
                 return new Dictionary<TKey, TValue>( len, comparer );
             } );
+            var kInfo = r.ReadInfo.SubTypes[0];
+            var vInfo = r.ReadInfo.SubTypes[1];
             while( --len >= 0 )
             {
-                dict.Add( _key( d, r.ReadInfo.SubTypes[0] ), _value( d, r.ReadInfo.SubTypes[1] ) );
+                d.DebugCheckSentinel();
+                dict.Add( _key( d, kInfo ), _value( d, vInfo ) );
+                d.DebugCheckSentinel();
             }
+            d.DebugCheckSentinel();
         }
     }
 }

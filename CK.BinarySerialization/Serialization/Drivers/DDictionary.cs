@@ -22,15 +22,20 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        internal protected override void Write( IBinarySerializer w, in Dictionary<TKey, TValue> o )
+        internal protected override void Write( IBinarySerializer s, in Dictionary<TKey, TValue> o )
         {
-            w.Writer.WriteNonNegativeSmallInt32( o.Count );
-            w.WriteObject( o.Comparer );
+            s.Writer.WriteNonNegativeSmallInt32( o.Count );
+            s.DebugWriteSentinel();
+            s.WriteObject( o.Comparer );
+            s.DebugWriteSentinel();
             foreach( var kv in o )
             {
-                _key( w, kv.Key );
-                _value( w, kv.Value );
+                s.DebugWriteSentinel();
+                _key( s, kv.Key );
+                _value( s, kv.Value );
+                s.DebugWriteSentinel();
             }
+            s.DebugWriteSentinel();
         }
     }
 }

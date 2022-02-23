@@ -56,13 +56,13 @@ namespace CK.BinarySerialization.Tests
             Type backO = (Type)TestHelper.SaveAndLoadObject( t );
             backO.Should().BeSameAs( t );
 
-            Type tRef = t.MakeByRefType();
-            Type backRef = (Type)TestHelper.SaveAndLoadObject( tRef );
-            backRef.Should().BeSameAs( tRef );
+            //Type tRef = t.MakeByRefType();
+            //Type backRef = (Type)TestHelper.SaveAndLoadObject( tRef );
+            //backRef.Should().BeSameAs( tRef );
 
-            Type tPointer = t.MakePointerType();
-            Type backPointer = (Type)TestHelper.SaveAndLoadObject( tPointer );
-            backPointer.Should().BeSameAs( tPointer );
+            //Type tPointer = t.MakePointerType();
+            //Type backPointer = (Type)TestHelper.SaveAndLoadObject( tPointer );
+            //backPointer.Should().BeSameAs( tPointer );
         }
 
         [Test]

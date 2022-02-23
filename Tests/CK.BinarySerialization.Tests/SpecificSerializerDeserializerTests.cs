@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using CK.Core;
 using static CK.Testing.MonitorTestHelper;
 using FluentAssertions;
+using System.Diagnostics;
 
 namespace CK.BinarySerialization.Tests
 {
@@ -61,5 +62,61 @@ namespace CK.BinarySerialization.Tests
             back.Should().BeEquivalentTo( n1, options => options.IgnoringCyclicReferences() );
         }
 
+        class NodeRoot
+        {
+            public Node? FirstRoot { get; set; }
+            public Node? SecondRoot { get; set; }
+            public List<Node>? Nodes { get; set; }
+        }
+
+        class NodeRootSerializer : ReferenceTypeSerializer<NodeRoot>
+        {
+            public override string DriverName => "NodeRoot";
+
+            public override int SerializationVersion => 0;
+
+            protected override void Write( IBinarySerializer w, in NodeRoot o )
+            {
+                w.WriteNullableObject( o.FirstRoot );
+                w.WriteNullableObject( o.SecondRoot );
+                w.WriteNullableObject( o.Nodes );
+            }
+        }
+
+        class NodeRootDeserializer : ReferenceTypeDeserializer<NodeRoot>
+        {
+            protected override void ReadInstance( ref RefReader r )
+            {
+                r.ReadInfo.SerializationVersion.Should().Be( 0 );
+                var n = new NodeRoot();
+                var d = r.SetInstance( n );
+                n.FirstRoot = d.ReadNullableObject<Node>();
+                n.SecondRoot = d.ReadNullableObject<Node>();
+                n.Nodes = d.ReadNullableObject<List<Node>>();
+            }
+        }
+
+        [Test]
+        public void list_of_references()
+        {
+            var root = new NodeRoot();
+            root.FirstRoot = new Node { Name = "n°1" };
+            root.SecondRoot = new Node { Name = "n°2" };
+            root.Nodes = new List<Node> { root.FirstRoot, root.SecondRoot };
+
+            var sC = new BinarySerializerContext( new SharedBinarySerializerContext() );
+            sC.Shared.AddSerializationDriver( typeof( Node ), new NodeSerializer() );
+            sC.Shared.AddSerializationDriver( typeof( NodeRoot ), new NodeRootSerializer() );
+
+            var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
+            dC.Shared.AddLocalTypeDeserializer( new NodeDeserializer() );
+            dC.Shared.AddLocalTypeDeserializer( new NodeRootDeserializer() );
+
+            NodeRoot back = TestHelper.SaveAndLoadObject( root, sC, dC );
+            back.Should().BeEquivalentTo( root );
+            Debug.Assert( back.Nodes != null && back.Nodes.Count == 2 );
+            back.Nodes[0].Should().BeSameAs( back.FirstRoot );
+            back.Nodes[1].Should().BeSameAs( back.SecondRoot );
+        }
     }
 }

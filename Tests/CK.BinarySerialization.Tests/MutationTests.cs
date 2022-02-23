@@ -19,7 +19,7 @@ namespace CK.BinarySerialization.Tests
         public void enum_renamed_and_moved()
         {
             var o = GrantLevel.Administrator;
-            
+
             static void SetNewLocalType( IMutableTypeReadInfo i )
             {
                 if( i.ReadInfo.AssemblyName == "CK.Core" && i.ReadInfo.TypeName == "GrantLevel" )
@@ -104,5 +104,99 @@ namespace CK.BinarySerialization.Tests
             back.Should().Be( NowItsAInt.FitInByte );
         }
 
+        [SerializationVersion( 0 )]
+        struct ThingStruct : ICKVersionedBinarySerializable
+        {
+            public readonly string Name;
+
+            public ThingStruct( string name )
+            {
+                Name = name;
+            }
+
+            public ThingStruct( ICKBinaryReader r, int version )
+            {
+                Name = r.ReadString();
+            }
+
+            public void Write( ICKBinaryWriter w )
+            {
+                w.Write( Name );
+            }
+        }
+
+        [SerializationVersion( 0 )]
+        sealed class ThingSealedClass : ICKVersionedBinarySerializable
+        {
+            public string Name { get; }
+
+            public ThingSealedClass( string name )
+            {
+                Name = name;
+            }
+
+            public ThingSealedClass( ICKBinaryReader r, int version )
+            {
+                Name = r.ReadString();
+            }
+
+            public void Write( ICKBinaryWriter w )
+            {
+                w.Write( Name );
+            }
+        }
+
+
+        [Test]
+        public void from_struct_to_sealed_class_using_ICKVersionedBinarySerializable()
+        {
+            static void SetNewLocalType( IMutableTypeReadInfo i )
+            {
+                if( i.ReadInfo.TypeName == "MutationTests+ThingStruct" )
+                {
+                    i.SetLocalType( typeof( ThingSealedClass ) );
+                }
+            }
+            var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
+            dC.Shared.AddDeserializationHook( SetNewLocalType );
+
+            var t = new ThingStruct( "Spi" );
+            object backT = TestHelper.SaveAndLoadAny( t, deserializerContext: dC );
+            var tC = (ThingSealedClass)backT;
+            tC.Name.Should().Be( t.Name );
+
+            var tA = new ThingStruct[] { new ThingStruct( "n°1" ), new ThingStruct( "n°2" ) };
+            object backA = TestHelper.SaveAndLoadAny( tA, deserializerContext: dC );
+            var tAC = (ThingSealedClass[])backA;
+            tAC.Length.Should().Be( 2 );
+            tAC[0].Name.Should().Be( tA[0].Name );
+            tAC[1].Name.Should().Be( tA[1].Name );
+        }
+
+        [Test]
+        public void from_sealed_class_to_nullable_struct_using_ICKVersionedBinarySerializable()
+        {
+            static void SetNewLocalType( IMutableTypeReadInfo i )
+            {
+                if( i.ReadInfo.TypeName == "MutationTests+ThingSealedClass" )
+                {
+                    i.SetLocalType( typeof( ThingStruct ) );
+                }
+            }
+            var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
+            dC.Shared.AddDeserializationHook( SetNewLocalType );
+
+            var t = new ThingSealedClass( "Spi" );
+            object backT = TestHelper.SaveAndLoadAny( t, deserializerContext: dC );
+            var tC = (ThingStruct)backT;
+            tC.Name.Should().Be( t.Name );
+
+            var tA = new ThingSealedClass[] { new ThingSealedClass( "n°1" ), new ThingSealedClass( "n°2" ) };
+            object backA = TestHelper.SaveAndLoadAny( tA, deserializerContext: dC );
+            var tAC = (ThingStruct?[])backA;
+            tAC.Length.Should().Be( 2 );
+            tAC[0]!.Value.Name.Should().Be( tA[0].Name );
+            tAC[1]!.Value.Name.Should().Be( tA[1].Name );
+        }
     }
 }

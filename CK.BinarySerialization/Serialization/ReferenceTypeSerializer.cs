@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace CK.BinarySerialization
 {
@@ -6,7 +7,7 @@ namespace CK.BinarySerialization
     /// Serializer for reference type <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
-    public abstract class ReferenceTypeSerializer<T> : IReferenceTypeNonNullableSerializationDriver<T> where T : class
+    public abstract class ReferenceTypeSerializer<T> : INonNullableSerializationDriverInternal, IReferenceTypeNonNullableSerializationDriver<T> where T : class
     {
         sealed class ReferenceTypeNullable : IReferenceTypeNullableSerializationDriver<T>
         {
@@ -48,8 +49,7 @@ namespace CK.BinarySerialization
             {
                 if( o != null )
                 {
-                    w.Writer.Write( (byte)SerializationMarker.Object );
-                    _serializer.Write( w, o );
+                    _serializer.WriteRefOrInstance( w, o );
                 }
                 else
                 {
@@ -62,22 +62,34 @@ namespace CK.BinarySerialization
 
         readonly ReferenceTypeNullable _nullable;
         readonly UntypedWriter _uWriter;
+        readonly UntypedWriter _noRefWriter;
         readonly TypedWriter<T> _tWriter;
 
         public ReferenceTypeSerializer()
         {
-            _uWriter = WriteUntyped;
-            _tWriter = Write;
+            _noRefWriter = WriteObjectData;
+            _uWriter = WriteUntypedRefOrInstance;
+            _tWriter = WriteRefOrInstance;
             _nullable = new ReferenceTypeNullable( this );
+        }
+
+        void WriteUntypedRefOrInstance( IBinarySerializer w, in object o ) => WriteRefOrInstance( w, (T)o );
+
+        void WriteRefOrInstance( IBinarySerializer s, in T o )
+        {
+            if( Unsafe.As<BinarySerializerImpl>( s ).TrackObject( o ) )
+            {
+                s.Writer.Write( (byte)SerializationMarker.Object );
+                Write( s, o );  
+            }
         }
 
         /// <summary>
         /// Must write the instance data.
         /// </summary>
-        /// <param name="r">The binary reader.</param>
-        /// <param name="readInfo">The read type info.</param>
-        /// <returns>The new instance.</returns>
-        internal protected abstract void Write( IBinarySerializer w, in T o );
+        /// <param name="s">The binary serializer.</param>
+        /// <param name="o">The instance to write.</param>
+        internal protected abstract void Write( IBinarySerializer s, in T o );
 
         /// <inheritdoc />
         public Type Type => typeof( T );
@@ -93,6 +105,9 @@ namespace CK.BinarySerialization
 
         Delegate ISerializationDriver.TypedWriter => _tWriter;
 
+        UntypedWriter INonNullableSerializationDriverInternal.NoRefNoNullWriter => _noRefWriter;
+
+
         /// <inheritdoc />
         public IReferenceTypeNullableSerializationDriver<T> ToNullable => _nullable;
 
@@ -107,8 +122,8 @@ namespace CK.BinarySerialization
 
         public abstract int SerializationVersion { get; }
 
-        void WriteUntyped( IBinarySerializer w, in object o ) => Write( w, (T)o );
+        void WriteObjectData( IBinarySerializer w, in object o ) => Write( w, (T)o );
 
-        void INonNullableSerializationDriver.WriteObject( IBinarySerializer w, in object o) => Write( w, (T)o );
+        //void INonNullableSerializationDriver.WriteObject( IBinarySerializer w, in object o) => Write( w, (T)o );
     }
 }

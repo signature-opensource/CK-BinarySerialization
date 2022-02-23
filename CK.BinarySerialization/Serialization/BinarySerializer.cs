@@ -115,6 +115,38 @@ namespace CK.BinarySerialization
             }
         }
 
+
+        public sealed class IdempotenceCheckResult
+        {
+            /// <summary>
+            /// Always null if <c>throwOnFailure</c> parameter is true.
+            /// Contains the exception otherwise.
+            /// </summary>
+            public Exception? Error { get; }
+            
+            /// <summary>
+            /// Gets whether there is no <see cref="Error"/>.
+            /// </summary>
+            public bool Success => Error == null;
+
+            /// <summary>
+            /// Gets the <see cref="IDestroyable"/> objects that has a true <see cref="IDestroyable.IsDestroyed"/>.
+            /// </summary>
+            public IReadOnlyList<IDestroyable> DestroyedObjects { get; }
+
+            /// <summary>
+            /// Gets the total number of serialized bytes.
+            /// </summary>
+            public int ByteLength { get; }
+
+            internal IdempotenceCheckResult( IReadOnlyList<IDestroyable> d, int length, Exception? ex )
+            {
+                Error = ex;
+                DestroyedObjects = d;
+                ByteLength = length;
+            }
+        }
+
         /// <summary>
         /// Magic yet simple helper to check the serialization implementation: the object (and potentially the whole graph behind)
         /// is serialized then deserialized and the result of the deserialization is then serialized again but in a special stream
@@ -124,12 +156,15 @@ namespace CK.BinarySerialization
         /// <param name="serializerContext">Optional serializer context.</param>
         /// <param name="deserializerContext">Optional deserializer context.</param>
         /// <param name="throwOnFailure">False to log silently fail and return false.</param>
-        /// <returns>True on success, false on error (if <paramref name="throwOnFailure"/> is false).</returns>
-        public static bool IdempotenceCheck( object o, 
-                                             BinarySerializerContext? serializerContext = null,
-                                             BinaryDeserializerContext? deserializerContext = null, 
-                                             bool throwOnFailure = true )
+        /// <returns>The result.</returns>
+        public static IdempotenceCheckResult IdempotenceCheck( object o, 
+                                                               BinarySerializerContext? serializerContext = null,
+                                                               BinaryDeserializerContext? deserializerContext = null, 
+                                                               bool throwOnFailure = true )
         {
+            Exception? error = null;
+            List<IDestroyable> destroyed = new();
+            int size = 0;
             try
             {
                 if( serializerContext == null ) serializerContext = new BinarySerializerContext();
@@ -137,28 +172,32 @@ namespace CK.BinarySerialization
                 {
                     using( var w = Create( s, true, serializerContext ) )
                     {
+                        w.OnDestroyedObject += destroyed.Add;
+                        w.DebugWriteMode( true );
                         w.WriteAny( o );
                     }
                     var originalBytes = s.ToArray();
+                    size = originalBytes.Length;
                     s.Position = 0;
                     using( var r = BinaryDeserializer.Create( s, true, deserializerContext ?? new BinaryDeserializerContext() ) )
                     {
+                        r.DebugReadMode();
                         var o2 = r.ReadAny();
                         using( var checker = new CheckedWriteStream( originalBytes ) )
                         using( var w2 = Create( s, true, serializerContext ) )
                         {
+                            w2.DebugWriteMode( true );
                             w2.WriteObject( o2 );
                         }
                     }
-
                 }
-                return true;
             }
-            catch
+            catch( Exception ex )
             {
                 if( throwOnFailure ) throw;
+                error = ex;
             }
-            return false;
+            return new IdempotenceCheckResult( destroyed, size, error );
         }
 
     }

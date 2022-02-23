@@ -5,11 +5,11 @@
     /// </summary>
     public interface INonNullableSerializationDriver : ISerializationDriver
     {
-        /// <summary>
-        /// Writes the untyped object.
-        /// </summary>
-        /// <param name="w">The serializer.</param>
-        /// <param name="o">The object instance.</param>
-        void WriteObject( IBinarySerializer w, in object o );
+        ///// <summary>
+        ///// Writes the untyped object.
+        ///// </summary>
+        ///// <param name="w">The serializer.</param>
+        ///// <param name="o">The object instance.</param>
+        //void WriteObject( IBinarySerializer w, in object o );
     }
 }

@@ -17,7 +17,7 @@ namespace CK.BinarySerialization
 
         public const int MaxRecurse = 50;
         int _recurseCount;
-        Stack<(ISerializationDriver D, object O)>? _deferred;
+        Stack<(INonNullableSerializationDriverInternal D, object O)>? _deferred;
 
         int _debugModeCounter;
         int _debugSentinel;
@@ -70,16 +70,13 @@ namespace CK.BinarySerialization
                 _writer.WriteNonNegativeSmallInt32( i.Item1 );
             }
 
-            bool WriteElementTypeInfo( Type t, bool mustExist )
+            bool WriteElementTypeInfo( Type t )
             {
                 Type? e = t.GetElementType();
                 if( e == null || e.IsGenericParameter )
                 {
-                    if( mustExist ) throw new ArgumentException( $"Type '{t}' is not supported. Its ElementType must be not null and must not be IsGenericParameter." );
-                    _writer.Write( false );
-                    return false;
+                    throw new ArgumentException( $"Type '{t}' is not supported. Its ElementType must be not null and must not be IsGenericParameter." );
                 }
-                if( !mustExist ) _writer.Write( true );
                 WriteTypeInfo( e );
                 return true;
             }
@@ -95,18 +92,16 @@ namespace CK.BinarySerialization
             // Handles special types that have no drivers nor base types.
             if( t.IsPointer )
             {
-                _writer.Write( (byte)'!' );
                 RegisterAndWriteIndex( nT, null );
-                _writer.Write( (byte)5 );
-                WriteElementTypeInfo( t, true );
+                _writer.Write( (byte)'P' );
+                WriteElementTypeInfo( t );
                 return true;
             }
             if( t.IsByRef )
             {
-                _writer.Write( (byte)'!' );
                 RegisterAndWriteIndex( nT, null );
-                _writer.Write( (byte)4 );
-                WriteElementTypeInfo( t, true );
+                _writer.Write( (byte)'R' );
+                WriteElementTypeInfo( t );
                 return true;
             }
             // Now we may have a driver names.
@@ -124,29 +119,49 @@ namespace CK.BinarySerialization
                 WriteTypeInfo( nT.ToNonNullable(), driver?.ToNonNullable, true );
                 return true;
             }
-            // Now we only write the non nullable info after a '!'.
-            _writer.Write( (byte)'!' );
+            // Now we only write the non nullable info after a byte
+            // that qualifies the type.
             if( t.IsArray )
             {
-                _writer.Write( (byte)3 );
-                _writer.WriteSmallInt32( t.GetArrayRank(), 1 );
-                if( WriteElementTypeInfo( t, false ) )
+                if( t.ContainsGenericParameters )
                 {
+                    _writer.Write( (byte)'A' );
+                    _writer.WriteSmallInt32( t.GetArrayRank(), 1 );
+                }
+                else
+                {
+                    _writer.Write( (byte)'a' );
+                    _writer.WriteSmallInt32( t.GetArrayRank(), 1 );
+                    WriteElementTypeInfo( t );
                     _writer.WriteSharedString( driver?.DriverName );
                 }
                 return true;
             }
             if( t.IsGenericType )
             {
-                _writer.Write( (byte)2 );
                 // For Generics we consider only Opened vs. Closed ones.
                 if( t.ContainsGenericParameters )
                 {
-                    // There's at least one free parameter T: it's not closed.
-                    _writer.WriteNonNegativeSmallInt32( 0 );
+                    _writer.Write( (byte)'O' );
                 }
                 else
                 {
+                    // Use uppercase for generic types.
+                    if( t.IsClass )
+                    {
+                        if( t.IsSealed )
+                        {
+                            _writer.Write( (byte)'S' );
+                        }
+                        else
+                        {
+                            _writer.Write( (byte)'C' );
+                        }
+                    }
+                    else
+                    {
+                        _writer.Write( (byte)'V' );
+                    }
                     var args = t.GetGenericArguments();
                     // Currently we work in oblivious nullable mode: all reference types are de facto nullable,
                     // except one: the dictionary key.
@@ -168,12 +183,27 @@ namespace CK.BinarySerialization
             }
             else if( t.IsEnum )
             {
-                _writer.Write( (byte)1 );
+                _writer.Write( (byte)'E' );
                 WriteTypeInfo( t.GetEnumUnderlyingType() );
             }
             else
             {
-                _writer.Write( (byte)0 );
+                // Uses lowercase for non generic types.
+                if( t.IsClass )
+                {
+                    if( t.IsSealed )
+                    {
+                        _writer.Write( (byte)'s' );
+                    }
+                    else
+                    {
+                        _writer.Write( (byte)'c' );
+                    }
+                }
+                else
+                {
+                    _writer.Write( (byte)'v' );
+                }
             }
             // Write Names.
             if( driver != null )
@@ -188,12 +218,7 @@ namespace CK.BinarySerialization
             _writer.WriteSharedString( t.Namespace );
             _writer.Write( GetNotSoSimpleName( t ) );
             _writer.WriteSharedString( t.Assembly.GetName().Name );
-            // Write base types recursively. Skip it for enum only.
-            // We don't tag ValueType (to KISS since it would require a bit flag rather
-            // than a simple enumeration) and deserialization should be able to handle
-            // as transparently as possible struct/class changes and SerializationMarker
-            // does this job.
-            if( !t.IsEnum )
+            if( !t.IsValueType )
             {
                 var b = t.BaseType;
                 if( b != null && b != typeof( object ) && b != typeof( ValueType ) )
@@ -247,7 +272,7 @@ namespace CK.BinarySerialization
             return DoWriteObject( o );
         }
 
-        bool TrackObject<T>( T o ) where T : class
+        internal bool TrackObject<T>( T o ) where T : class
         {
             if( _seen.TryGetValue( o, out var num ) )
             {
@@ -293,12 +318,12 @@ namespace CK.BinarySerialization
             {
                 marker = SerializationMarker.Struct;
             }
-            ISerializationDriver driver = _context.FindDriver( t ).ToNonNullable;
+            var driver = (INonNullableSerializationDriverInternal)_context.FindDriver( t ).ToNonNullable;
             if( _recurseCount > MaxRecurse 
                 && marker == SerializationMarker.Object
                 && driver is ISerializationDriverAllowDeferredRead )
             {
-                if( _deferred == null ) _deferred = new Stack<(ISerializationDriver D, object O)>( 200 );
+                if( _deferred == null ) _deferred = new Stack<(INonNullableSerializationDriverInternal D, object O)>( 200 );
                 _deferred.Push( (driver, o) );
                 _writer.Write( (byte)SerializationMarker.DeferredObject );
                 WriteTypeInfo( new NullableTypeRoot( driver.Type, false ), driver, true );
@@ -308,7 +333,7 @@ namespace CK.BinarySerialization
                 ++_recurseCount;
                 _writer.Write( (byte)marker );
                 WriteTypeInfo( new NullableTypeRoot( driver.Type, false ), driver, true );
-                driver.UntypedWriter( this, o );
+                driver.NoRefNoNullWriter( this, o );
                 --_recurseCount;
             }
             if( _recurseCount == 0 && _deferred != null )
@@ -316,7 +341,7 @@ namespace CK.BinarySerialization
                 while( _deferred.TryPop( out var d ) )
                 {
                     ++_recurseCount;
-                    d.D.UntypedWriter( this, d.O );
+                    d.D.NoRefNoNullWriter( this, d.O );
                     --_recurseCount;
                 }
             }

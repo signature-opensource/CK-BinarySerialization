@@ -71,28 +71,6 @@ namespace CK.BinarySerialization
             protected override T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => _factory( d, readInfo );
         }
 
-        sealed class SlicedDeserializerDriverR<T> : ReferenceTypeDeserializer<T>, IDeserializationDeferredDriver where T : class
-        {
-            readonly List<ConstructorInfo> _ctors;
-
-            public SlicedDeserializerDriverR( List<ConstructorInfo> ctors )
-            {
-                _ctors = ctors;
-            }
-
-            public void ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo, object o )
-            {
-                throw new NotImplementedException();
-            }
-
-            protected override void ReadInstance( ref RefReader r )
-            {
-                var o = RuntimeHelpers.GetUninitializedObject( typeof( T ) );
-                var d = r.SetInstance( (T)o );
-                ReadInstance( d, r.ReadInfo, o );
-            }
-        }
-
         sealed class SlicedDeserializerDriverRMonoCtor<T> : ReferenceTypeDeserializer<T>, IDeserializationDeferredDriver where T : class
         {
             readonly ConstructorInfo _ctor;
@@ -131,17 +109,43 @@ namespace CK.BinarySerialization
                 var parameters = new object?[] { d, readInfo.TypePath[idxInfo] };
                 // Call the top one.
                 _ctors[0].Invoke( o, parameters );
-                // Challenge the IDestroyable.
+                // Challenge the IDestroyable and calls the remainders if the object is not destroyed.
                 if( o is not IDestroyable destroyed || !destroyed.IsDestroyed )
                 {
                     int idxCtor = 1;
                     do
                     {
-                        parameters[1] = ++idxInfo;
+                        parameters[1] = readInfo.TypePath[++idxInfo];
                         _ctors[idxCtor].Invoke( o, parameters );
                     }
                     while( ++idxCtor < _ctors.Length );
                 }
+            }
+
+            protected override void ReadInstance( ref RefReader r )
+            {
+                var o = RuntimeHelpers.GetUninitializedObject( typeof( T ) );
+                var d = r.SetInstance( (T)o );
+                ReadInstance( d, r.ReadInfo, o );
+            }
+        }
+
+        sealed class SlicedDeserializerDriverGoodLuck<T> : ReferenceTypeDeserializer<T>, IDeserializationDeferredDriver where T : class
+        {
+            readonly List<ConstructorInfo> _ctors;
+            readonly ITypeReadInfo[] _readTypes;
+
+            public SlicedDeserializerDriverGoodLuck( List<ConstructorInfo> ctors, ITypeReadInfo[] readTypes )
+            {
+                _ctors = ctors;
+                _readTypes = readTypes;
+            }
+
+            public void ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo, object o )
+            {
+                // Call the top one.
+                var parameters = new object?[] { d, _readTypes[0] };
+                _ctors[0].Invoke( o, parameters );
             }
 
             protected override void ReadInstance( ref RefReader r )
@@ -183,6 +187,16 @@ namespace CK.BinarySerialization
                 // it will be dedicated to this deserialization session.
                 // By resolving the mapping here (the best we can), we optimize the run: the specific driver will have less
                 // work to do for each instance of that type.
+                // The heuristic is rather simple:
+                //  - First we associate each constructor to the TypeReadInfo that has the same local type regardless of its position
+                //    in the TyperReadInfo chain. This handles renaming (as long as type has been mapped) and suppression of base classes.
+                //  - Constructors that are "free" are provided with a MissingSlicedTypeReadInfo... and let it be.
+                var readTypeInfo = info.Info;
+                Lazy<MissingSlicedTypeReadInfo> missing = new( () => new MissingSlicedTypeReadInfo( readTypeInfo.TypePath ) );
+                var types = ctors.Select( ctor => readTypeInfo.TypePath.FirstOrDefault( i => i.TryResolveLocalType() == ctor.DeclaringType ) ?? missing.Value ).ToArray();
+                var tGoodLuck = typeof( SlicedDeserializerDriverGoodLuck<> ).MakeGenericType( info.LocalType );
+                return (IDeserializationDriver)Activator.CreateInstance( tGoodLuck, ctors, types )!;
+
             }
             return null;
         }

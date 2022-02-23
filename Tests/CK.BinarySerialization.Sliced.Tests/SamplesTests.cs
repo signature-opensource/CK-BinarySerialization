@@ -5,6 +5,7 @@ using System.Text;
 using FluentAssertions;
 using static CK.Testing.MonitorTestHelper;
 using CK.Core;
+using System.Linq;
 
 namespace CK.BinarySerialization.Tests
 {
@@ -17,7 +18,29 @@ namespace CK.BinarySerialization.Tests
         {
             var o = new Samples.Person() { Name = "Albert" };
             object? backO = TestHelper.SaveAndLoadAny( o );
-            backO.Should().Be( o );
+            backO.Should().BeEquivalentTo( o );
+
+            BinarySerializer.IdempotenceCheck( o ); 
+        }
+
+        [Test]
+        public void huge_linked_list_relies_on_IDeserializationDeferredDriver_to_avoid_StackOverflow()
+        {
+            var garage = new Samples.Garage();
+            int realize = Enumerable.Range( 0, 2 ).Select( i => new Samples.Employee( garage ) { Name = $"n°{i}", EmployeeNumber = i } ).Count();
+
+            // This creates a linked list of 99999 employees that will
+            // be serialized by the employee n°0: without the IDeserializationDeferredDriver this
+            // would explode the stack.
+            for( int i = 1; i < garage.Employees.Count; i++ )
+            {
+                garage.Employees[i-1].BestFriend = garage.Employees[i];
+            }
+            
+            object? backG = TestHelper.SaveAndLoadAny( garage );
+            backG.Should().BeEquivalentTo( garage, o => o.IgnoringCyclicReferences() );
+
+            BinarySerializer.IdempotenceCheck( garage );
         }
 
     }

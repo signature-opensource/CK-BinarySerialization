@@ -8,9 +8,39 @@ namespace CK.BinarySerialization
     public enum TypeReadInfoKind
     {
         /// <summary>
-        /// Regular reference or value type. Instances may be deserialized.
+        /// Missing, unknown or invalid type .
         /// </summary>
-        Regular,
+        None,
+
+        /// <summary>
+        /// Value type. Instances may be deserialized.
+        /// </summary>
+        ValueType,
+
+        /// <summary>
+        /// Generic value type. Instances may be deserialized.
+        /// </summary>
+        GenericValueType,
+
+        /// <summary>
+        /// Sealed class. Instances may be deserialized.
+        /// </summary>
+        SealedClass,
+
+        /// <summary>
+        /// Generic sealed class. Instances may be deserialized.
+        /// </summary>
+        GenericSealedClass,
+
+        /// <summary>
+        /// Regular, non sealed, class. Instances may be deserialized.
+        /// </summary>
+        Class,
+
+        /// <summary>
+        /// Regular, non sealed, generic class. Instances may be deserialized.
+        /// </summary>
+        GenericClass,
 
         /// <summary>
         /// Enumeration. Instances may be deserialized.
@@ -40,11 +70,6 @@ namespace CK.BinarySerialization
         /// Instances cannot be deserialized.
         /// </summary>
         Ref,
-
-        /// <summary>
-        /// Generic closed type. Instances may be deserialized.
-        /// </summary>
-        Generic,
 
         /// <summary>
         /// Open generic type. Instances cannot be deserialized.

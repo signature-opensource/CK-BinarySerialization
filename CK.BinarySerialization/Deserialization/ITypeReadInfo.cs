@@ -29,6 +29,18 @@ namespace CK.BinarySerialization
         TypeReadInfoKind Kind { get; }
 
         /// <summary>
+        /// Gets the whether this type is a value type.
+        /// This is an important property since this drives whether object references occurs
+        /// or not for this type.
+        /// </summary>
+        bool IsValueType { get; }
+
+        /// <summary>
+        /// Gets whether this type is sealed: ValueTypes and sealed classes are sealed.
+        /// </summary>
+        bool IsSealed { get; }
+        
+        /// <summary>
         /// Gets the rank of the array (the number of dimensions of a multidimensional array) 
         /// if this is an array.
         /// </summary>
@@ -63,7 +75,7 @@ namespace CK.BinarySerialization
         /// or the underlying type for an Enum.
         /// </summary>
         IReadOnlyList<ITypeReadInfo> SubTypes { get; }
-        
+
         /// <summary>
         /// Gets the simple assembly name of the type (without version, culture, etc.).
         /// </summary>

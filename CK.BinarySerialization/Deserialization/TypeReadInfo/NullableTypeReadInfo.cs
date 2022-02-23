@@ -17,6 +17,10 @@ namespace CK.BinarySerialization
 
         public bool IsNullable => true;
 
+        public bool IsValueType => _nonNull.IsValueType;
+
+        public bool IsSealed => _nonNull.IsSealed;
+
         public ITypeReadInfo ToNonNullable => _nonNull;
 
         public TypeReadInfoKind Kind => _nonNull.Kind;
@@ -37,8 +41,7 @@ namespace CK.BinarySerialization
                     }
                     else
                     {
-                        var pN = (ITypeReadInfo[])_nonNull.TypePath;
-                        _typePath = new ITypeReadInfo[pN.Length];
+                        _typePath = (ITypeReadInfo[])((ITypeReadInfo[])_nonNull.TypePath).Clone();
                         _typePath[_typePath.Length-1] = this;
                     }
                 }

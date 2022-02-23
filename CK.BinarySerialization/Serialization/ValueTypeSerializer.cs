@@ -7,7 +7,7 @@ namespace CK.BinarySerialization
     /// Serializer for type <typeparamref name="T"/> that serializes nullable as well as non nullable instances.
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
-    public abstract class ValueTypeSerializer<T> : IValueTypeNonNullableSerializationDriver<T> where T : struct
+    public abstract class ValueTypeSerializer<T> : INonNullableSerializationDriverInternal, IValueTypeNonNullableSerializationDriver<T> where T : struct
     {
         sealed class ValueTypeNullable : IValueTypeNullableSerializationDriver<T>
         {
@@ -60,6 +60,7 @@ namespace CK.BinarySerialization
             }
 
             public void WriteNullableObject( IBinarySerializer w, in object? o ) => WriteNullable( w, (T?)o );
+
         }
 
         readonly ValueTypeNullable _nullable;
@@ -93,6 +94,8 @@ namespace CK.BinarySerialization
 
         Delegate ISerializationDriver.TypedWriter => _tWriter;
 
+        UntypedWriter INonNullableSerializationDriverInternal.NoRefNoNullWriter => _uWriter;
+
         /// <inheritdoc />
         public IValueTypeNullableSerializationDriver<T> ToNullable => _nullable;
 
@@ -108,7 +111,8 @@ namespace CK.BinarySerialization
         public abstract int SerializationVersion { get; }
 
         void WriteUntyped( IBinarySerializer w, in object o ) => Write( w, (T)o );
-        
-        void INonNullableSerializationDriver.WriteObject( IBinarySerializer w, in object o ) => Write( w, (T)o );
+
+
+        //void INonNullableSerializationDriver.WriteObject( IBinarySerializer w, in object o ) => Write( w, (T)o );
     }
 }

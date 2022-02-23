@@ -30,6 +30,8 @@ namespace CK.BinarySerialization
             Kind = k;
             SerializationVersion = -1;
             SubTypes = Array.Empty<ITypeReadInfo>();
+            IsSealed = k == TypeReadInfoKind.ValueType || k == TypeReadInfoKind.SealedClass || k == TypeReadInfoKind.GenericSealedClass;
+            IsValueType = k == TypeReadInfoKind.ValueType || k == TypeReadInfoKind.GenericValueType || k == TypeReadInfoKind.Enum;
         }
 
         #region Read methods called after instantiation by BinaryDeserializerImpl.ReadTypeInfo().
@@ -61,13 +63,14 @@ namespace CK.BinarySerialization
 
         internal void ReadArray()
         {
+            Debug.Assert( Kind == TypeReadInfoKind.Array || Kind == TypeReadInfoKind.OpenArray );
             Debug.Assert( typeof( int[] ).Namespace == "System"
                             && typeof( int[] ).Assembly.GetName().Name == "System.Private.CoreLib" );
             TypeNamespace = "System";
             AssemblyName = "System.Private.CoreLib";
             ArrayRank = _deserializer.Reader.ReadSmallInt32( 1 );
             string eName;
-            if( _deserializer.Reader.ReadBoolean() )
+            if( Kind == TypeReadInfoKind.Array )
             {
                 var item = _deserializer.ReadTypeInfo();
                 SubTypes = new[] { item };
@@ -76,7 +79,6 @@ namespace CK.BinarySerialization
             }
             else
             {
-                Kind = TypeReadInfoKind.OpenArray;
                 eName = "T";
                 _localType = typeof( Array );
             }
@@ -140,12 +142,16 @@ namespace CK.BinarySerialization
             }
         }
 
-        public TypeReadInfoKind Kind { get; private set; }
+        public TypeReadInfoKind Kind { get; }
+
+        public bool IsSealed { get; }
 
         public string? DriverName { get; private set; }
 
         public bool IsNullable => false;
 
+        public bool IsValueType { get; }
+        
         public ITypeReadInfo ToNonNullable => this;
 
         public string TypeNamespace { get; private set; }
@@ -226,7 +232,9 @@ namespace CK.BinarySerialization
                 try
                 {
                     Type t;
-                    if( Kind == TypeReadInfoKind.Generic )
+                    if( Kind == TypeReadInfoKind.GenericValueType 
+                        || Kind == TypeReadInfoKind.GenericSealedClass 
+                        || Kind == TypeReadInfoKind.GenericClass )
                     {
                         t = CreateTypeFromNames();
                         var p = new Type[SubTypes.Count];
@@ -265,7 +273,14 @@ namespace CK.BinarySerialization
                     }
                     else
                     {
-                        Debug.Assert( Kind == TypeReadInfoKind.Regular || Kind == TypeReadInfoKind.Enum || Kind == TypeReadInfoKind.OpenGeneric );
+                        Debug.Assert( Kind == TypeReadInfoKind.ValueType
+                                      || Kind == TypeReadInfoKind.Class
+                                      || Kind == TypeReadInfoKind.SealedClass
+                                      || Kind == TypeReadInfoKind.GenericValueType
+                                      || Kind == TypeReadInfoKind.GenericClass
+                                      || Kind == TypeReadInfoKind.GenericSealedClass
+                                      || Kind == TypeReadInfoKind.Enum 
+                                      || Kind == TypeReadInfoKind.OpenGeneric );
                         _localType = CreateTypeFromNames();
                     }
                 }

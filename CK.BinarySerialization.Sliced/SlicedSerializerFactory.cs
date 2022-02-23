@@ -55,11 +55,10 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Serializer don't rely on base type serializers for 2 reasons: there's no gain
         /// to reuse the base serializers to call their static write method (especially with generated 
-        /// delegates) and base types may be abstract: there will be no serializer for them.
+        /// delegates if we implement them) and base types may be abstract: there will be no serializer for them.
         /// If a base type must be serialized, it will have its own dedicated serializer.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        sealed class SlicedReferenceTypeSerializableDriver<T> : ReferenceTypeSerializer<T> where T : class
+        sealed class SlicedReferenceTypeSerializableDriver<T> : ReferenceTypeSerializer<T>, ISerializationDriverAllowDeferredRead where T : class
         {
             public override string DriverName => "Sliced";
 
@@ -83,7 +82,7 @@ namespace CK.BinarySerialization
                 {
                     for( int i = 1; i < _writers.Count; i++ )
                     {
-                        _writers[0].Invoke( null, p );
+                        _writers[i].Invoke( null, p );
                     }
                 }
             }
@@ -98,20 +97,24 @@ namespace CK.BinarySerialization
                 return (ISerializationDriver)Activator.CreateInstance( tV, version )!;
             }
             List<MethodInfo> writers = new();
-            GetWritersTopDown( t, writers );
+            GetWritersTopDown( t, writers, typeof(IDestroyable).IsAssignableFrom( t ) );
             var tR = typeof( SlicedReferenceTypeSerializableDriver<> ).MakeGenericType( t );
             return ((ISerializationDriver)Activator.CreateInstance( tR, version, writers, typeof( IDestroyable ).IsAssignableFrom( t ) )!).ToNullable;
         }
 
-        static void GetWritersTopDown( Type t, List<MethodInfo> w )
+        static void GetWritersTopDown( Type t, List<MethodInfo> w, bool mustBeDestroyable )
         {
             var b = t.BaseType;
             Debug.Assert( b != null );
             if( b != typeof( object )
-                && b != typeof( ValueType )
                 && typeof( ICKSlicedSerializable ).IsAssignableFrom( b ) )
             {
-                GetWritersTopDown( b, w );
+                bool isDestroyable = typeof( IDestroyable ).IsAssignableFrom( b );
+                if( mustBeDestroyable && !isDestroyable )
+                {
+                    throw new InvalidOperationException( $"Type '{b}' must be a IDestroyableObject: IDestroyableObject must be implemented by the root of the ICKSlicedSerializable type hierarchy." );
+                }
+                GetWritersTopDown( b, w, mustBeDestroyable | isDestroyable );
             }
             w.Add( SharedBinarySerializerContext.GetStaticWriter( t, t ) );
         }
