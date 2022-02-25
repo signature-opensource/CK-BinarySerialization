@@ -333,7 +333,7 @@ namespace CK.BinarySerialization
                 ++_recurseCount;
                 _writer.Write( (byte)marker );
                 WriteTypeInfo( new NullableTypeRoot( t, false ), driver, true );
-                driver.NoRefNoNullWriter( this, o );
+                driver.WriteObjectData( this, o );
                 --_recurseCount;
             }
             if( _recurseCount == 0 && _deferred != null )
@@ -341,7 +341,7 @@ namespace CK.BinarySerialization
                 while( _deferred.TryPop( out var d ) )
                 {
                     ++_recurseCount;
-                    d.D.NoRefNoNullWriter( this, d.O );
+                    d.D.WriteObjectData( this, d.O );
                     --_recurseCount;
                 }
             }

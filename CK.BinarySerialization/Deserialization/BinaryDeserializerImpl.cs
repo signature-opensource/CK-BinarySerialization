@@ -130,7 +130,7 @@ namespace CK.BinarySerialization
             }
             Debug.Assert( b == SerializationMarker.DeferredObject || b == SerializationMarker.Object || b == SerializationMarker.Struct );
             var info = ReadTypeInfo();
-            var d = info.GetConcreteDriver();
+            var d = (IDeserializationDriverInternal)info.GetConcreteDriver().ToNonNullable;
             object result;
             if( b == SerializationMarker.DeferredObject )
             {
@@ -147,7 +147,7 @@ namespace CK.BinarySerialization
             else
             {
                 ++_recurseCount;
-                result = d.ToNonNullable.DoUntypedRead( this, info );
+                result = d.ReadObjectData( this, info );
                 --_recurseCount;
             }
             if( _recurseCount == 0 && _deferred != null )

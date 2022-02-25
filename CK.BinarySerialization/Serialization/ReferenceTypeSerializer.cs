@@ -12,14 +12,12 @@ namespace CK.BinarySerialization
         sealed class ReferenceTypeNullable : ISerializationDriver
         {
             readonly ReferenceTypeSerializer<T> _serializer;
-            //readonly UntypedWriter _uWriter;
             readonly TypedWriter<T?> _tWriter;
 
             public ReferenceTypeNullable( ReferenceTypeSerializer<T> serializer )
             {
                 _serializer = serializer;
                 _tWriter = WriteNullable;
-                //_uWriter = WriteNullableObject;
             }
 
             public Delegate UntypedWriter => _tWriter;
@@ -45,24 +43,16 @@ namespace CK.BinarySerialization
                     w.Writer.Write( (byte)SerializationMarker.Null );
                 }
             }
-
-            //void WriteNullableObject( IBinarySerializer w, in object? o ) => WriteNullable( w, (T?)o );
         }
 
         readonly ReferenceTypeNullable _nullable;
-        //readonly UntypedWriter _uWriter;
-        readonly UntypedWriter _noRefWriter;
         readonly TypedWriter<T> _tWriter;
 
         public ReferenceTypeSerializer()
         {
-            _noRefWriter = WriteObjectData;
-            //_uWriter = WriteUntypedRefOrInstance;
             _tWriter = WriteRefOrInstance;
             _nullable = new ReferenceTypeNullable( this );
         }
-
-        //void WriteUntypedRefOrInstance( IBinarySerializer w, in object o ) => WriteRefOrInstance( w, (T)o );
 
         void WriteRefOrInstance( IBinarySerializer s, in T o )
         {
@@ -73,7 +63,7 @@ namespace CK.BinarySerialization
             }
         }
 
-        void WriteObjectData( IBinarySerializer w, in object o ) => Write( w, (T)o );
+        void ISerializationDriverInternal.WriteObjectData( IBinarySerializer w, in object o ) => Write( w, (T)o );
 
         /// <summary>
         /// Must write the instance data.
@@ -86,11 +76,7 @@ namespace CK.BinarySerialization
         public Delegate UntypedWriter => _tWriter;
 
         /// <inheritdoc />
-        public TypedWriter<T> TypedWriter => _tWriter;
-
-        Delegate ISerializationDriver.TypedWriter => _tWriter;
-
-        UntypedWriter ISerializationDriverInternal.NoRefNoNullWriter => _noRefWriter;
+        public Delegate TypedWriter => _tWriter;
 
         public ISerializationDriver ToNullable => _nullable;
 

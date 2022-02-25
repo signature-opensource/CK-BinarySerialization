@@ -7,7 +7,7 @@ namespace CK.BinarySerialization
     /// Deserializer base for value type <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
-    public abstract class ValueTypeDeserializer<T> : IValueTypeNonNullableDeserializationDriver<T> where T : struct
+    public abstract class ValueTypeDeserializer<T> : IDeserializationDriverInternal, IValueTypeNonNullableDeserializationDriver<T> where T : struct
     {
         class NullableAdapter : IValueTypeNullableDeserializationDriver<T>
         {
@@ -29,9 +29,9 @@ namespace CK.BinarySerialization
 
             public Delegate TypedReader => _reader;
 
-            INullableDeserializationDriver IDeserializationDriver.ToNullable => this;
+            IDeserializationDriver IDeserializationDriver.ToNullable => this;
 
-            INonNullableDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
+            IDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
 
             public object? ReadAsObject( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 
@@ -76,13 +76,13 @@ namespace CK.BinarySerialization
         /// <inheritdoc />
         public IValueTypeNonNullableDeserializationDriver<T> ToNonNullable => this;
 
-        INullableDeserializationDriver IDeserializationDriver.ToNullable => _null;
+        IDeserializationDriver IDeserializationDriver.ToNullable => _null;
 
-        INonNullableDeserializationDriver IDeserializationDriver.ToNonNullable => this;
+        IDeserializationDriver IDeserializationDriver.ToNonNullable => this;
 
         T IValueTypeNonNullableDeserializationDriver<T>.ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 
-        object INonNullableDeserializationDriver.DoUntypedRead( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
+        object IDeserializationDriverInternal.ReadObjectData( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 
     }
 }

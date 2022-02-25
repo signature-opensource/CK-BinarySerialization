@@ -99,7 +99,7 @@ namespace CK.BinarySerialization
 
         Delegate ISerializationDriver.TypedWriter => _tWriter;
 
-        UntypedWriter ISerializationDriverInternal.NoRefNoNullWriter => _uWriter;
+        void ISerializationDriverInternal.WriteObjectData( IBinarySerializer w, in object o ) => _tWriter( w, (T)o );
 
         public ISerializationDriver ToNullable => _nullable;
 

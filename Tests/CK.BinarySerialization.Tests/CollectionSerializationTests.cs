@@ -262,6 +262,8 @@ namespace CK.BinarySerialization.Tests
         [Test]
         public void list_of_non_sealed_classes()
         {
+            Assume.That( false, "DAbstract not implemented yet." );
+
             var a = new List<SimpleBase>();
             a.Add( new SimpleSealedDerived() { Power = 42, Name = "Alice" } );
             a.Add( new SimpleDerived() { Power = 3712, Name = "Albert" } );

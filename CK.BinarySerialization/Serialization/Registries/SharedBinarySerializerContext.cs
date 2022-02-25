@@ -77,11 +77,11 @@ namespace CK.BinarySerialization
 
         public ISerializationDriver? TryFindPossiblyAbstractDriver( Type t )
         {
-            if( !t.IsSealed )
-            {
-                Debug.Assert( t.IsClass );
-                return Serialization.DAbstract.Instance;
-            }
+            //if( !t.IsSealed )
+            //{
+            //    Debug.Assert( t.IsClass );
+            //    return Serialization.DAbstract.Instance;
+            //}
             return TryFindDriver( t );
         }
 

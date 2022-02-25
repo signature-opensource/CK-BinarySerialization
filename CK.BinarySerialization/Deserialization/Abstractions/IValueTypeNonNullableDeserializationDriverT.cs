@@ -5,7 +5,7 @@ namespace CK.BinarySerialization
     /// <summary>
     /// Typed deserialization driver that knows how to instantiate an instance of a value type <typeparamref name="T"/>.
     /// </summary>
-    public interface IValueTypeNonNullableDeserializationDriver<T> : IDeserializationDriver, INonNullableDeserializationDriver where T : struct
+    public interface IValueTypeNonNullableDeserializationDriver<T> : IDeserializationDriver where T : struct
     {
         /// <summary>
         /// Reads the data and instantiates a new object.

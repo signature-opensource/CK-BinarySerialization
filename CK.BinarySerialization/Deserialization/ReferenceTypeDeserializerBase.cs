@@ -8,9 +8,9 @@ namespace CK.BinarySerialization
     /// Base reference deserializer for <see cref="ReferenceTypeDeserializer{T}"/> and <see cref="SimpleReferenceTypeDeserializer{T}"/>.
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
-    public abstract class ReferenceTypeDeserializerBase<T> : INonNullableDeserializationDriver where T : class
+    public abstract class ReferenceTypeDeserializerBase<T> : IDeserializationDriverInternal where T : class
     {
-        class NullableAdapter : INullableDeserializationDriver
+        class NullableAdapter : IDeserializationDriver
         {
             readonly ReferenceTypeDeserializerBase<T> _deserializer;
             readonly TypedReader<T?> _reader;
@@ -25,9 +25,9 @@ namespace CK.BinarySerialization
 
             public Delegate TypedReader => _reader;
 
-            INullableDeserializationDriver IDeserializationDriver.ToNullable => this;
+            IDeserializationDriver IDeserializationDriver.ToNullable => this;
 
-            INonNullableDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
+            IDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
 
             public object? ReadAsObject( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 
@@ -78,11 +78,11 @@ namespace CK.BinarySerialization
         /// <inheritdoc />
         public Delegate TypedReader => _reader;
 
-        INullableDeserializationDriver IDeserializationDriver.ToNullable => _null;
+        IDeserializationDriver IDeserializationDriver.ToNullable => _null;
 
-        INonNullableDeserializationDriver IDeserializationDriver.ToNonNullable => this;
+        IDeserializationDriver IDeserializationDriver.ToNonNullable => this;
 
-        object INonNullableDeserializationDriver.DoUntypedRead( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
+        object IDeserializationDriverInternal.ReadObjectData( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 
     }
 }

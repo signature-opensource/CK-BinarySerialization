@@ -6,6 +6,6 @@ namespace CK.BinarySerialization
 {
     interface ISerializationDriverInternal : ISerializationDriver
     {
-        UntypedWriter NoRefNoNullWriter { get; }
+        void WriteObjectData( IBinarySerializer w, in object o );
     }
 }

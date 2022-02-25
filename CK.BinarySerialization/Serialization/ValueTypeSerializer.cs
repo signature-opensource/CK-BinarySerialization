@@ -52,14 +52,12 @@ namespace CK.BinarySerialization
         }
 
         readonly ValueTypeNullable _nullable;
-        readonly UntypedWriter _uWriter;
         readonly TypedWriter<T> _tWriter;
 
         public ValueTypeSerializer()
         {
             _nullable = new ValueTypeNullable( this );
             _tWriter = Write;
-            _uWriter = WriteUntyped;
         }
 
         /// <summary>
@@ -74,7 +72,7 @@ namespace CK.BinarySerialization
 
         public Delegate TypedWriter => _tWriter;
 
-        UntypedWriter ISerializationDriverInternal.NoRefNoNullWriter => _uWriter;
+        void ISerializationDriverInternal.WriteObjectData( IBinarySerializer w, in object o ) => Write( w, (T)o );
 
         public ISerializationDriver ToNullable => _nullable;
 
@@ -83,8 +81,6 @@ namespace CK.BinarySerialization
         public abstract string DriverName { get; }
 
         public abstract int SerializationVersion { get; }
-
-        void WriteUntyped( IBinarySerializer w, in object o ) => Write( w, (T)o );
 
     }
 }
