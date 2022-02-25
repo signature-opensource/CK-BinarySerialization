@@ -75,6 +75,16 @@ namespace CK.BinarySerialization
             return driver;
         }
 
+        public ISerializationDriver? TryFindPossiblyAbstractDriver( Type t )
+        {
+            if( !t.IsSealed )
+            {
+                Debug.Assert( t.IsClass );
+                return Serialization.DAbstract.Instance;
+            }
+            return TryFindDriver( t );
+        }
+
         /// <summary>
         /// Ensures that a resolver is registered.
         /// When new, the resolver is appended after or inserted before the existing ones.

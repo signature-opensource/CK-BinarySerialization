@@ -130,7 +130,7 @@ namespace CK.BinarySerialization
             }
             Debug.Assert( b == SerializationMarker.DeferredObject || b == SerializationMarker.Object || b == SerializationMarker.Struct );
             var info = ReadTypeInfo();
-            var d = info.GetDeserializationDriver();
+            var d = info.GetConcreteDriver();
             object result;
             if( b == SerializationMarker.DeferredObject )
             {
@@ -280,7 +280,7 @@ namespace CK.BinarySerialization
                 ThrowInvalidDataException( $"Unexpected '{b}' marker while reading non nullable '{typeof( T )}'." );
             }
             var info = ReadTypeInfo();
-            var d = (IValueTypeNonNullableDeserializationDriver<T>)info.GetDeserializationDriver();
+            var d = (IValueTypeNonNullableDeserializationDriver<T>)info.GetConcreteDriver();
             return d.ReadInstance( this, info );
         }
 

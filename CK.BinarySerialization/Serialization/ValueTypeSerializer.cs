@@ -22,7 +22,7 @@ namespace CK.BinarySerialization
                 _uWriter = WriteNullableObject;
             }
 
-            public UntypedWriter UntypedWriter => _uWriter;
+            public Delegate UntypedWriter => _tWriter;
 
             public Delegate TypedWriter => _tWriter;
 
@@ -70,7 +70,7 @@ namespace CK.BinarySerialization
         /// <returns>The new instance.</returns>
         internal protected abstract void Write( IBinarySerializer w, in T o );
 
-        public UntypedWriter UntypedWriter => _uWriter;
+        public Delegate UntypedWriter => _tWriter;
 
         public Delegate TypedWriter => _tWriter;
 

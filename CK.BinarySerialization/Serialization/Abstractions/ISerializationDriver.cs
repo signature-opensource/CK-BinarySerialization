@@ -23,11 +23,11 @@ namespace CK.BinarySerialization
         int SerializationVersion { get; }
 
         /// <summary>
-        /// Gets the writer function that accepts a an untyped object that will be down-casted to the actual type.
+        /// Gets the writer <see cref="BinarySerialization.UntypedWriter"/> that accepts a an untyped object that will be down-casted to the actual type.
         /// If this is a non nullable serialization driver, the writer will throw if the 
         /// object to write is null.
         /// </summary>
-        UntypedWriter UntypedWriter { get; }
+        Delegate UntypedWriter { get; }
 
         /// <summary>
         /// Gets a strongly typed <see cref="TypedWriter{T}"/> function for this type and nullability.

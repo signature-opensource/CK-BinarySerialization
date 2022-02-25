@@ -12,19 +12,19 @@ namespace CK.BinarySerialization
         sealed class ReferenceTypeNullable : ISerializationDriver
         {
             readonly ReferenceTypeSerializer<T> _serializer;
-            readonly UntypedWriter _uWriter;
+            //readonly UntypedWriter _uWriter;
             readonly TypedWriter<T?> _tWriter;
 
             public ReferenceTypeNullable( ReferenceTypeSerializer<T> serializer )
             {
                 _serializer = serializer;
                 _tWriter = WriteNullable;
-                _uWriter = WriteNullableObject;
+                //_uWriter = WriteNullableObject;
             }
 
-            public UntypedWriter UntypedWriter => _uWriter;
+            public Delegate UntypedWriter => _tWriter;
 
-            Delegate ISerializationDriver.TypedWriter => _tWriter;
+            public Delegate TypedWriter => _tWriter;
 
             public string DriverName => _serializer.DriverName;
 
@@ -46,23 +46,23 @@ namespace CK.BinarySerialization
                 }
             }
 
-            public void WriteNullableObject( IBinarySerializer w, in object? o ) => WriteNullable( w, (T?)o );
+            //void WriteNullableObject( IBinarySerializer w, in object? o ) => WriteNullable( w, (T?)o );
         }
 
         readonly ReferenceTypeNullable _nullable;
-        readonly UntypedWriter _uWriter;
+        //readonly UntypedWriter _uWriter;
         readonly UntypedWriter _noRefWriter;
         readonly TypedWriter<T> _tWriter;
 
         public ReferenceTypeSerializer()
         {
             _noRefWriter = WriteObjectData;
-            _uWriter = WriteUntypedRefOrInstance;
+            //_uWriter = WriteUntypedRefOrInstance;
             _tWriter = WriteRefOrInstance;
             _nullable = new ReferenceTypeNullable( this );
         }
 
-        void WriteUntypedRefOrInstance( IBinarySerializer w, in object o ) => WriteRefOrInstance( w, (T)o );
+        //void WriteUntypedRefOrInstance( IBinarySerializer w, in object o ) => WriteRefOrInstance( w, (T)o );
 
         void WriteRefOrInstance( IBinarySerializer s, in T o )
         {
@@ -83,10 +83,7 @@ namespace CK.BinarySerialization
         internal protected abstract void Write( IBinarySerializer s, in T o );
 
         /// <inheritdoc />
-        public bool IsNullable => false;
-
-        /// <inheritdoc />
-        public UntypedWriter UntypedWriter => _uWriter;
+        public Delegate UntypedWriter => _tWriter;
 
         /// <inheritdoc />
         public TypedWriter<T> TypedWriter => _tWriter;

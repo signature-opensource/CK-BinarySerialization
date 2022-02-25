@@ -78,7 +78,7 @@ namespace CK.BinarySerialization
             {
                 return d;
             }
-            // Do not cache ResolvedType in _typedDrivers here: the same type may be
+            // Do not cache TargetType in _typedDrivers here: the same type may be
             // built by more than one driver.
             // We must not lookup the PureLocalTypeDependentDrivers here: some drivers may be resolved
             // based on different informations from the TypeReadInfo (typically the DriverName) that 
@@ -109,7 +109,7 @@ namespace CK.BinarySerialization
         /// The local type MUST not already be mapped otherwise an <see cref="InvalidOperationException"/> is raised.
         /// </para>
         /// <para>
-        /// These drivers explicitly registered takes precedence over all other resolvers.
+        /// These explicitly registered drivers take precedence over all other resolvers.
         /// </para>
         /// </summary>
         /// <param name="driver">The driver to register.</param>
@@ -121,7 +121,11 @@ namespace CK.BinarySerialization
             {
                 done = true;
                 var nn = driver.ToNonNullable.ResolvedType;
-                if( nn != n ) done = _typedDrivers.TryAdd( nn, driver.ToNonNullable );
+                if( nn != n )
+                {
+                    done = _typedDrivers.TryAdd( nn, driver.ToNonNullable );
+                    n = nn;
+                }
             }
             if( !done ) throw new InvalidOperationException( $"A deserialization driver for type '{n}' is already registered." );
         }

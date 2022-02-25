@@ -30,11 +30,9 @@ namespace CK.BinarySerialization
                 _uWriter = WriteNullableObject;
             }
 
-            public UntypedWriter UntypedWriter => _uWriter;
+            public Delegate UntypedWriter => _uWriter;
 
-            public TypedWriter<T?> TypedWriter => _tWriter;
-
-            Delegate ISerializationDriver.TypedWriter => _tWriter;
+            public Delegate TypedWriter => _tWriter;
 
             public string DriverName => _serializer.DriverName;
 
@@ -94,7 +92,7 @@ namespace CK.BinarySerialization
         }
 
         /// <inheritdoc />
-        public UntypedWriter UntypedWriter => _uWriter;
+        public Delegate UntypedWriter => _uWriter;
 
         /// <inheritdoc />
         public TypedWriter<T> TypedWriter => _tWriter;

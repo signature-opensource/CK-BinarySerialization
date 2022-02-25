@@ -316,7 +316,7 @@ namespace CK.BinarySerialization
 
         public bool HasResolvedDeserializationDriver => _driver != null;
 
-        public IDeserializationDriver GetDeserializationDriver()
+        public IDeserializationDriver GetConcreteDriver()
         {
             if( !_driverLookupDone )
             {

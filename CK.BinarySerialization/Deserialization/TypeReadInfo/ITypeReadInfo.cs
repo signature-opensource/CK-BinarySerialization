@@ -147,6 +147,17 @@ namespace CK.BinarySerialization
         /// the serialization process itself.
         /// </para>
         /// </summary>
-        IDeserializationDriver GetDeserializationDriver();
+        IDeserializationDriver GetConcreteDriver();
+    }
+
+    public static class TypeReadInfoExtensions
+    {
+        //public static IDeserializationDriver GetDriver( this ITypeReadInfo @this )
+        //{
+        //    if( !@this.IsSealed )
+        //    {
+        //        return ;
+        //    }
+        //}
     }
 }

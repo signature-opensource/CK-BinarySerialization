@@ -98,7 +98,7 @@ namespace CK.BinarySerialization
             return _localType;
         }
 
-        public IDeserializationDriver GetDeserializationDriver() => _nonNull.GetDeserializationDriver().ToNullable;
+        public IDeserializationDriver GetConcreteDriver() => _nonNull.GetConcreteDriver().ToNullable;
 
         public override string ToString() => '?' + _nonNull.ToString();
 

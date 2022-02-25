@@ -80,7 +80,7 @@ namespace CK.BinarySerialization
                     {
                         // Enum is automatically adapted to its local type, including using any integral local type.
                         Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Enum && info.ReadInfo.SubTypes.Count == 1 );
-                        var uD = info.ReadInfo.SubTypes[0].GetDeserializationDriver();
+                        var uD = info.ReadInfo.SubTypes[0].GetConcreteDriver();
                         // We cache only the "nominal deserializer".
                         if( info.TargetType == uD.ResolvedType )
                         {
@@ -115,7 +115,7 @@ namespace CK.BinarySerialization
                     {
                         Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Array );
                         Debug.Assert( info.ReadInfo.SubTypes.Count == 1 );
-                        var item = info.ReadInfo.SubTypes[0].GetDeserializationDriver();
+                        var item = info.ReadInfo.SubTypes[0].GetConcreteDriver();
                         return _cache.GetOrAdd( (item, info.ReadInfo.ArrayRank), CreateArray );
                     }
                 case "Dictionary": return TryGetDoubleGenericParameter( info.ReadInfo, typeof( Deserialization.DDictionary<,> ) );
@@ -131,7 +131,7 @@ namespace CK.BinarySerialization
             var tA = new IDeserializationDriver[info.SubTypes.Count];
             for( int i = 0; i < tA.Length; ++i )
             {
-                tA[i] = info.SubTypes[i].GetDeserializationDriver();
+                tA[i] = info.SubTypes[i].GetConcreteDriver();
             }
             var key = new TupleKey( tA, isValueTuple );
             return _cache.GetOrAdd( key, DoCreateTuple );
@@ -159,7 +159,7 @@ namespace CK.BinarySerialization
         IDeserializationDriver? TryGetSingleGenericParameter( ITypeReadInfo info, Type tGenD )
         {
             Debug.Assert( info.SubTypes.Count == 1 );
-            var item = info.SubTypes[0].GetDeserializationDriver();
+            var item = info.SubTypes[0].GetConcreteDriver();
             var k = (item, tGenD);
             var d = _cache.GetOrAdd( k, CreateSingleGenericTypeParam );
             return d;
@@ -175,8 +175,8 @@ namespace CK.BinarySerialization
         IDeserializationDriver? TryGetDoubleGenericParameter( ITypeReadInfo info, Type tGenD )
         {
             Debug.Assert( info.SubTypes.Count == 2 );
-            var item1 = info.SubTypes[0].GetDeserializationDriver();
-            var item2 = info.SubTypes[1].GetDeserializationDriver();
+            var item1 = info.SubTypes[0].GetConcreteDriver();
+            var item2 = info.SubTypes[1].GetConcreteDriver();
             var k = (item1, item2, tGenD);
             return _cache.GetOrAdd( k, CreateDoubleGenericTypeParam );
 

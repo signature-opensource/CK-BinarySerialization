@@ -110,7 +110,7 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Always throws a <see cref="NotSupportedException"/>.
         /// </summary>
-        public IDeserializationDriver GetDeserializationDriver()
+        public IDeserializationDriver GetConcreteDriver()
         {
             throw new NotSupportedException( nameof( MissingSlicedTypeReadInfo ) );
         }

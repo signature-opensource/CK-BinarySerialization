@@ -9,7 +9,7 @@ namespace CK.BinarySerialization.Serialization
     {
         readonly UntypedWriter[] _items;
 
-        public DValueTuple( UntypedWriter[] items ) => _items = items;
+        public DValueTuple( Delegate[] items ) => _items = Unsafe.As<UntypedWriter[]>( items );
 
         public override string DriverName => "ValueTuple";
 

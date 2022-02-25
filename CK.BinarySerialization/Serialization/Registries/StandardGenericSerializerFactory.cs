@@ -78,7 +78,7 @@ namespace CK.BinarySerialization
         ISerializationDriver? TryCreateArray( Type t )
         {
             var tE = t.GetElementType()!;
-            var dItem = _resolver.TryFindDriver( tE );
+            var dItem = _resolver.TryFindPossiblyAbstractDriver( tE );
             if( dItem == null ) return null;
             int rank = t.GetArrayRank();
             if( rank == 1 )
@@ -102,7 +102,7 @@ namespace CK.BinarySerialization
         ISerializationDriver? TryCreateSingleGenericParam( Type t, Type tGenD )
         {
             var tE = t.GetGenericArguments()[0];
-            var dItem = _resolver.TryFindDriver( tE );
+            var dItem = _resolver.TryFindPossiblyAbstractDriver( tE );
             if( dItem == null ) return null;
             var tS = tGenD.MakeGenericType( tE );
             Debug.Assert( t.IsClass, "All single generics are reference type: oblivious rules for now." );
@@ -112,13 +112,13 @@ namespace CK.BinarySerialization
         ISerializationDriver? TryCreateDoubleGenericParam( Type t, Type tGenD )
         {
             var tE1 = t.GetGenericArguments()[0];
-            var dItem1 = _resolver.TryFindDriver( tE1 );
+            var dItem1 = _resolver.TryFindPossiblyAbstractDriver( tE1 );
             if( dItem1 == null ) return null;
             Debug.Assert( tGenD == typeof( Serialization.DDictionary<,> ), "Dictionary is currently the only Double params." );
             dItem1 = dItem1.ToNonNullable;
 
             var tE2 = t.GetGenericArguments()[1];
-            var dItem2 = _resolver.TryFindDriver( tE2 );
+            var dItem2 = _resolver.TryFindPossiblyAbstractDriver( tE2 );
             if( dItem2 == null ) return null;
             var tS = tGenD.MakeGenericType( tE1, tE2 );
             
@@ -129,10 +129,10 @@ namespace CK.BinarySerialization
         ISerializationDriver? TryCreateTuple( Type t, bool isValue )
         {
             var parameters = t.GetGenericArguments();
-            var p = new UntypedWriter[parameters.Length];
+            var p = new Delegate[parameters.Length];
             for( int i = 0; i < parameters.Length; i++ )
             {
-                var d = _resolver.TryFindDriver( parameters[i] );
+                var d = _resolver.TryFindPossiblyAbstractDriver( parameters[i] );
                 if( d == null ) return null;    
                 p[i] = d.UntypedWriter;
             }

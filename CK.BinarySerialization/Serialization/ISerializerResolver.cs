@@ -9,14 +9,13 @@ namespace CK.BinarySerialization
     /// <para>
     /// Not all the resolvers are the same: <see cref="BasicTypeSerializerRegistry.Instance"/> relies on 
     /// immutable mappings and is exposed as a singleton, <see cref="SimpleBinarySerializableFactory"/> is 
-    /// a pure factory (doesn't cache its result) that relies on the <see cref="SharedBinarySerializerContext"/>
-    /// 
+    /// a pure factory (doesn't cache its result).
     /// </para>
     /// </summary>
     public interface ISerializerResolver
     {
         /// <summary>
-        /// Finds an untyped serialization driver for a type.
+        /// Finds a serialization driver for a type.
         /// The driver's nullability is driven by the type. 
         /// Reference type defaults to nullable (rule of the oblivious nullable context).
         /// </summary>
@@ -27,12 +26,6 @@ namespace CK.BinarySerialization
 
     public static class SerializerResolverExtensions
     {
-        public static TypedWriter<T> FindWriter<T>( this ISerializerResolver r, bool? nullable = null )
-        {
-            var d = FindDriver( r, typeof( T ), nullable );
-            return (TypedWriter<T>)d.TypedWriter;
-        }
-
         /// <summary>
         /// Finds an untyped serialization nullable or non nullable driver for a type.
         /// </summary>
