@@ -79,29 +79,49 @@ namespace CK.BinarySerialization
                 case "Enum":
                     {
                         // Enum is automatically adapted to its local type, including using any integral local type.
-                        Debug.Assert( info.Info.Kind == TypeReadInfoKind.Enum && info.Info.SubTypes.Count == 1 );
-                        var uD = info.Info.SubTypes[0].GetDeserializationDriver();
-                        return _cache.GetOrAdd( (info.LocalType, uD), CreateEnum );
+                        Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Enum && info.ReadInfo.SubTypes.Count == 1 );
+                        var uD = info.ReadInfo.SubTypes[0].GetDeserializationDriver();
+                        // We cache only the "nominal deserializer".
+                        if( info.TargetType == uD.ResolvedType )
+                        {
+                            return _cache.GetOrAdd( (info.TargetType, uD), CreateNominalEnum );
+                        }
+                        // If info.TargetType.IsEnum is false (the target type is NOT an enum), we could do this (it works):
+                        //
+                        //   var tDiffOther = typeof( Deserialization.DEnumDiff<,,> ).MakeGenericType( info.TargetType, info.TargetType, uD.ResolvedType );
+                        //   return (IDeserializationDriver)Activator.CreateInstance( tDiffOther, uD.TypedReader )!;
+                        //
+                        // However we don't to stay consistent. Mutations must be coherent, if we do this then we should also handle 
+                        // the opposite (written integral types read as enums). We may do this once.
+                        // 
+                        // For the moment, supporting mapping to different enums types only makes deserialization hooks and
+                        // IMutableTypeReadInfo.SetTargetType a simple way to handle enum migrations.
+                        //
+                        if( !info.TargetType.IsEnum ) return null;
+
+                        var tDiff = typeof( Deserialization.DEnumDiff<,,> )
+                                    .MakeGenericType( info.TargetType, info.TargetType.GetEnumUnderlyingType(), uD.ResolvedType );
+                        return (IDeserializationDriver)Activator.CreateInstance( tDiff, uD.TypedReader )!;
                     }
                 case "ValueTuple":
                     {
-                        return CreateTuple( info.Info, true );
+                        return CreateTuple( info.ReadInfo, true );
                     }
                 case "Tuple":
                     {
-                        return CreateTuple( info.Info, false );
+                        return CreateTuple( info.ReadInfo, false );
                     }
                 case "Array":
                     {
-                        Debug.Assert( info.Info.Kind == TypeReadInfoKind.Array );
-                        Debug.Assert( info.Info.SubTypes.Count == 1 );
-                        var item = info.Info.SubTypes[0].GetDeserializationDriver();
-                        return _cache.GetOrAdd( (item, info.Info.ArrayRank), CreateArray );
+                        Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Array );
+                        Debug.Assert( info.ReadInfo.SubTypes.Count == 1 );
+                        var item = info.ReadInfo.SubTypes[0].GetDeserializationDriver();
+                        return _cache.GetOrAdd( (item, info.ReadInfo.ArrayRank), CreateArray );
                     }
-                case "Dictionary": return TryGetDoubleGenericParameter( info.Info, typeof( Deserialization.DDictionary<,> ) );
-                case "List": return TryGetSingleGenericParameter( info.Info, typeof( Deserialization.DList<> ) );
-                case "Stack": return TryGetSingleGenericParameter( info.Info, typeof( Deserialization.DStack<> ) );
-                case "Queue": return TryGetSingleGenericParameter( info.Info, typeof( Deserialization.DQueue<> ) );
+                case "Dictionary": return TryGetDoubleGenericParameter( info.ReadInfo, typeof( Deserialization.DDictionary<,> ) );
+                case "List": return TryGetSingleGenericParameter( info.ReadInfo, typeof( Deserialization.DList<> ) );
+                case "Stack": return TryGetSingleGenericParameter( info.ReadInfo, typeof( Deserialization.DStack<> ) );
+                case "Queue": return TryGetSingleGenericParameter( info.ReadInfo, typeof( Deserialization.DQueue<> ) );
             }
             return null;
         }
@@ -181,26 +201,12 @@ namespace CK.BinarySerialization
             return (IDeserializationDriver)Activator.CreateInstance( tM, k.I.TypedReader )!;
         }
 
-        IDeserializationDriver CreateEnum( object key )
+        IDeserializationDriver CreateNominalEnum( object key )
         {
-            var k = ((Type L, IDeserializationDriver U))key;
-            var uLocal = k.L.GetEnumUnderlyingType();
-            if( uLocal == k.U.ResolvedType )
-            {
-                var tSame = typeof( Deserialization.DEnum<,> ).MakeGenericType( k.L, k.U.ResolvedType );
-                return (IDeserializationDriver)Activator.CreateInstance( tSame, k.U.TypedReader )!;
-            }
-            // If k.L.IsEnum is false (the local type is NOT an enum), we could do this (it works):
-            //
-            //   var tDiffOther = typeof( Deserialization.DEnumDiff<,,> ).MakeGenericType( k.L, k.L, k.U.ResolvedType );
-            //   return (IDeserializationDriver)Activator.CreateInstance( tDiffOther, k.U.TypedReader )!;
-            //
-            // However we don't to stay consistent. Mutations must be coherent, if we do this then we should also handle 
-            // the opposite (written integral types read as enums).
-            // Supporting mapping to different enums makes deserialization hooks and IMutableTypeReadInfo.SetLocalType
-            // a simple way to handle enum migrations.
-            var tDiff = typeof( Deserialization.DEnumDiff<,,> ).MakeGenericType( k.L, uLocal, k.U.ResolvedType );
-            return (IDeserializationDriver)Activator.CreateInstance( tDiff, k.U.TypedReader )!;
+            var k = ((Type Target, IDeserializationDriver U))key;
+            Debug.Assert( k.Target.GetEnumUnderlyingType() == k.U.ResolvedType );
+            var tSame = typeof( Deserialization.DEnum<,> ).MakeGenericType( k.Target, k.U.ResolvedType );
+            return (IDeserializationDriver)Activator.CreateInstance( tSame, k.U.TypedReader )!;
         }
 
     }

@@ -37,17 +37,34 @@ namespace CK.BinarySerialization
             if( !isSimple && !isSealed ) return null;
 
             // We allow Simple to be read back as Sealed and the opposite.
+            // We lookup the TargetType constructors here. Should we handle the case where the TargetType has no 
+            // simple deserializer constructors? 
+            // We may lookup the LocalType simple deserializer constructors as well and handle the conversion
+            // from Local to TargetType via LocalType.ConvertTo or TargetType.ConvertFrom or Convert.ChangeType
+            // and standard .Net TypeConverters.
+            // For the moment, there's no such conversions.
+
+            // We cache the driver only if the TargetType is the LocalType ("nominal" deserializers).
             // We may have duplicate calls to Create here (that should barely happen but who knows), but GetOrAdd
             // will return the winner.
-            var ctor = info.LocalType.GetConstructor( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, _sealedCPTypes, null );
+            // 
+            var ctor = info.TargetType.GetConstructor( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, _sealedCPTypes, null );
             if( ctor != null )
             {
-                return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.LocalType, CreateSealed, ctor );
+                if( info.TargetType == info.ReadInfo.TryResolveLocalType() )
+                {
+                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateSealed, ctor );
+                }
+                return CreateSealed( info.TargetType, ctor );
             }
-            ctor = info.LocalType.GetConstructor( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, _simpleCPTypes, null );
+            ctor = info.TargetType.GetConstructor( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, _simpleCPTypes, null );
             if( ctor != null )
             {
-                return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.LocalType, CreateSimple, ctor );
+                if( info.TargetType == info.ReadInfo.TryResolveLocalType() )
+                {
+                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateSimple, ctor );
+                }
+                return CreateSimple( info.TargetType, ctor );
             }
             return null;
         }

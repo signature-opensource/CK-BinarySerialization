@@ -4,12 +4,76 @@ using System.Collections.Generic;
 using CK.Core;
 using static CK.Testing.MonitorTestHelper;
 using FluentAssertions;
+using System.Runtime.CompilerServices;
 
 namespace CK.BinarySerialization.Tests
 {
     [TestFixture]
-    public class SimpleSerializableTests
+    public partial class SimpleSerializableTests
     {
+        interface ILikeSerializer
+        {
+            int Count { get; set; }
+        }
+
+        class LikeSerializerImpl : ILikeSerializer
+        {
+            public int Count { get; set; }  
+        }
+
+        delegate void UWriter( ILikeSerializer s, in object o );
+        delegate void TWriter<T>( ILikeSerializer s, in T o );
+
+        [Test]
+        public void using_Unsafe_as_to_work_around_variance_for_reference_types()
+        {
+            var oB = new SimpleBase();
+            var oD = new SimpleDerived();
+            var s = new LikeSerializerImpl();
+            TWriter<SimpleBase> bOnB = WriteBase;
+
+            bOnB( s, oB );
+            bOnB( s, oD );
+            s.Count.Should().Be( 2 );
+
+            // - No contravariance.
+            // TWriter<SimpleDerived> dOnB = WriteBase;
+            // TWriter<SimpleDerived> dOnBC = (TWriter<SimpleDerived>)( bOnB );
+            // - No covariance.
+            // TWriter<object> oOnS = WriteBase;
+            // UWriter uOnB = WriteBase;
+
+            TWriter<SimpleDerived> dOnB = Unsafe.As<TWriter<SimpleDerived>>( bOnB );
+            dOnB( s, oD );
+            s.Count.Should().Be( 3 );
+
+            TWriter<object> oOnBase = Unsafe.As<TWriter<object>>( bOnB );
+            oOnBase( s, oD );
+            s.Count.Should().Be( 4 );
+
+            UWriter uOnBase = Unsafe.As<UWriter>( bOnB );
+            uOnBase( s, oD );
+            s.Count.Should().Be( 5 );
+
+            var bug = new object();
+            // Safe.
+            // bOnB( s, bug );
+
+            // Unsafe means something: this should not work.
+            oOnBase( s, bug );
+            uOnBase( s, bug );
+            s.Count.Should().Be( 7 );
+
+            static void WriteBase( ILikeSerializer s, in SimpleBase o )
+            {
+                ++s.Count;
+            }
+
+        }
+
+
+
+
         readonly struct Sample : ICKSimpleBinarySerializable
         {
             public readonly int Power;
@@ -54,50 +118,6 @@ namespace CK.BinarySerialization.Tests
             var l = new List<Sample?>() { null, new Sample( 31, "Albert", 12 ) };
             object? backL = TestHelper.SaveAndLoadAny( l );
             backL.Should().BeEquivalentTo( l, o => o.WithStrictOrdering() );
-        }
-
-        class SimpleBase : ICKSimpleBinarySerializable
-        {
-            public int Power { get; set; }
-
-            public SimpleBase()
-            {
-            }
-
-            public SimpleBase( ICKBinaryReader r )
-            {
-                r.ReadByte(); // Version
-                Power = r.ReadInt32();
-            }
-
-            public virtual void Write( ICKBinaryWriter w )
-            {
-                w.Write( (byte)0 ); // Version
-                w.Write( Power );
-            }
-        }
-
-        class SimpleDerived : SimpleBase
-        {
-            public string? Name { get; set; }
-
-            public SimpleDerived()
-            {
-            }
-
-            public SimpleDerived( ICKBinaryReader r )
-                : base( r )
-            {
-                r.ReadByte(); // Version
-                Name = r.ReadNullableString();
-            }
-
-            public override void Write( ICKBinaryWriter w )
-            {
-                base.Write( w );
-                w.Write( (byte)0 ); // Version
-                w.WriteNullableString( Name );
-            }
         }
 
         [Test]

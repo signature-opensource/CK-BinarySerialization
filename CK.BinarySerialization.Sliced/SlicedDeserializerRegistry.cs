@@ -159,28 +159,28 @@ namespace CK.BinarySerialization
         /// <inheritdoc />
         public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
-            if( info.DriverName == "Sliced" && typeof( ICKSlicedSerializable ).IsAssignableFrom( info.LocalType ) )
+            if( info.DriverName == "Sliced" && typeof( ICKSlicedSerializable ).IsAssignableFrom( info.TargetType ) )
             {
-                if( info.LocalType.IsValueType )
+                if( info.TargetType.IsValueType )
                 {
-                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.LocalType, 
+                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, 
                                                                                                    CreateMonoConstructorDriver, 
                                                                                                    typeof( SlicedDeserializerDriverV<> ) );
                 }
                 // Looking for mono constructor: the base type (that may be Object) is not a ICKSlicedSerializable.
-                var b = info.LocalType.BaseType;
+                var b = info.TargetType.BaseType;
                 Debug.Assert( b != null );  
                 if( !typeof( ICKSlicedSerializable ).IsAssignableFrom( b ) )
                 {
-                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.LocalType, 
+                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, 
                                                                                                    CreateMonoConstructorDriver, 
                                                                                                    typeof( SlicedDeserializerDriverRMonoCtor<> ) );
                 }
                 // Multiple constructors case.
                 List<ConstructorInfo> ctors = new();
-                if( GetConstructorsTopDownAndCheckNominality( info.LocalType, ctors, info.Info ) )
+                if( GetConstructorsTopDownAndCheckNominality( info.TargetType, ctors, info.ReadInfo ) )
                 {
-                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.LocalType, CreateNominalDriver, ctors );
+                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateNominalDriver, ctors );
                 }
                 // The TypeReadInfos don't match deserialization constructors.
                 // We build a driver that tries its best to associate the TypeReadInfos to the constructors and don't cache it:
@@ -191,10 +191,10 @@ namespace CK.BinarySerialization
                 //  - First we associate each constructor to the TypeReadInfo that has the same local type regardless of its position
                 //    in the TyperReadInfo chain. This handles renaming (as long as type has been mapped) and suppression of base classes.
                 //  - Constructors that are "free" are provided with a MissingSlicedTypeReadInfo... and let it be.
-                var readTypeInfo = info.Info;
+                var readTypeInfo = info.ReadInfo;
                 Lazy<MissingSlicedTypeReadInfo> missing = new( () => new MissingSlicedTypeReadInfo( readTypeInfo.TypePath ) );
                 var types = ctors.Select( ctor => readTypeInfo.TypePath.FirstOrDefault( i => i.TryResolveLocalType() == ctor.DeclaringType ) ?? missing.Value ).ToArray();
-                var tGoodLuck = typeof( SlicedDeserializerDriverGoodLuck<> ).MakeGenericType( info.LocalType );
+                var tGoodLuck = typeof( SlicedDeserializerDriverGoodLuck<> ).MakeGenericType( info.TargetType );
                 return (IDeserializationDriver)Activator.CreateInstance( tGoodLuck, ctors, types )!;
 
             }

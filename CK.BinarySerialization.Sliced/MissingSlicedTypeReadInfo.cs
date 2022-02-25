@@ -98,6 +98,16 @@ namespace CK.BinarySerialization
         public bool HasResolvedDeserializationDriver => false;
 
         /// <summary>
+        /// Always null.
+        /// </summary>
+        public Type? TargetType => null;
+
+        /// <summary>
+        /// Always null.
+        /// </summary>
+        public Type? TryResolveLocalType() => null;
+
+        /// <summary>
         /// Always throws a <see cref="NotSupportedException"/>.
         /// </summary>
         public IDeserializationDriver GetDeserializationDriver()
@@ -112,10 +122,5 @@ namespace CK.BinarySerialization
         {
             throw new NotSupportedException( nameof( MissingSlicedTypeReadInfo ) );
         }
-
-        /// <summary>
-        /// Always null.
-        /// </summary>
-        public Type? TryResolveLocalType() => null;
     }
 }

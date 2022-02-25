@@ -47,25 +47,13 @@ namespace CK.BinarySerialization
 
         static void Register<T>( StaticValueTypeSerializer<T> driver ) where T : struct
         {
-            _byType.Add( driver.Type, driver );
-            _byType.Add( driver.ToNullable.Type, driver.ToNullable );
+            _byType.Add( typeof(T), driver );
+            _byType.Add( typeof( Nullable<> ).MakeGenericType( typeof( T ) ), driver.ToNullable );
         }
 
         static void Register<T>( ReferenceTypeSerializer<T> driver ) where T : class
         {
-            _byType.Add( driver.Type, driver.ToNullable );
-        }
-
-        /// <inheritdoc />
-        public IValueTypeSerializationDriver<T>? TryFindValueTypeDriver<T>() where T : struct
-        {
-            return (IValueTypeSerializationDriver<T>?)_byType.GetValueOrDefault( typeof( T ) );
-        }
-
-        /// <inheritdoc />
-        public IReferenceTypeSerializationDriver<T>? TryFindReferenceTypeDriver<T>() where T : class
-        {
-            return (IReferenceTypeSerializationDriver<T>?)_byType.GetValueOrDefault( typeof( T ) );
+            _byType.Add( typeof(T), driver.ToNullable );
         }
 
         /// <inheritdoc />

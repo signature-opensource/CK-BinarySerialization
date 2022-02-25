@@ -1,6 +1,7 @@
 ﻿using CK.Core;
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Reflection;
 
 namespace CK.BinarySerialization
@@ -59,7 +60,7 @@ namespace CK.BinarySerialization
                 // to allow subordinate types resolution.
                 lock( _resolvers )
                 {
-                    // Double check the lock.
+                    // Double Check Lock.
                     if( !_typedDrivers.TryGetValue( t, out driver ) )
                     {
                         foreach( var resolver in _resolvers )
@@ -87,6 +88,7 @@ namespace CK.BinarySerialization
 
         /// <summary>
         /// Registers a driver for a type.
+        /// The driver must be able to handle the type otherwise kitten will be killed.
         /// <para>
         /// The type MUST not already be associated to a driver otherwise an <see cref="InvalidOperationException"/> is raised.
         /// </para>
@@ -95,15 +97,21 @@ namespace CK.BinarySerialization
         /// <param name="driver">The driver that will handle the type's serialization.</param>
         public void AddSerializationDriver( Type t, ISerializationDriver driver )
         {
-            var n = driver.ToNullable.Type;
+            if( t == null ) throw new ArgumentNullException( nameof( t ) );
+            if( driver == null ) throw new ArgumentNullException( nameof( driver ) );
+            driver = driver.ToNonNullable;
             bool done = false;
-            if( _typedDrivers.TryAdd( n, driver.ToNullable ) )
+            if( _typedDrivers.TryAdd( t, driver ) )
             {
                 done = true;
-                var nn = driver.ToNonNullable.Type;
-                if( nn != n ) done = _typedDrivers.TryAdd( nn, driver.ToNonNullable );
+                if( t.IsValueType )
+                {
+                    if( Nullable.GetUnderlyingType( t ) != null ) throw new ArgumentException( "Type must not be a nullable value type.", nameof( t ) );
+                    t = typeof( Nullable<> ).MakeGenericType( t );
+                    done = _typedDrivers.TryAdd( t, driver.ToNullable );
+                }
             }
-            if( !done ) throw new InvalidOperationException( $"A serialization driver for type '{n}' is already registered." );
+            if( !done ) throw new InvalidOperationException( $"A serialization driver for type '{t}' is already registered." );
         }
 
         /// <summary>

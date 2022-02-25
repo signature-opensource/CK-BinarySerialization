@@ -4,7 +4,7 @@ using System.Text;
 
 namespace CK.BinarySerialization
 {
-    interface INonNullableSerializationDriverInternal : ISerializationDriver
+    interface ISerializationDriverInternal : ISerializationDriver
     {
         UntypedWriter NoRefNoNullWriter { get; }
     }

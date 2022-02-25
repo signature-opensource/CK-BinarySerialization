@@ -28,7 +28,7 @@ namespace CK.BinarySerialization
         /// </para>
         /// </summary>
         /// <param name="t">The target local type.</param>
-        void SetLocalType( Type t );
+        void SetTargetType( Type t );
 
         /// <summary>
         /// Assigns the deserialization driver that must be used for this <see cref="ReadInfo"/>.

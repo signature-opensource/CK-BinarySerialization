@@ -17,6 +17,7 @@ namespace CK.BinarySerialization
     {
         readonly BinaryDeserializerImpl _deserializer;
         IDeserializationDriver? _driver;
+        Type? _targetType;
         Type? _localType;
         Mutable? _mutating;
         ITypeReadInfo[]? _typePath;
@@ -127,11 +128,11 @@ namespace CK.BinarySerialization
                 _info.DriverName = driverName;
             }
 
-            public void SetLocalType( Type t )
+            public void SetTargetType( Type t )
             {
                 if( t == null ) throw new ArgumentNullException( nameof( t ) );
                 if( _closed ) throw new InvalidOperationException();
-                _info._localType = t;
+                _info._targetType = t;
             }
 
             public void Close()
@@ -196,6 +197,15 @@ namespace CK.BinarySerialization
             }
         }
 
+        public Type? TargetType
+        {
+            get
+            {
+                if( !_hooked ) ApplyHook();
+                return _targetType ?? TryResolveLocalType();
+            }
+        }
+
         public Type? TryResolveLocalType()
         {
             if( _localType == null )
@@ -220,15 +230,7 @@ namespace CK.BinarySerialization
                 // OpenArray has a local type by design (set by read).
                 Debug.Assert( Kind != TypeReadInfoKind.OpenArray );
                 // Apply hooks if this is the first time.
-                if( !_hooked )
-                {
-                    _hooked = true;
-                    _mutating = new Mutable( this );
-                    _deserializer.Context.Shared.CallHooks( _mutating );
-                    _mutating = null;
-                    if( _driver != null ) _driverLookupDone = true;
-                    if( _localType != null ) return _localType;
-                }
+                if( !_hooked ) ApplyHook();
                 try
                 {
                     Type t;
@@ -300,6 +302,16 @@ namespace CK.BinarySerialization
                 t = a.GetType( s, throwOnError: true )!;
                 return t;
             }
+        }
+
+        void ApplyHook()
+        {
+            Debug.Assert( !_hooked );
+            _hooked = true;
+            _mutating = new Mutable( this );
+            _deserializer.Context.Shared.CallHooks( _mutating );
+            _mutating = null;
+            if( _driver != null ) _driverLookupDone = true;
         }
 
         public bool HasResolvedDeserializationDriver => _driver != null;

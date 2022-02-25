@@ -17,7 +17,7 @@ namespace CK.BinarySerialization
 
         public const int MaxRecurse = 50;
         int _recurseCount;
-        Stack<(INonNullableSerializationDriverInternal D, object O)>? _deferred;
+        Stack<(ISerializationDriverInternal D, object O)>? _deferred;
 
         int _debugModeCounter;
         int _debugSentinel;
@@ -318,21 +318,21 @@ namespace CK.BinarySerialization
             {
                 marker = SerializationMarker.Struct;
             }
-            var driver = (INonNullableSerializationDriverInternal)_context.FindDriver( t ).ToNonNullable;
+            var driver = (ISerializationDriverInternal)_context.FindDriver( t ).ToNonNullable;
             if( _recurseCount > MaxRecurse 
                 && marker == SerializationMarker.Object
                 && driver is ISerializationDriverAllowDeferredRead )
             {
-                if( _deferred == null ) _deferred = new Stack<(INonNullableSerializationDriverInternal D, object O)>( 200 );
+                if( _deferred == null ) _deferred = new Stack<(ISerializationDriverInternal D, object O)>( 200 );
                 _deferred.Push( (driver, o) );
                 _writer.Write( (byte)SerializationMarker.DeferredObject );
-                WriteTypeInfo( new NullableTypeRoot( driver.Type, false ), driver, true );
+                WriteTypeInfo( new NullableTypeRoot( t, false ), driver, true );
             }
             else
             {
                 ++_recurseCount;
                 _writer.Write( (byte)marker );
-                WriteTypeInfo( new NullableTypeRoot( driver.Type, false ), driver, true );
+                WriteTypeInfo( new NullableTypeRoot( t, false ), driver, true );
                 driver.NoRefNoNullWriter( this, o );
                 --_recurseCount;
             }

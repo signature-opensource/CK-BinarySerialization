@@ -7,9 +7,9 @@ namespace CK.BinarySerialization
     /// Serializer for reference type <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
-    public abstract class ReferenceTypeSerializer<T> : INonNullableSerializationDriverInternal, IReferenceTypeNonNullableSerializationDriver<T> where T : class
+    public abstract class ReferenceTypeSerializer<T> : ISerializationDriverInternal where T : class
     {
-        sealed class ReferenceTypeNullable : IReferenceTypeNullableSerializationDriver<T>
+        sealed class ReferenceTypeNullable : ISerializationDriver
         {
             readonly ReferenceTypeSerializer<T> _serializer;
             readonly UntypedWriter _uWriter;
@@ -18,32 +18,21 @@ namespace CK.BinarySerialization
             public ReferenceTypeNullable( ReferenceTypeSerializer<T> serializer )
             {
                 _serializer = serializer;
-                DriverName = _serializer.DriverName + '?';
                 _tWriter = WriteNullable;
                 _uWriter = WriteNullableObject;
             }
 
-            public bool IsNullable => true;
-
             public UntypedWriter UntypedWriter => _uWriter;
-
-            public TypedWriter<T?> TypedWriter => _tWriter;
 
             Delegate ISerializationDriver.TypedWriter => _tWriter;
 
-            public IReferenceTypeNullableSerializationDriver<T> ToNullable => this;
-
-            public IReferenceTypeNonNullableSerializationDriver<T> ToNonNullable => _serializer;
-
-            public Type Type => _serializer.Type;
-
-            public string DriverName { get; }
+            public string DriverName => _serializer.DriverName;
 
             public int SerializationVersion => _serializer.SerializationVersion;
 
-            INullableSerializationDriver ISerializationDriver.ToNullable => this;
+            public ISerializationDriver ToNullable => this;
 
-            INonNullableSerializationDriver ISerializationDriver.ToNonNullable => _serializer;
+            public ISerializationDriver ToNonNullable => _serializer;
 
             public void WriteNullable( IBinarySerializer w, in T? o )
             {
@@ -84,15 +73,14 @@ namespace CK.BinarySerialization
             }
         }
 
+        void WriteObjectData( IBinarySerializer w, in object o ) => Write( w, (T)o );
+
         /// <summary>
         /// Must write the instance data.
         /// </summary>
         /// <param name="s">The binary serializer.</param>
         /// <param name="o">The instance to write.</param>
         internal protected abstract void Write( IBinarySerializer s, in T o );
-
-        /// <inheritdoc />
-        public Type Type => typeof( T );
 
         /// <inheritdoc />
         public bool IsNullable => false;
@@ -105,25 +93,15 @@ namespace CK.BinarySerialization
 
         Delegate ISerializationDriver.TypedWriter => _tWriter;
 
-        UntypedWriter INonNullableSerializationDriverInternal.NoRefNoNullWriter => _noRefWriter;
+        UntypedWriter ISerializationDriverInternal.NoRefNoNullWriter => _noRefWriter;
 
+        public ISerializationDriver ToNullable => _nullable;
 
-        /// <inheritdoc />
-        public IReferenceTypeNullableSerializationDriver<T> ToNullable => _nullable;
-
-        /// <inheritdoc />
-        public IReferenceTypeNonNullableSerializationDriver<T> ToNonNullable => this;
-
-        INullableSerializationDriver ISerializationDriver.ToNullable => _nullable;
-
-        INonNullableSerializationDriver ISerializationDriver.ToNonNullable => this;
+        public ISerializationDriver ToNonNullable => this;
 
         public abstract string DriverName { get; }
 
         public abstract int SerializationVersion { get; }
 
-        void WriteObjectData( IBinarySerializer w, in object o ) => Write( w, (T)o );
-
-        //void INonNullableSerializationDriver.WriteObject( IBinarySerializer w, in object o) => Write( w, (T)o );
     }
 }

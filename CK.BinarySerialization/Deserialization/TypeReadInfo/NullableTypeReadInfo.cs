@@ -63,6 +63,8 @@ namespace CK.BinarySerialization
 
         public bool HasResolvedDeserializationDriver => _nonNull.HasResolvedDeserializationDriver;
 
+        public Type? TargetType => _nonNull.TargetType;
+
         public Type? TryResolveLocalType()
         {
             if( _localType == null )

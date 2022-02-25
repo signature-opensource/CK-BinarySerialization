@@ -247,5 +247,27 @@ namespace CK.BinarySerialization.Tests
             FluentActions.Invoking( () => backA.Add( "a", 1 ) ).Should().Throw<ArgumentException>();
         }
 
+
+        [Test]
+        public void list_of_sealed_classes()
+        {
+            var a = new List<SimpleSealedDerived>();
+            a.Add( new SimpleSealedDerived() { Power = 42, Name = "Alice" } );
+            a.Add( new SimpleSealedDerived() { Power = 3712, Name = "Albert" } );
+
+            object? backA = TestHelper.SaveAndLoadObject( a );
+            backA.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
+        }
+
+        [Test]
+        public void list_of_non_sealed_classes()
+        {
+            var a = new List<SimpleBase>();
+            a.Add( new SimpleSealedDerived() { Power = 42, Name = "Alice" } );
+            a.Add( new SimpleDerived() { Power = 3712, Name = "Albert" } );
+
+            object? backA = TestHelper.SaveAndLoadObject( a );
+            backA.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
+        }
     }
 }

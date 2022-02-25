@@ -94,7 +94,7 @@ namespace CK.BinarySerialization
         {
             var tU = Enum.GetUnderlyingType( t );
             var dU = _resolver.TryFindDriver( tU );
-            if( dU == null ) return null;
+            if( dU == null ) return null;   
             var tS = typeof( Serialization.DEnum<,>).MakeGenericType( t, tU );
             return (ISerializationDriver)Activator.CreateInstance( tS, dU.TypedWriter )!;
         }
@@ -120,7 +120,6 @@ namespace CK.BinarySerialization
             var tE2 = t.GetGenericArguments()[1];
             var dItem2 = _resolver.TryFindDriver( tE2 );
             if( dItem2 == null ) return null;
-
             var tS = tGenD.MakeGenericType( tE1, tE2 );
             
             var d = (ISerializationDriver)Activator.CreateInstance( tS, dItem1.TypedWriter, dItem2.TypedWriter )!;
@@ -134,16 +133,16 @@ namespace CK.BinarySerialization
             for( int i = 0; i < parameters.Length; i++ )
             {
                 var d = _resolver.TryFindDriver( parameters[i] );
-                if( d == null ) return null;
+                if( d == null ) return null;    
                 p[i] = d.UntypedWriter;
             }
             if( isValue )
             {
                 var tS = typeof( Serialization.DValueTuple<> ).MakeGenericType( t );
-                return (ISerializationDriver?)Activator.CreateInstance( tS, new object?[] { p } );
+                return (ISerializationDriver)Activator.CreateInstance( tS, new object?[] { p } )!;
             }
             var tR = typeof( Serialization.DTuple<> ).MakeGenericType( t );
-            return ((ISerializationDriver?)Activator.CreateInstance( tR, new object?[] { p } )!).ToNullable;
+            return ((ISerializationDriver)Activator.CreateInstance( tR, new object?[] { p } )!).ToNullable;
         }
 
     }

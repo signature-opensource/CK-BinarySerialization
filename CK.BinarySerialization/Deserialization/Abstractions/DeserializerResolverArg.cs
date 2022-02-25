@@ -15,17 +15,17 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Gets the non nullable <see cref="ITypeReadInfo"/>.
         /// </summary>
-        public readonly ITypeReadInfo Info;
+        public readonly ITypeReadInfo ReadInfo;
 
         /// <summary>
         /// Gets the local type.
         /// </summary>
-        public readonly Type LocalType;
+        public readonly Type TargetType;
 
         /// <summary>
         /// Gets the driver name.
         /// </summary>
-        public string DriverName => Info.DriverName!;
+        public string DriverName => ReadInfo.DriverName!;
 
         /// <summary>
         /// Gets the shared context. 
@@ -38,16 +38,17 @@ namespace CK.BinarySerialization
         /// </summary>
         /// <param name="info">The type info for which a deserialization driver must be resolved.</param>
         /// <param name="context">The shared context is used only to detect mismatch of resolution context.</param>
-        public DeserializerResolverArg( ITypeReadInfo info, SharedBinaryDeserializerContext context )
+        /// <param name="targetType">Optional target local type. When not null, overrides <see cref="ITypeReadInfo.TargetType"/>.</param>
+        public DeserializerResolverArg( ITypeReadInfo info, SharedBinaryDeserializerContext context, Type? targetType = null )
         {
             if( info == null ) throw new ArgumentNullException( nameof( info ) );
             if( info.IsNullable ) throw new ArgumentException( "Type must not be nullable.", nameof( info ) );
             if( info.DriverName == null ) throw new ArgumentException( "Must have a driver name.", nameof( info ) );
             if( info.HasResolvedDeserializationDriver ) throw new ArgumentException( "Deserialization driver must not be already resolved.", nameof( info ) );
             if( context == null ) throw new ArgumentNullException( nameof(context) );
-            Info = info;
-            LocalType = info.ResolveLocalType();
-            if( LocalType.IsAbstract ) throw new ArgumentException( $"Cannot deserialize an abstract type '{LocalType}'.", nameof( info ) );
+            ReadInfo = info;
+            TargetType = targetType ?? info.TargetType ?? info.ResolveLocalType();
+            if( TargetType.IsAbstract ) throw new ArgumentException( $"Cannot deserialize an abstract type '{TargetType}'.", nameof( info ) );
             Context = context;
         }
 

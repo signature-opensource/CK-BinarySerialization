@@ -13,7 +13,7 @@ namespace CK.BinarySerialization
         /// Gets whether this type information describes a nullable type.
         /// Reference or value type are handles uniformly: the <see cref="Nullable{T}"/> doesn't
         /// appear: type informations here are the ones of the non nullable type except for the 
-        /// <see cref="TryResolveLocalType()"/> or <see cref="ResolveLocalType()"/> that synthesize
+        /// <see cref="TryResolveLocalType()"/> or <see cref="ResolveLocalType()"/> that synthesizes
         /// a <see cref="Nullable{T}"/> if this is a nullable value type. 
         /// </summary>
         bool IsNullable { get; }
@@ -93,24 +93,44 @@ namespace CK.BinarySerialization
         string TypeNamespace { get; }
 
         /// <summary>
+        /// Gets the target type into which instances that have been serialized with 
+        /// this type information should be deserialized by default.
+        /// <para>
+        /// This defaults to the <see cref="TryResolveLocalType()"/>.
+        /// </para>
+        /// </summary>
+        /// <remarks>
+        /// This will be a NullableTypeTree once.
+        /// </remarks>
+        Type? TargetType { get; }
+
+        /// <summary>
         /// Tries to resolve the local type.
         /// <para>
         /// Note that <see cref="TypeReadInfoKind.OpenArray"/> is bound to the system typeof( <see cref="Array"/> ).
         /// </para>
         /// </summary>
         /// <returns>The local type if it can be resolved, null otherwise.</returns>
+        /// <remarks>
+        /// This will be a NullableTypeTree once.
+        /// </remarks>
         Type? TryResolveLocalType();
 
         /// <summary>
         /// Resolves the local type or throws a <see cref="TypeLoadException"/>.
         /// </summary>
         /// <returns>The local type.</returns>
+        /// <remarks>
+        /// This will be a NullableTypeTree once.
+        /// </remarks>
         Type ResolveLocalType();
 
         /// <summary>
-        /// Gets the type's path from the first base that is not Object nor ValueType
-        /// up to and including this one.
+        /// Gets the type's path from the first base (skipping Object and ValueType) up to and 
+        /// including this one.
+        /// <para>
         /// Base types are non nullable.
+        /// </para>
         /// </summary>
         IReadOnlyList<ITypeReadInfo> TypePath { get; }
 

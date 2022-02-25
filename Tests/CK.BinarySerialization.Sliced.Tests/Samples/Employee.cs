@@ -8,6 +8,7 @@ namespace CK.BinarySerialization.Tests.Samples
     public class Employee : Person
     {
         public Employee( Garage g )
+            : base( g.Town )
         {
             Garage = g;
             g.OnNewEmployee( this );
@@ -29,15 +30,15 @@ namespace CK.BinarySerialization.Tests.Samples
             : base( Sliced.Instance )
         {
             EmployeeNumber = d.Reader.ReadInt32();
-            Garage = d.ReadObject<Garage>();
             BestFriend = d.ReadNullableObject<Employee>();
+            Garage = d.ReadObject<Garage>();
         }
 
         public static void Write( IBinarySerializer s, in Employee o )
         {
             s.Writer.Write( o.EmployeeNumber );
-            s.WriteObject( o.Garage );
             s.WriteNullableObject( o.BestFriend );
+            s.WriteObject( o.Garage );
         }
 
         #endregion
