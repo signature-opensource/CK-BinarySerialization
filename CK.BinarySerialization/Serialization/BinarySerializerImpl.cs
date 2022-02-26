@@ -288,7 +288,7 @@ namespace CK.BinarySerialization
             return true;
         }
 
-        bool DoWriteObject( object o )
+        internal bool DoWriteObject( object o )
         {
             if( o is Type oT )
             {

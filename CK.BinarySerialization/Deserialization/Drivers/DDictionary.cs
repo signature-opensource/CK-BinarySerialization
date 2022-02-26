@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace CK.BinarySerialization.Deserialization
@@ -17,10 +18,10 @@ namespace CK.BinarySerialization.Deserialization
             SharedDeserializerKnownObject.Default.RegisterKnownKey( k, c );
         }
 
-        public DDictionary( TypedReader<TKey> k, TypedReader<TValue> v )
+        public DDictionary( Delegate k, Delegate v )
         {
-            _key = k;
-            _value = v;
+            _key = Unsafe.As<TypedReader<TKey>>( k );
+            _value = Unsafe.As<TypedReader<TValue>>( v );
         }
 
         protected override void ReadInstance( ref RefReader r )

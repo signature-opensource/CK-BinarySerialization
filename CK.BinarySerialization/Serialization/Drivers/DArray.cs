@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace CK.BinarySerialization.Serialization
@@ -8,7 +9,7 @@ namespace CK.BinarySerialization.Serialization
     {
         readonly TypedWriter<T> _item;
 
-        public DArray( TypedWriter<T> item ) => _item = item;
+        public DArray( Delegate item ) => _item = Unsafe.As<TypedWriter<T>>( item );
 
         public override string DriverName => "Array";
 

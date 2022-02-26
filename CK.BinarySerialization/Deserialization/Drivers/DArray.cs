@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace CK.BinarySerialization.Deserialization
@@ -9,10 +10,7 @@ namespace CK.BinarySerialization.Deserialization
     {
         readonly TypedReader<T> _item;
 
-        public DArray( TypedReader<T> item )
-        {
-            _item = item;
-        }
+        public DArray( Delegate item ) => _item = Unsafe.As<TypedReader<T>>( item );
 
         protected override void ReadInstance( ref RefReader r )
         {

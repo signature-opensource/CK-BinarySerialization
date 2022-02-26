@@ -21,6 +21,7 @@ namespace CK.BinarySerialization
         Type? _localType;
         Mutable? _mutating;
         ITypeReadInfo[]? _typePath;
+        IDeserializationDriver? _abstractOrConcreteDriver;
 
         bool _hooked;
         bool _driverLookupDone;
@@ -31,8 +32,8 @@ namespace CK.BinarySerialization
             Kind = k;
             SerializationVersion = -1;
             SubTypes = Array.Empty<ITypeReadInfo>();
-            IsSealed = k == TypeReadInfoKind.ValueType || k == TypeReadInfoKind.SealedClass || k == TypeReadInfoKind.GenericSealedClass;
             IsValueType = k == TypeReadInfoKind.ValueType || k == TypeReadInfoKind.GenericValueType || k == TypeReadInfoKind.Enum;
+            IsSealed = k != TypeReadInfoKind.Class && k != TypeReadInfoKind.GenericClass;
         }
 
         #region Read methods called after instantiation by BinaryDeserializerImpl.ReadTypeInfo().
@@ -314,7 +315,7 @@ namespace CK.BinarySerialization
             if( _driver != null ) _driverLookupDone = true;
         }
 
-        public bool HasResolvedDeserializationDriver => _driver != null;
+        public bool HasResolvedConcreteDriver => _driver != null;
 
         public IDeserializationDriver GetConcreteDriver()
         {
@@ -331,9 +332,30 @@ namespace CK.BinarySerialization
             return _driver;
         }
 
+        public IDeserializationDriver GetPotentiallyAbstractDriver()
+        {
+            if( _abstractOrConcreteDriver == null )
+            { 
+                if( !IsSealed )
+                {
+                    _abstractOrConcreteDriver = _deserializer.Context.GetAbstractDriver( TargetType ?? ResolveLocalType() );
+                }
+                else
+                {
+                    _abstractOrConcreteDriver = GetConcreteDriver();
+                }
+            }
+            return _abstractOrConcreteDriver;
+        }
+
+
         public override string ToString()
         {
-            var gen = SubTypes.Count > 0
+            var gen = Kind != TypeReadInfoKind.Array 
+                      && Kind != TypeReadInfoKind.Enum 
+                      && Kind != TypeReadInfoKind.Ref 
+                      && Kind != TypeReadInfoKind.Pointer 
+                      && SubTypes.Count > 0
                         ? '<' + SubTypes.Select( p => p.ToString()! ).Concatenate() + '>'
                         : "";
             return $"[{DriverName}]{TypeNamespace}.{TypeName}{gen}";

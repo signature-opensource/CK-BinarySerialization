@@ -33,9 +33,9 @@ namespace CK.BinarySerialization
         public bool IsNullable => false;
 
         /// <summary>
-        /// Always false.
+        /// Always true.
         /// </summary>
-        public bool IsSealed => false;
+        public bool IsSealed => true;
 
         /// <summary>
         /// Always false.
@@ -95,7 +95,7 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Always false.
         /// </summary>
-        public bool HasResolvedDeserializationDriver => false;
+        public bool HasResolvedConcreteDriver => false;
 
         /// <summary>
         /// Always null.
@@ -111,6 +111,14 @@ namespace CK.BinarySerialization
         /// Always throws a <see cref="NotSupportedException"/>.
         /// </summary>
         public IDeserializationDriver GetConcreteDriver()
+        {
+            throw new NotSupportedException( nameof( MissingSlicedTypeReadInfo ) );
+        }
+
+        /// <summary>
+        /// Always throws a <see cref="NotSupportedException"/>.
+        /// </summary>
+        public IDeserializationDriver GetPotentiallyAbstractDriver()
         {
             throw new NotSupportedException( nameof( MissingSlicedTypeReadInfo ) );
         }

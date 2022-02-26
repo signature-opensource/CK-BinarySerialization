@@ -9,9 +9,9 @@
     
     string TypeReaderDecl( int i ) => String.Join( ";"+Environment.NewLine, Enumerable.Range( 1, i + 1 ).Select( x => $"readonly TypedReader<T{x}> _item{x}" ) );
     
-    string AssignCtorParams( int i ) => String.Join( ";"+Environment.NewLine, Enumerable.Range( 1, i + 1 ).Select( x => $"_item{x} = (TypedReader<T{x}>)d[{x-1}]" ) );
+    string AssignCtorParams( int i ) => String.Join( ";"+Environment.NewLine, Enumerable.Range( 1, i + 1 ).Select( x => $"_item{x} = Unsafe.As<TypedReader<T{x}>>( d[{x-1}] )" ) );
 
-    string CallReaders( int i, string readInfo ) => String.Join( ","+Environment.NewLine, Enumerable.Range( 1, i + 1 ).Select( x => $"_item{x}( d, {readInfo}.GenericParameters[{x-1}] )" ) );
+    string CallReaders( int i, string readInfo ) => String.Join( ","+Environment.NewLine, Enumerable.Range( 1, i + 1 ).Select( x => $"_item{x}( d, {readInfo}.SubTypes[{x-1}] )" ) );
 #>
 
 using CK.BinarySerialization;
@@ -34,7 +34,7 @@ namespace CK.BinarySerialization.Deserialization
 
         protected override void ReadInstance( ref RefReader r )
         {
-            Debug.Assert( r.ReadInfo.GenericParameters.Count == <#=i+1#> );
+            Debug.Assert( r.ReadInfo.SubTypes.Count == <#=i+1#> );
             var a = (Tuple<<#=GParams(i)#>>)RuntimeHelpers.GetUninitializedObject( typeof( Tuple<<#=GParams(i)#>> ) );
             var d = r.SetInstance( a );
             var parameters = new object?[]
@@ -54,7 +54,7 @@ namespace CK.BinarySerialization.Deserialization
             <#=AssignCtorParams( i )#>;
         }
 
-        protected override ValueTuple<<#=GParams(i)#>> ReadInstance( IBinaryDeserializer d, TypeReadInfo info )
+        protected override ValueTuple<<#=GParams(i)#>> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )
         {
             return new ValueTuple<<#=GParams(i)#>>( <#=CallReaders( i, "info" )#> );
         }

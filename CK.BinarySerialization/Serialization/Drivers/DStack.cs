@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace CK.BinarySerialization.Serialization
@@ -9,7 +10,7 @@ namespace CK.BinarySerialization.Serialization
     {
         readonly TypedWriter<T> _item;
 
-        public DStack( TypedWriter<T> item ) => _item = item;
+        public DStack( Delegate item ) => _item = Unsafe.As<TypedWriter<T>>( item );
 
         public override string DriverName => "Stack";
 

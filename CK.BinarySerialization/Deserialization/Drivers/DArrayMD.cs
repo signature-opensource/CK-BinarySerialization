@@ -10,10 +10,7 @@ namespace CK.BinarySerialization.Deserialization
     {
         readonly TypedReader<TItem> _item;
 
-        public DArrayMD( TypedReader<TItem> item )
-        {
-            _item = item;
-        }
+        public DArrayMD( Delegate item ) => _item = Unsafe.As<TypedReader<TItem>>( item );
 
         protected override void ReadInstance( ref RefReader r )
         {

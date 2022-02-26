@@ -40,8 +40,8 @@ namespace CK.BinarySerialization
             // We lookup the TargetType constructors here. Should we handle the case where the TargetType has no 
             // simple deserializer constructors? 
             // We may lookup the LocalType simple deserializer constructors as well and handle the conversion
-            // from Local to TargetType via LocalType.ConvertTo or TargetType.ConvertFrom or Convert.ChangeType
-            // and standard .Net TypeConverters.
+            // from Local to TargetType via a constructor TargetType( LocalType ) (and/or Convert.ChangeType and
+            // standard .Net TypeConverters).
             // For the moment, there's no such conversions.
 
             // We cache the driver only if the TargetType is the LocalType ("nominal" deserializers).
@@ -51,26 +51,54 @@ namespace CK.BinarySerialization
             var ctor = info.TargetType.GetConstructor( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, _sealedCPTypes, null );
             if( ctor != null )
             {
-                if( info.TargetType == info.ReadInfo.TryResolveLocalType() )
+                if( info.IsTargetSameAsLocalType )
                 {
-                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateSealed, ctor );
+                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateCachedSealed, ctor );
                 }
-                return CreateSealed( info.TargetType, ctor );
+                if( info.TargetType.IsValueType )
+                {
+                    var tGen = info.ReadInfo.IsValueType
+                                ? typeof( SealedBinaryDeserializableDriverV<> )
+                                : typeof( SealedBinaryDeserializableDriverVFromRef<> );
+                    return (IDeserializationDriver)Activator.CreateInstance( tGen.MakeGenericType( info.TargetType ), ctor )!;
+                }
+                var tR = typeof( SealedBinaryDeserializableDriverR<> ).MakeGenericType( info.TargetType );
+                return (IDeserializationDriver)Activator.CreateInstance( tR, ctor )!;
             }
             ctor = info.TargetType.GetConstructor( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, _simpleCPTypes, null );
             if( ctor != null )
             {
-                if( info.TargetType == info.ReadInfo.TryResolveLocalType() )
+                if( info.IsTargetSameAsLocalType )
                 {
-                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateSimple, ctor );
+                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateCachedSimple, ctor );
                 }
-                return CreateSimple( info.TargetType, ctor );
+                if( info.TargetType.IsValueType )
+                {
+                    var tGen = info.ReadInfo.IsValueType
+                                ? typeof( SimpleBinaryDeserializableDriverV<> )
+                                : typeof( SimpleBinaryDeserializableDriverVFromRef<> );
+                    return (IDeserializationDriver)Activator.CreateInstance( tGen.MakeGenericType( info.TargetType ), ctor )!;
+                }
+                var tR = typeof( SimpleBinaryDeserializableDriverR<> ).MakeGenericType( info.TargetType );
+                return (IDeserializationDriver)Activator.CreateInstance( tR, ctor )!;
             }
             return null;
         }
 
         static readonly Type[] _simpleCPTypes = new Type[] { typeof( ICKBinaryReader ) };
         static readonly ParameterExpression[] _simpleCPExpressions = new ParameterExpression[] { Expression.Parameter( typeof( ICKBinaryReader ) ) };
+
+        sealed class SimpleBinaryDeserializableDriverVFromRef<T> : ValueTypeDeserializerWithRef<T> where T : struct
+        {
+            readonly Func<ICKBinaryReader, T> _factory;
+
+            public SimpleBinaryDeserializableDriverVFromRef( ConstructorInfo ctor )
+            {
+                _factory = (Func<ICKBinaryReader, T>)CreateNewDelegate<T>( typeof( Func<ICKBinaryReader, T> ), _simpleCPExpressions, ctor );
+            }
+
+            protected override T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => _factory( d.Reader );
+        }
 
         sealed class SimpleBinaryDeserializableDriverV<T> : ValueTypeDeserializer<T> where T : struct
         {
@@ -96,7 +124,7 @@ namespace CK.BinarySerialization
             protected override T ReadInstance( ICKBinaryReader r, ITypeReadInfo readInfo ) => _factory( r );
         }
 
-        static IDeserializationDriver CreateSimple( Type t, ConstructorInfo ctor )
+        static IDeserializationDriver CreateCachedSimple( Type t, ConstructorInfo ctor )
         {
             if( t.IsValueType )
             {
@@ -109,6 +137,18 @@ namespace CK.BinarySerialization
 
         static readonly Type[] _sealedCPTypes = new Type[] { typeof( ICKBinaryReader ), typeof( int ) };
         static readonly ParameterExpression[] _sealedCPExpressions = new ParameterExpression[] { Expression.Parameter( typeof( ICKBinaryReader ) ), Expression.Parameter( typeof( int ) ) };
+
+        sealed class SealedBinaryDeserializableDriverVFromRef<T> : ValueTypeDeserializerWithRef<T> where T : struct
+        {
+            readonly Func<ICKBinaryReader, int, T> _factory;
+
+            public SealedBinaryDeserializableDriverVFromRef( ConstructorInfo ctor )
+            {
+                _factory = (Func<ICKBinaryReader, int, T>)CreateNewDelegate<T>( typeof( Func<ICKBinaryReader, int, T> ), _sealedCPExpressions, ctor );
+            }
+
+            protected override T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => _factory( d.Reader, d.SerializerVersion );
+        }
 
         sealed class SealedBinaryDeserializableDriverV<T> : ValueTypeDeserializer<T> where T : struct
         {
@@ -134,7 +174,7 @@ namespace CK.BinarySerialization
             protected override T ReadInstance( ICKBinaryReader r, ITypeReadInfo readInfo ) => _factory( r, readInfo.SerializationVersion );
         }
 
-        static IDeserializationDriver CreateSealed( Type t, ConstructorInfo ctor )
+        static IDeserializationDriver CreateCachedSealed( Type t, ConstructorInfo ctor )
         {
             if( t.IsValueType )
             {

@@ -29,8 +29,6 @@ namespace CK.BinarySerialization
 
             IDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
 
-            public object? ReadAsObject( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
-
             public T? ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
             {
                 var b = d.Reader.ReadByte();

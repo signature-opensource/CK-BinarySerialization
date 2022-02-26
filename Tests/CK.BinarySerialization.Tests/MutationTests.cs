@@ -176,7 +176,7 @@ namespace CK.BinarySerialization.Tests
         [Test]
         public void from_sealed_class_to_nullable_struct_using_ICKVersionedBinarySerializable()
         {
-            Assume.That( false, "Reference type to struct is not handled yet." );
+            //Assume.That( false, "Reference type to struct is not handled yet." );
             static void SetNewLocalType( IMutableTypeReadInfo i )
             {
                 if( i.ReadInfo.TypeName == "MutationTests+ThingSealedClass" )

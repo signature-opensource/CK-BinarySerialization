@@ -9,7 +9,7 @@ namespace CK.BinarySerialization.Serialization
     {
         readonly TypedWriter<TItem> _item;
 
-        public DArrayMD( TypedWriter<TItem> item ) => _item = item;
+        public DArrayMD( Delegate item ) => _item = Unsafe.As<TypedWriter<TItem>>( item );
 
         public override string DriverName => "Array";
 

@@ -40,26 +40,26 @@ namespace CK.BinarySerialization.Tests
             BinarySerializer.IdempotenceCheck( t ); 
         }
 
-        [Test]
-        public void huge_linked_list_relies_on_IDeserializationDeferredDriver_to_avoid_StackOverflow()
+        [TestCase(30,2000)]
+        public void big_town_with_a_lot_of_garages_with_employees_that_have_BestFriends( int nbGarage, int nbEmployees )
         {
-            Assume.That( false, "DAbstract not implemented yet." );
-
-            var garage = new Samples.Garage( new Samples.Town( "BigOne" ) );
-            int realize = Enumerable.Range( 0, 2/*100000*/ ).Select( i => new Samples.Employee( garage ) { Name = $"n°{i}", EmployeeNumber = i } ).Count();
-
-            // This creates a linked list of 99999 employees that will
-            // be serialized by the employee n°0: without the IDeserializationDeferredDriver this
-            // would explode the stack.
-            for( int i = 1; i < garage.Employees.Count; i++ )
+            var town = new Samples.Town( "BigOne" );
+            for( int i = 0; i < nbGarage; i++ )
             {
-                garage.Employees[i-1].BestFriend = garage.Employees[i];
+                var garage = new Samples.Garage( town );
+                int realize = Enumerable.Range( 0, nbEmployees ).Select( i => new Samples.Employee( garage ) { Name = $"n°{i}", EmployeeNumber = i } ).Count();
+                // This creates a linked list of employees that will
+                // be serialized by the employee n°0: without the IDeserializationDeferredDriver this
+                // would explode the stack.
+                for( int j = 1; j < garage.Employees.Count; j++ )
+                {
+                    garage.Employees[j - 1].BestFriend = garage.Employees[j];
+                }
             }
-            
-            object? backG = TestHelper.SaveAndLoadAny( garage );
-            backG.Should().BeEquivalentTo( garage, o => o.IgnoringCyclicReferences() );
+            object? backG = TestHelper.SaveAndLoadAny( town );
+            backG.Should().BeEquivalentTo( town, o => o.IgnoringCyclicReferences() );
 
-            BinarySerializer.IdempotenceCheck( garage );
+            BinarySerializer.IdempotenceCheck( town );
         }
 
     }

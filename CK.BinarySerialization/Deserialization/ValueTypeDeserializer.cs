@@ -1,15 +1,21 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace CK.BinarySerialization
 {
     /// <summary>
     /// Deserializer base for value type <typeparamref name="T"/>.
+    /// <para>
+    /// This deserializer cannot read a previously written reference type: when a type has changed from class
+    /// to struct, the <see cref="ValueTypeDeserializerWithRef{T}"/> must be used (as long as previously written 
+    /// reference types must still be read).
+    /// </para>
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
     public abstract class ValueTypeDeserializer<T> : IDeserializationDriverInternal, IValueTypeNonNullableDeserializationDriver<T> where T : struct
     {
-        class NullableAdapter : IValueTypeNullableDeserializationDriver<T>
+        sealed class NullableAdapter : IValueTypeNullableDeserializationDriver<T>
         {
             readonly ValueTypeDeserializer<T> _deserializer;
             readonly TypedReader<T?> _reader;
@@ -33,8 +39,6 @@ namespace CK.BinarySerialization
 
             IDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
 
-            public object? ReadAsObject( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
-
             public T? ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
             {
                 Debug.Assert( readInfo.IsNullable );
@@ -50,6 +54,9 @@ namespace CK.BinarySerialization
         readonly NullableAdapter _null;
         readonly TypedReader<T> _reader;
 
+        /// <summary>
+        /// Initializes a new <see cref="ValueTypeDeserializer{T}"/>.
+        /// </summary>
         protected ValueTypeDeserializer()
         {
             _null = new NullableAdapter( this );

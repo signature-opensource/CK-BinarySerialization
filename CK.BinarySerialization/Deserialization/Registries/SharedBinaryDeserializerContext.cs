@@ -23,6 +23,12 @@ namespace CK.BinarySerialization
         Action<IMutableTypeReadInfo>[] _hooks;
 
         /// <summary>
+        /// Abstract drivers are statically cached once for all.
+        /// Note that the local type here may itself be sealed: it's the way it has been written that matters.
+        /// </summary>
+        static readonly ConcurrentDictionary<Type, IDeserializationDriver> _abstractDrivers = new();
+
+        /// <summary>
         /// Public cache for drivers that depend only on the local type to deserialize.
         /// This is the case for <see cref="ICKSimpleBinarySerializable"/>, <see cref="ICKVersionedBinarySerializable"/>
         /// and may be the case for others like the "Sliced" serialization.
@@ -55,6 +61,17 @@ namespace CK.BinarySerialization
                                     new StandardGenericDeserializerRegistry( this ),
                                 }
                             : Array.Empty<IDeserializerResolver>();
+        }
+
+        internal IDeserializationDriver GetAbstractDriver( Type t )
+        {
+            return _abstractDrivers.GetOrAdd( t, Create );
+
+            static IDeserializationDriver Create( Type t )
+            {
+                var tD = typeof( Deserialization.DAbstract<> ).MakeGenericType( t );
+                return (IDeserializationDriver)Activator.CreateInstance( tD )!;
+            }
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace CK.BinarySerialization.Serialization
@@ -16,7 +17,11 @@ namespace CK.BinarySerialization.Serialization
             SharedSerializerKnownObject.Default.RegisterKnownObject( c, k );
         }
 
-        public DDictionary( TypedWriter<TKey> k, TypedWriter<TValue> v ) => (_key, _value) = (k, v);
+        public DDictionary( Delegate k, Delegate v )
+        {
+            _key = Unsafe.As<TypedWriter<TKey>>( k );
+            _value = Unsafe.As<TypedWriter<TValue>>( v );
+        }
 
         public override string DriverName => "Dictionary";
 

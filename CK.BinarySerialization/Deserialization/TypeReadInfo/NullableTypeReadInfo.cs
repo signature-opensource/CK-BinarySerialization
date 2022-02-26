@@ -61,7 +61,7 @@ namespace CK.BinarySerialization
 
         public string TypeNamespace => _nonNull.TypeNamespace;
 
-        public bool HasResolvedDeserializationDriver => _nonNull.HasResolvedDeserializationDriver;
+        public bool HasResolvedConcreteDriver => _nonNull.HasResolvedConcreteDriver;
 
         public Type? TargetType => _nonNull.TargetType;
 
@@ -101,6 +101,8 @@ namespace CK.BinarySerialization
         public IDeserializationDriver GetConcreteDriver() => _nonNull.GetConcreteDriver().ToNullable;
 
         public override string ToString() => '?' + _nonNull.ToString();
+
+        public IDeserializationDriver GetPotentiallyAbstractDriver() => _nonNull.GetPotentiallyAbstractDriver().ToNullable;
 
     }
 }

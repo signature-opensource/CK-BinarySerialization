@@ -111,7 +111,7 @@ To overcome this limitation, a more complex model is required: this is what the 
 brings to the table.
 
 ## ICKSlicedBinarySerializable (any type)
-The `CK.BinarySerialization.ICKVersionedBinarySerializable` interface is a pure marker interface:
+The `CK.BinarySerialization.ICKSlicedSerializable` interface is a pure marker interface:
 ```c#
     /// <summary>
     /// Marker interface for types that can use the "Sliced" serialization. 
@@ -153,10 +153,22 @@ The risk here is to downsize the underlying type, removing or changing the value
 that you did this and reloading an old serialized stream that contains these out of range values: an `OverflowException` will
 be raised.
 
-## ICKVersionedBinarySerializable: struct to sealed class
-This simply works for struct to class: each serialized struct becomes a new object.
+## General support of struct to class and class to struct mutations
 
-The opposite is currently not supported.
+This simply works for struct to class: each serialized struct becomes a new object. The 2 possible 
+base classes for reference type ([`ReferenceTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/ReferenceTypeDeserializer.cs) 
+and [`SimpleReferenceTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/SimpleReferenceTypeDeserializer.cs)) directly 
+supports this mutation.
+
+Transforming a class into a struct is more complex because a serialized reference type is written 
+only once (subsequent references are written as simple numbers). The efficient value type deserializer 
+[`ValueTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/ValueTypeDeserializer.cs) is not able to handle
+this mutation. When a serialized stream that has been written with classes must be read back, 
+the [`ValueTypeDeserializerWithRef<T>`](CK.BinarySerialization/Deserialization/ValueTypeDeserializerWithRef.cs)
+must be used.
+
+The 3 type of serializations handle these mutations automatically.
+
 
 
  

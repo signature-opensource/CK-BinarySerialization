@@ -13,7 +13,7 @@ namespace CK.BinarySerialization.Deserialization
 
         public DTuple( Delegate[] d )
         {
-            _item1 = (TypedReader<T1>)d[0];
+            _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
         }
 
         protected override void ReadInstance( ref RefReader r )
@@ -35,7 +35,7 @@ namespace CK.BinarySerialization.Deserialization
 
         public DValueTuple( Delegate[] d )
         {
-            _item1 = (TypedReader<T1>)d[0];
+            _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
         }
 
         protected override ValueTuple<T1> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )
@@ -50,8 +50,8 @@ readonly TypedReader<T2> _item2;
 
         public DTuple( Delegate[] d )
         {
-            _item1 = (TypedReader<T1>)d[0];
-_item2 = (TypedReader<T2>)d[1];
+            _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
+_item2 = Unsafe.As<TypedReader<T2>>( d[1] );
         }
 
         protected override void ReadInstance( ref RefReader r )
@@ -75,8 +75,8 @@ readonly TypedReader<T2> _item2;
 
         public DValueTuple( Delegate[] d )
         {
-            _item1 = (TypedReader<T1>)d[0];
-_item2 = (TypedReader<T2>)d[1];
+            _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
+_item2 = Unsafe.As<TypedReader<T2>>( d[1] );
         }
 
         protected override ValueTuple<T1, T2> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )
@@ -93,9 +93,9 @@ readonly TypedReader<T3> _item3;
 
         public DTuple( Delegate[] d )
         {
-            _item1 = (TypedReader<T1>)d[0];
-_item2 = (TypedReader<T2>)d[1];
-_item3 = (TypedReader<T3>)d[2];
+            _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
+_item2 = Unsafe.As<TypedReader<T2>>( d[1] );
+_item3 = Unsafe.As<TypedReader<T3>>( d[2] );
         }
 
         protected override void ReadInstance( ref RefReader r )
@@ -121,9 +121,9 @@ readonly TypedReader<T3> _item3;
 
         public DValueTuple( Delegate[] d )
         {
-            _item1 = (TypedReader<T1>)d[0];
-_item2 = (TypedReader<T2>)d[1];
-_item3 = (TypedReader<T3>)d[2];
+            _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
+_item2 = Unsafe.As<TypedReader<T2>>( d[1] );
+_item3 = Unsafe.As<TypedReader<T3>>( d[2] );
         }
 
         protected override ValueTuple<T1, T2, T3> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )
@@ -142,10 +142,10 @@ readonly TypedReader<T4> _item4;
 
         public DTuple( Delegate[] d )
         {
-            _item1 = (TypedReader<T1>)d[0];
-_item2 = (TypedReader<T2>)d[1];
-_item3 = (TypedReader<T3>)d[2];
-_item4 = (TypedReader<T4>)d[3];
+            _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
+_item2 = Unsafe.As<TypedReader<T2>>( d[1] );
+_item3 = Unsafe.As<TypedReader<T3>>( d[2] );
+_item4 = Unsafe.As<TypedReader<T4>>( d[3] );
         }
 
         protected override void ReadInstance( ref RefReader r )
@@ -173,10 +173,10 @@ readonly TypedReader<T4> _item4;
 
         public DValueTuple( Delegate[] d )
         {
-            _item1 = (TypedReader<T1>)d[0];
-_item2 = (TypedReader<T2>)d[1];
-_item3 = (TypedReader<T3>)d[2];
-_item4 = (TypedReader<T4>)d[3];
+            _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
+_item2 = Unsafe.As<TypedReader<T2>>( d[1] );
+_item3 = Unsafe.As<TypedReader<T3>>( d[2] );
+_item4 = Unsafe.As<TypedReader<T4>>( d[3] );
         }
 
         protected override ValueTuple<T1, T2, T3, T4> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )
@@ -197,11 +197,11 @@ readonly TypedReader<T5> _item5;
 
         public DTuple( Delegate[] d )
         {
-            _item1 = (TypedReader<T1>)d[0];
-_item2 = (TypedReader<T2>)d[1];
-_item3 = (TypedReader<T3>)d[2];
-_item4 = (TypedReader<T4>)d[3];
-_item5 = (TypedReader<T5>)d[4];
+            _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
+_item2 = Unsafe.As<TypedReader<T2>>( d[1] );
+_item3 = Unsafe.As<TypedReader<T3>>( d[2] );
+_item4 = Unsafe.As<TypedReader<T4>>( d[3] );
+_item5 = Unsafe.As<TypedReader<T5>>( d[4] );
         }
 
         protected override void ReadInstance( ref RefReader r )
@@ -231,11 +231,11 @@ readonly TypedReader<T5> _item5;
 
         public DValueTuple( Delegate[] d )
         {
-            _item1 = (TypedReader<T1>)d[0];
-_item2 = (TypedReader<T2>)d[1];
-_item3 = (TypedReader<T3>)d[2];
-_item4 = (TypedReader<T4>)d[3];
-_item5 = (TypedReader<T5>)d[4];
+            _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
+_item2 = Unsafe.As<TypedReader<T2>>( d[1] );
+_item3 = Unsafe.As<TypedReader<T3>>( d[2] );
+_item4 = Unsafe.As<TypedReader<T4>>( d[3] );
+_item5 = Unsafe.As<TypedReader<T5>>( d[4] );
         }
 
         protected override ValueTuple<T1, T2, T3, T4, T5> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )
@@ -258,12 +258,12 @@ readonly TypedReader<T6> _item6;
 
         public DTuple( Delegate[] d )
         {
-            _item1 = (TypedReader<T1>)d[0];
-_item2 = (TypedReader<T2>)d[1];
-_item3 = (TypedReader<T3>)d[2];
-_item4 = (TypedReader<T4>)d[3];
-_item5 = (TypedReader<T5>)d[4];
-_item6 = (TypedReader<T6>)d[5];
+            _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
+_item2 = Unsafe.As<TypedReader<T2>>( d[1] );
+_item3 = Unsafe.As<TypedReader<T3>>( d[2] );
+_item4 = Unsafe.As<TypedReader<T4>>( d[3] );
+_item5 = Unsafe.As<TypedReader<T5>>( d[4] );
+_item6 = Unsafe.As<TypedReader<T6>>( d[5] );
         }
 
         protected override void ReadInstance( ref RefReader r )
@@ -295,12 +295,12 @@ readonly TypedReader<T6> _item6;
 
         public DValueTuple( Delegate[] d )
         {
-            _item1 = (TypedReader<T1>)d[0];
-_item2 = (TypedReader<T2>)d[1];
-_item3 = (TypedReader<T3>)d[2];
-_item4 = (TypedReader<T4>)d[3];
-_item5 = (TypedReader<T5>)d[4];
-_item6 = (TypedReader<T6>)d[5];
+            _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
+_item2 = Unsafe.As<TypedReader<T2>>( d[1] );
+_item3 = Unsafe.As<TypedReader<T3>>( d[2] );
+_item4 = Unsafe.As<TypedReader<T4>>( d[3] );
+_item5 = Unsafe.As<TypedReader<T5>>( d[4] );
+_item6 = Unsafe.As<TypedReader<T6>>( d[5] );
         }
 
         protected override ValueTuple<T1, T2, T3, T4, T5, T6> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )
@@ -325,13 +325,13 @@ readonly TypedReader<T7> _item7;
 
         public DTuple( Delegate[] d )
         {
-            _item1 = (TypedReader<T1>)d[0];
-_item2 = (TypedReader<T2>)d[1];
-_item3 = (TypedReader<T3>)d[2];
-_item4 = (TypedReader<T4>)d[3];
-_item5 = (TypedReader<T5>)d[4];
-_item6 = (TypedReader<T6>)d[5];
-_item7 = (TypedReader<T7>)d[6];
+            _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
+_item2 = Unsafe.As<TypedReader<T2>>( d[1] );
+_item3 = Unsafe.As<TypedReader<T3>>( d[2] );
+_item4 = Unsafe.As<TypedReader<T4>>( d[3] );
+_item5 = Unsafe.As<TypedReader<T5>>( d[4] );
+_item6 = Unsafe.As<TypedReader<T6>>( d[5] );
+_item7 = Unsafe.As<TypedReader<T7>>( d[6] );
         }
 
         protected override void ReadInstance( ref RefReader r )
@@ -365,13 +365,13 @@ readonly TypedReader<T7> _item7;
 
         public DValueTuple( Delegate[] d )
         {
-            _item1 = (TypedReader<T1>)d[0];
-_item2 = (TypedReader<T2>)d[1];
-_item3 = (TypedReader<T3>)d[2];
-_item4 = (TypedReader<T4>)d[3];
-_item5 = (TypedReader<T5>)d[4];
-_item6 = (TypedReader<T6>)d[5];
-_item7 = (TypedReader<T7>)d[6];
+            _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
+_item2 = Unsafe.As<TypedReader<T2>>( d[1] );
+_item3 = Unsafe.As<TypedReader<T3>>( d[2] );
+_item4 = Unsafe.As<TypedReader<T4>>( d[3] );
+_item5 = Unsafe.As<TypedReader<T5>>( d[4] );
+_item6 = Unsafe.As<TypedReader<T6>>( d[5] );
+_item7 = Unsafe.As<TypedReader<T7>>( d[6] );
         }
 
         protected override ValueTuple<T1, T2, T3, T4, T5, T6, T7> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )

@@ -137,27 +137,26 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Gets whether a deserialization driver has been resolved.
         /// </summary>
-        bool HasResolvedDeserializationDriver { get; }
+        bool HasResolvedConcreteDriver { get; }
 
         /// <summary>
         /// Gets the deserialization driver. If the type cannot be 
         /// locally resolved or a driver cannot be resolved, an exception is thrown.
         /// <para>
-        /// This should be called only when attempting to instantiate a driver or during 
+        /// This should be called only when attempting to instantiate a driver, during 
         /// the serialization process itself.
         /// </para>
         /// </summary>
+        /// <returns>The deserialization driver.</returns>
         IDeserializationDriver GetConcreteDriver();
+
+        /// <summary>
+        /// Gets an abstract driver if <see cref="IsSealed"/> is false, otherwise
+        /// the <see cref="GetConcreteDriver"/>.
+        /// </summary>
+        /// <returns>The deserialization driver.</returns>
+        IDeserializationDriver GetPotentiallyAbstractDriver();
+
     }
 
-    public static class TypeReadInfoExtensions
-    {
-        //public static IDeserializationDriver GetDriver( this ITypeReadInfo @this )
-        //{
-        //    if( !@this.IsSealed )
-        //    {
-        //        return ;
-        //    }
-        //}
-    }
 }

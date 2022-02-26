@@ -29,15 +29,17 @@ namespace CK.BinarySerialization.Tests.Samples
         public Employee( IBinaryDeserializer d, ITypeReadInfo info )
             : base( Sliced.Instance )
         {
-            EmployeeNumber = d.Reader.ReadInt32();
             BestFriend = d.ReadNullableObject<Employee>();
+            EmployeeNumber = d.Reader.ReadInt32();
             Garage = d.ReadObject<Garage>();
         }
 
         public static void Write( IBinarySerializer s, in Employee o )
         {
-            s.Writer.Write( o.EmployeeNumber );
+            // Writes the BestFriend first: this enters a recursion on the stack
+            // that is handled thanks to the IDeserializationDeferredDriver.
             s.WriteNullableObject( o.BestFriend );
+            s.Writer.Write( o.EmployeeNumber );
             s.WriteObject( o.Garage );
         }
 

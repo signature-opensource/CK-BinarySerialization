@@ -4,6 +4,7 @@ namespace CK.BinarySerialization
 {
     /// <summary>
     /// Categories the <see cref="ITypeReadInfo"/>.
+    /// All are considered sealed except <see cref="Class"/> and <see cref="GenericClass"/>.
     /// </summary>
     public enum TypeReadInfoKind
     {
@@ -18,29 +19,19 @@ namespace CK.BinarySerialization
         ValueType,
 
         /// <summary>
-        /// Generic value type. Instances may be deserialized.
-        /// </summary>
-        GenericValueType,
-
-        /// <summary>
         /// Sealed class. Instances may be deserialized.
         /// </summary>
         SealedClass,
 
         /// <summary>
+        /// Generic value type. Instances may be deserialized.
+        /// </summary>
+        GenericValueType,
+
+        /// <summary>
         /// Generic sealed class. Instances may be deserialized.
         /// </summary>
         GenericSealedClass,
-
-        /// <summary>
-        /// Regular, non sealed, class. Instances may be deserialized.
-        /// </summary>
-        Class,
-
-        /// <summary>
-        /// Regular, non sealed, generic class. Instances may be deserialized.
-        /// </summary>
-        GenericClass,
 
         /// <summary>
         /// Enumeration. Instances may be deserialized.
@@ -51,6 +42,16 @@ namespace CK.BinarySerialization
         /// Array, potentially with multiple dimensions. Instances may be deserialized.
         /// </summary>
         Array,
+
+        /// <summary>
+        /// Regular, non sealed, class. Instances may be deserialized.
+        /// </summary>
+        Class,
+
+        /// <summary>
+        /// Regular, non sealed, generic class. Instances may be deserialized.
+        /// </summary>
+        GenericClass,
 
         /// <summary>
         /// "Generic" array (see <see cref="Type.ContainsGenericParameters"/> is true).
@@ -74,6 +75,8 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Open generic type. Instances cannot be deserialized.
         /// </summary>
-        OpenGeneric
+        OpenGeneric,
+
+
     }
 }

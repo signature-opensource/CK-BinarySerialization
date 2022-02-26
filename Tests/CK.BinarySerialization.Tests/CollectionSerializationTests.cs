@@ -202,39 +202,41 @@ namespace CK.BinarySerialization.Tests
         [Test]
         public void complex_collection_support()
         {
+            var a = new Dictionary<(int, int), string[,]?>
             {
-                var a = new Dictionary<(int,int), string[,]?>
-                {
-                    { (1, 2), new string[,]{ {"a","b"}, {"b","c"} } },
-                    { (2, 4), new string[,]{ {"c","d"}, {"e","f"} } },
-                    { (3, 6), new string[,]{ {"g","h"}, {"i","j"} } },
-                    { (4, 8), new string[,]{ {"k","l"}, {"m","n"} } },
-                    { (5, 0), new string[,]{ {"o","p"}, {"q","r"} } },
-                    { (6, 0), null }
-                };
-                object? backA = TestHelper.SaveAndLoadObject( a );
-                backA.Should().BeEquivalentTo( a );
-            }
+                { (1, 2), new string[,]{ {"a","b"}, {"b","c"} } },
+                { (2, 4), new string[,]{ {"c","d"}, {"e","f"} } },
+                { (3, 6), new string[,]{ {"g","h"}, {"i","j"} } },
+                { (4, 8), new string[,]{ {"k","l"}, {"m","n"} } },
+                { (5, 0), new string[,]{ {"o","p"}, {"q","r"} } },
+                { (6, 0), null }
+            };
+            object? backA = TestHelper.SaveAndLoadObject( a );
+            backA.Should().BeEquivalentTo( a );
+        }
+
+        [Test]
+        public void complex_collection_support_2()
+        {
+            var a = new Dictionary<string, List<Dictionary<ushort, string[,]?>>>
             {
-                var a = new Dictionary<string, List<Dictionary<ushort, string[,]?>>>
                 {
+                    "A",
+                    new List<Dictionary<ushort, string[,]?>>
                     {
-                        "A",
-                        new List<Dictionary<ushort, string[,]?>>
+                        new Dictionary<ushort, string[,]?>
                         {
-                            new Dictionary<ushort, string[,]?>
-                            {
-                                { 45, null },
-                                { 72, new string[,]{ { "a", "b" }, { "b", "c" } } },
-                                { 68, new string[,]{ { "o", "p" }, { "q", "r" } } }
-                            }
+                            { 45, null },
+                            { 72, new string[,]{ { "a", "b" }, { "b", "c" } } },
+                            { 68, new string[,]{ { "o", "p" }, { "q", "r" } } }
                         }
                     }
-                };
-                object? backA = TestHelper.SaveAndLoadObject( a );
-                backA.Should().BeEquivalentTo( a );
-            }
+                }
+            };
+            object? backA = TestHelper.SaveAndLoadObject( a );
+            backA.Should().BeEquivalentTo( a );
         }
+        
 
         [Test]
         public void dictionary_comparer_support()
@@ -262,8 +264,6 @@ namespace CK.BinarySerialization.Tests
         [Test]
         public void list_of_non_sealed_classes()
         {
-            Assume.That( false, "DAbstract not implemented yet." );
-
             var a = new List<SimpleBase>();
             a.Add( new SimpleSealedDerived() { Power = 42, Name = "Alice" } );
             a.Add( new SimpleDerived() { Power = 3712, Name = "Albert" } );

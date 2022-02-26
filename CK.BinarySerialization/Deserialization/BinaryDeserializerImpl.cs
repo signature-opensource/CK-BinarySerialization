@@ -143,6 +143,7 @@ namespace CK.BinarySerialization
 
                 result = RuntimeHelpers.GetUninitializedObject( d.ResolvedType );
                 _deferred.Push( (defer, info, result) );
+                Track( result );
             }
             else
             {

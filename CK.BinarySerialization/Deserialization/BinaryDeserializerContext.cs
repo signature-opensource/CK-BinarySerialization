@@ -17,6 +17,7 @@ namespace CK.BinarySerialization
     {
         readonly Dictionary<string,object> _knownObjects;
         readonly SharedBinaryDeserializerContext _shared;
+        readonly Dictionary<Type,IDeserializationDriver> _abstractDrivers;
         readonly SimpleServiceContainer _services;
         BinaryDeserializerImpl? _deserializer;
 
@@ -29,6 +30,7 @@ namespace CK.BinarySerialization
         {
             _knownObjects = new Dictionary<string, object>();
             _shared = shared;
+            _abstractDrivers = new Dictionary<Type, IDeserializationDriver>();
             _services = new SimpleServiceContainer( services );
         }
 
@@ -65,6 +67,7 @@ namespace CK.BinarySerialization
         /// </summary>
         public SimpleServiceContainer Services => _services;
 
+        internal IDeserializationDriver GetAbstractDriver( Type t ) => _abstractDrivers.GetOrSet( t, _shared.GetAbstractDriver );
 
         internal IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {

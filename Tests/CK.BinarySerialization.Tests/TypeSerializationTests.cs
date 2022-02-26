@@ -35,6 +35,9 @@ namespace CK.BinarySerialization.Tests
             typeof( TypeHolder<>.NestedGenTypeHolder<,> ),
             typeof( int[] ),
             typeof( int[,] ),
+            typeof( string[] ),
+            typeof( string[,] ),
+            typeof( SimpleBase[] ),
             typeof( List<(int, string)[]> ),
             typeof( List<(int, string)[,,,]> ),
             typeof( int[][] ),
@@ -56,13 +59,13 @@ namespace CK.BinarySerialization.Tests
             Type backO = (Type)TestHelper.SaveAndLoadObject( t );
             backO.Should().BeSameAs( t );
 
-            //Type tRef = t.MakeByRefType();
-            //Type backRef = (Type)TestHelper.SaveAndLoadObject( tRef );
-            //backRef.Should().BeSameAs( tRef );
+            Type tRef = t.MakeByRefType();
+            Type backRef = (Type)TestHelper.SaveAndLoadObject( tRef );
+            backRef.Should().BeSameAs( tRef );
 
-            //Type tPointer = t.MakePointerType();
-            //Type backPointer = (Type)TestHelper.SaveAndLoadObject( tPointer );
-            //backPointer.Should().BeSameAs( tPointer );
+            Type tPointer = t.MakePointerType();
+            Type backPointer = (Type)TestHelper.SaveAndLoadObject( tPointer );
+            backPointer.Should().BeSameAs( tPointer );
         }
 
         [Test]

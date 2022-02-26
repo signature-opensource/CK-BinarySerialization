@@ -34,6 +34,11 @@ namespace CK.BinarySerialization
         public readonly SharedBinaryDeserializerContext Context;
 
         /// <summary>
+        /// True if the <see cref="TargetType"/> is the same as the <see cref="ITypeReadInfo.TryResolveLocalType()"/>.
+        /// </summary>
+        public readonly bool IsTargetSameAsLocalType;
+
+        /// <summary>
         /// Initializes a new <see cref="DeserializerResolverArg"/>.
         /// </summary>
         /// <param name="info">The type info for which a deserialization driver must be resolved.</param>
@@ -44,11 +49,18 @@ namespace CK.BinarySerialization
             if( info == null ) throw new ArgumentNullException( nameof( info ) );
             if( info.IsNullable ) throw new ArgumentException( "Type must not be nullable.", nameof( info ) );
             if( info.DriverName == null ) throw new ArgumentException( "Must have a driver name.", nameof( info ) );
-            if( info.HasResolvedDeserializationDriver ) throw new ArgumentException( "Deserialization driver must not be already resolved.", nameof( info ) );
             if( context == null ) throw new ArgumentNullException( nameof(context) );
             ReadInfo = info;
             TargetType = targetType ?? info.TargetType ?? info.ResolveLocalType();
-            if( TargetType.IsAbstract ) throw new ArgumentException( $"Cannot deserialize an abstract type '{TargetType}'.", nameof( info ) );
+            if( TargetType.IsAbstract )
+            {
+                throw new ArgumentException( $"Cannot deserialize an abstract type '{TargetType}'.", nameof( info ) );
+            }
+            if( TargetType == info.TargetType && info.HasResolvedConcreteDriver )
+            {
+                throw new ArgumentException( "Deserialization driver must not be already resolved.", nameof( info ) );
+            }
+            IsTargetSameAsLocalType = TargetType == info.TryResolveLocalType();
             Context = context;
         }
 

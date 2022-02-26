@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace CK.BinarySerialization.Serialization
@@ -8,11 +9,12 @@ namespace CK.BinarySerialization.Serialization
     {
         TypedWriter<object?> _reader;
 
-        public static DAbstract Instance = new DAbstract();
+        public static DAbstract Instance = new DAbstract( false );
+        static DAbstract NullableInstance = new DAbstract( true );
 
-        DAbstract()
+        DAbstract( bool isNullable )
         {
-            _reader = Write;
+            _reader = isNullable ? WriteNullable : WriteNonNullable;
         }
 
         public string DriverName => "object";
@@ -23,7 +25,7 @@ namespace CK.BinarySerialization.Serialization
 
         public Delegate TypedWriter => _reader;
 
-        void Write( IBinarySerializer s, in object? o )
+        static void WriteNullable( IBinarySerializer s, in object? o )
         {
             if( o == null )
             {
@@ -31,12 +33,18 @@ namespace CK.BinarySerialization.Serialization
             }
             else
             {
-                s.WriteObject( o );
+                Unsafe.As<BinarySerializerImpl>( s ).DoWriteObject( o );
             }
         }
 
-        public ISerializationDriver ToNullable => this;
+        static void WriteNonNullable( IBinarySerializer s, in object? o )
+        {
+            if( o == null ) throw new ArgumentNullException( nameof( o ) );
+            Unsafe.As<BinarySerializerImpl>( s ).DoWriteObject( o );
+        }
 
-        public ISerializationDriver ToNonNullable => this;
+        public ISerializationDriver ToNullable => NullableInstance;
+
+        public ISerializationDriver ToNonNullable => Instance;
     }
 }

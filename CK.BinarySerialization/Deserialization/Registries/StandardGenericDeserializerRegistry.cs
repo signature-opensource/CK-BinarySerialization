@@ -115,7 +115,7 @@ namespace CK.BinarySerialization
                     {
                         Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Array );
                         Debug.Assert( info.ReadInfo.SubTypes.Count == 1 );
-                        var item = info.ReadInfo.SubTypes[0].GetConcreteDriver();
+                        var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver();
                         return _cache.GetOrAdd( (item, info.ReadInfo.ArrayRank), CreateArray );
                     }
                 case "Dictionary": return TryGetDoubleGenericParameter( info.ReadInfo, typeof( Deserialization.DDictionary<,> ) );
@@ -126,12 +126,12 @@ namespace CK.BinarySerialization
             return null;
         }
 
-        private IDeserializationDriver? CreateTuple( ITypeReadInfo info, bool isValueTuple )
+        IDeserializationDriver? CreateTuple( ITypeReadInfo info, bool isValueTuple )
         {
             var tA = new IDeserializationDriver[info.SubTypes.Count];
             for( int i = 0; i < tA.Length; ++i )
             {
-                tA[i] = info.SubTypes[i].GetConcreteDriver();
+                tA[i] = info.SubTypes[i].GetPotentiallyAbstractDriver();
             }
             var key = new TupleKey( tA, isValueTuple );
             return _cache.GetOrAdd( key, DoCreateTuple );
@@ -159,7 +159,7 @@ namespace CK.BinarySerialization
         IDeserializationDriver? TryGetSingleGenericParameter( ITypeReadInfo info, Type tGenD )
         {
             Debug.Assert( info.SubTypes.Count == 1 );
-            var item = info.SubTypes[0].GetConcreteDriver();
+            var item = info.SubTypes[0].GetPotentiallyAbstractDriver();
             var k = (item, tGenD);
             var d = _cache.GetOrAdd( k, CreateSingleGenericTypeParam );
             return d;
@@ -175,8 +175,8 @@ namespace CK.BinarySerialization
         IDeserializationDriver? TryGetDoubleGenericParameter( ITypeReadInfo info, Type tGenD )
         {
             Debug.Assert( info.SubTypes.Count == 2 );
-            var item1 = info.SubTypes[0].GetConcreteDriver();
-            var item2 = info.SubTypes[1].GetConcreteDriver();
+            var item1 = info.SubTypes[0].GetPotentiallyAbstractDriver();
+            var item2 = info.SubTypes[1].GetPotentiallyAbstractDriver();
             var k = (item1, item2, tGenD);
             return _cache.GetOrAdd( k, CreateDoubleGenericTypeParam );
 
