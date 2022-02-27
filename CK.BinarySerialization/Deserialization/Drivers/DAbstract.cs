@@ -22,6 +22,8 @@ namespace CK.BinarySerialization.Deserialization
 
             public Delegate TypedReader { get; }
 
+            public bool IsCached => true;
+
             public IDeserializationDriver ToNullable => this;
 
             public IDeserializationDriver ToNonNullable => _d;
@@ -41,6 +43,8 @@ namespace CK.BinarySerialization.Deserialization
         public Type ResolvedType { get; }
 
         public Delegate TypedReader { get; }
+
+        public bool IsCached => true;
 
         public IDeserializationDriver ToNullable => _nullable;
 

@@ -11,7 +11,8 @@ namespace CK.BinarySerialization.Deserialization
     {
         readonly TypedReader<T1> _item1;
 
-        public DTuple( Delegate[] d )
+        public DTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
         }
@@ -33,7 +34,8 @@ namespace CK.BinarySerialization.Deserialization
     {
         readonly TypedReader<T1> _item1;
 
-        public DValueTuple( Delegate[] d )
+        public DValueTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
         }
@@ -48,7 +50,8 @@ namespace CK.BinarySerialization.Deserialization
         readonly TypedReader<T1> _item1;
 readonly TypedReader<T2> _item2;
 
-        public DTuple( Delegate[] d )
+        public DTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
 _item2 = Unsafe.As<TypedReader<T2>>( d[1] );
@@ -73,7 +76,8 @@ _item2( d, r.ReadInfo.SubTypes[1] )
         readonly TypedReader<T1> _item1;
 readonly TypedReader<T2> _item2;
 
-        public DValueTuple( Delegate[] d )
+        public DValueTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
 _item2 = Unsafe.As<TypedReader<T2>>( d[1] );
@@ -91,7 +95,8 @@ _item2( d, info.SubTypes[1] ) );
 readonly TypedReader<T2> _item2;
 readonly TypedReader<T3> _item3;
 
-        public DTuple( Delegate[] d )
+        public DTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
 _item2 = Unsafe.As<TypedReader<T2>>( d[1] );
@@ -119,7 +124,8 @@ _item3( d, r.ReadInfo.SubTypes[2] )
 readonly TypedReader<T2> _item2;
 readonly TypedReader<T3> _item3;
 
-        public DValueTuple( Delegate[] d )
+        public DValueTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
 _item2 = Unsafe.As<TypedReader<T2>>( d[1] );
@@ -140,7 +146,8 @@ readonly TypedReader<T2> _item2;
 readonly TypedReader<T3> _item3;
 readonly TypedReader<T4> _item4;
 
-        public DTuple( Delegate[] d )
+        public DTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
 _item2 = Unsafe.As<TypedReader<T2>>( d[1] );
@@ -171,7 +178,8 @@ readonly TypedReader<T2> _item2;
 readonly TypedReader<T3> _item3;
 readonly TypedReader<T4> _item4;
 
-        public DValueTuple( Delegate[] d )
+        public DValueTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
 _item2 = Unsafe.As<TypedReader<T2>>( d[1] );
@@ -195,7 +203,8 @@ readonly TypedReader<T3> _item3;
 readonly TypedReader<T4> _item4;
 readonly TypedReader<T5> _item5;
 
-        public DTuple( Delegate[] d )
+        public DTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
 _item2 = Unsafe.As<TypedReader<T2>>( d[1] );
@@ -229,7 +238,8 @@ readonly TypedReader<T3> _item3;
 readonly TypedReader<T4> _item4;
 readonly TypedReader<T5> _item5;
 
-        public DValueTuple( Delegate[] d )
+        public DValueTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
 _item2 = Unsafe.As<TypedReader<T2>>( d[1] );
@@ -256,7 +266,8 @@ readonly TypedReader<T4> _item4;
 readonly TypedReader<T5> _item5;
 readonly TypedReader<T6> _item6;
 
-        public DTuple( Delegate[] d )
+        public DTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
 _item2 = Unsafe.As<TypedReader<T2>>( d[1] );
@@ -293,7 +304,8 @@ readonly TypedReader<T4> _item4;
 readonly TypedReader<T5> _item5;
 readonly TypedReader<T6> _item6;
 
-        public DValueTuple( Delegate[] d )
+        public DValueTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
 _item2 = Unsafe.As<TypedReader<T2>>( d[1] );
@@ -323,7 +335,8 @@ readonly TypedReader<T5> _item5;
 readonly TypedReader<T6> _item6;
 readonly TypedReader<T7> _item7;
 
-        public DTuple( Delegate[] d )
+        public DTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
 _item2 = Unsafe.As<TypedReader<T2>>( d[1] );
@@ -363,7 +376,8 @@ readonly TypedReader<T5> _item5;
 readonly TypedReader<T6> _item6;
 readonly TypedReader<T7> _item7;
 
-        public DValueTuple( Delegate[] d )
+        public DValueTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             _item1 = Unsafe.As<TypedReader<T1>>( d[0] );
 _item2 = Unsafe.As<TypedReader<T2>>( d[1] );

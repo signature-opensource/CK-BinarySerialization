@@ -25,6 +25,8 @@ namespace CK.BinarySerialization
 
             public Delegate TypedReader => _reader;
 
+            public bool IsCached => _deserializer.IsCached;
+
             IDeserializationDriver IDeserializationDriver.ToNullable => this;
 
             IDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
@@ -44,10 +46,11 @@ namespace CK.BinarySerialization
         readonly NullableAdapter _null;
         readonly TypedReader<T> _reader;
 
-        private protected ReferenceTypeDeserializerBase()
+        private protected ReferenceTypeDeserializerBase( bool isCached )
         {
             _null = new NullableAdapter( this );
             _reader = ReadRefOrInstance;
+            IsCached = isCached;
         }
 
         T ReadRefOrInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
@@ -75,6 +78,9 @@ namespace CK.BinarySerialization
 
         /// <inheritdoc />
         public Delegate TypedReader => _reader;
+
+        /// <inheritdoc />
+        public bool IsCached { get; }
 
         IDeserializationDriver IDeserializationDriver.ToNullable => _null;
 

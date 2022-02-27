@@ -152,7 +152,7 @@ namespace CK.BinarySerialization
 
         /// <summary>
         /// Gets an abstract driver if <see cref="IsSealed"/> is false, otherwise
-        /// the <see cref="GetConcreteDriver"/>.
+        /// calls <see cref="GetConcreteDriver"/>.
         /// </summary>
         /// <returns>The deserialization driver.</returns>
         IDeserializationDriver GetPotentiallyAbstractDriver();

@@ -84,7 +84,7 @@ namespace CK.BinarySerialization
 
         sealed class SealedBinarySerializableDriverR<T> : ReferenceTypeSerializer<T> where T : class, ICKVersionedBinarySerializable
         {
-            public override string DriverName => "SealedVersionBinarySerializable";
+            public override string DriverName => "VersionedBinarySerializable";
 
             public SealedBinarySerializableDriverR( int version ) => SerializationVersion = version;
 
@@ -95,7 +95,7 @@ namespace CK.BinarySerialization
 
         sealed class SealedBinarySerializableDriverV<T> : StaticValueTypeSerializer<T> where T : struct, ICKVersionedBinarySerializable
         {
-            public override string DriverName => "SealedVersionBinarySerializable";
+            public override string DriverName => "VersionedBinarySerializable";
 
             public SealedBinarySerializableDriverV( int version ) => SerializationVersion = version;
 

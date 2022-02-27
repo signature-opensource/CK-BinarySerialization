@@ -16,6 +16,7 @@ namespace CK.BinarySerialization.Deserialization
         readonly TypedReader<TU> _underlying;
 
         public DEnumDiff( TypedReader<TU> underlying )
+            : base( false )
         {
             _underlying = underlying;
         }

@@ -31,9 +31,9 @@ namespace CK.BinarySerialization
 
         public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
-            // Only the "SimpleBinarySerializable" or "SealedVersionBinarySerializable" drivers are handled here.
+            // Only the "SimpleBinarySerializable" or "VersionedBinarySerializable" drivers are handled here.
             bool isSimple = info.DriverName == "SimpleBinarySerializable";
-            bool isSealed = !isSimple && info.DriverName == "SealedVersionBinarySerializable";
+            bool isSealed = !isSimple && info.DriverName == "VersionedBinarySerializable";
             if( !isSimple && !isSealed ) return null;
 
             // We allow Simple to be read back as Sealed and the opposite.
@@ -53,36 +53,56 @@ namespace CK.BinarySerialization
             var ctor = BinaryDeserializer.Helper.GetVersionedConstructor( info.TargetType );
             if( ctor != null )
             {
+                // Simple basic strategy here: as soon as the written type is not the target one, we skip caching.
                 if( info.IsTargetSameAsLocalType )
                 {
-                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateCachedSealed, ctor );
+                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateCachedVersioned, ctor );
                 }
                 if( info.TargetType.IsValueType )
                 {
-                    var tGen = info.ReadInfo.IsValueType
-                                ? typeof( VersionedBinaryDeserializableDriverV<> )
-                                : typeof( VersionedBinaryDeserializableDriverVFromRef<> );
-                    return (IDeserializationDriver)Activator.CreateInstance( tGen.MakeGenericType( info.TargetType ), ctor )!;
+                    if( info.ReadInfo.IsValueType )
+                    {
+                        // Creates a non cached value type deserializer.
+                        return (IDeserializationDriver)Activator.CreateInstance( 
+                                        typeof( VersionedBinaryDeserializableDriverV<> ).MakeGenericType( info.TargetType ), 
+                                        ctor,
+                                        false )!;
+
+                    }
+                    // FromRef is by design not cached.
+                    return (IDeserializationDriver)Activator.CreateInstance( 
+                                    typeof( VersionedBinaryDeserializableDriverVFromRef<> ).MakeGenericType( info.TargetType ), 
+                                    ctor )!;
                 }
                 var tR = typeof( VersionedBinaryDeserializableDriverR<> ).MakeGenericType( info.TargetType );
-                return (IDeserializationDriver)Activator.CreateInstance( tR, ctor )!;
+                return (IDeserializationDriver)Activator.CreateInstance( tR, ctor, false )!;
             }
             ctor = BinaryDeserializer.Helper.GetSimpleConstructor( info.TargetType );
             if( ctor != null )
             {
+                // Simple basic strategy here: as soon as the written type is not the target one, we skip caching.
                 if( info.IsTargetSameAsLocalType )
                 {
                     return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateCachedSimple, ctor );
                 }
                 if( info.TargetType.IsValueType )
                 {
-                    var tGen = info.ReadInfo.IsValueType
-                                ? typeof( SimpleBinaryDeserializableDriverV<> )
-                                : typeof( SimpleBinaryDeserializableDriverVFromRef<> );
-                    return (IDeserializationDriver)Activator.CreateInstance( tGen.MakeGenericType( info.TargetType ), ctor )!;
+                    if( info.ReadInfo.IsValueType )
+                    {
+                        // Creates a non cached value type deserializer.
+                        return (IDeserializationDriver)Activator.CreateInstance(
+                                        typeof( SimpleBinaryDeserializableDriverV<> ).MakeGenericType( info.TargetType ),
+                                        ctor,
+                                        false )!;
+
+                    }
+                    // FromRef is by design not cached.
+                    return (IDeserializationDriver)Activator.CreateInstance(
+                                    typeof( SimpleBinaryDeserializableDriverVFromRef<> ).MakeGenericType( info.TargetType ),
+                                    ctor )!;
                 }
                 var tR = typeof( SimpleBinaryDeserializableDriverR<> ).MakeGenericType( info.TargetType );
-                return (IDeserializationDriver)Activator.CreateInstance( tR, ctor )!;
+                return (IDeserializationDriver)Activator.CreateInstance( tR, ctor, false )!;
             }
             return null;
         }
@@ -103,7 +123,8 @@ namespace CK.BinarySerialization
         {
             readonly Func<ICKBinaryReader, T> _factory;
 
-            public SimpleBinaryDeserializableDriverV( ConstructorInfo ctor )
+            public SimpleBinaryDeserializableDriverV( ConstructorInfo ctor, bool isCached )
+                : base( isCached )
             {
                 _factory = BinaryDeserializer.Helper.CreateSimpleNewDelegate<T>( ctor );
             }
@@ -115,7 +136,8 @@ namespace CK.BinarySerialization
         {
             readonly Func<ICKBinaryReader, T> _factory;
 
-            public SimpleBinaryDeserializableDriverR( ConstructorInfo ctor )
+            public SimpleBinaryDeserializableDriverR( ConstructorInfo ctor, bool isCached )
+                : base( isCached )
             {
                 _factory = BinaryDeserializer.Helper.CreateSimpleNewDelegate<T>( ctor );
             }
@@ -128,10 +150,10 @@ namespace CK.BinarySerialization
             if( t.IsValueType )
             {
                 var tV = typeof( SimpleBinaryDeserializableDriverV<> ).MakeGenericType( t );
-                return (IDeserializationDriver)Activator.CreateInstance( tV, ctor )!;
+                return (IDeserializationDriver)Activator.CreateInstance( tV, ctor, true )!;
             }
             var tR = typeof( SimpleBinaryDeserializableDriverR<> ).MakeGenericType( t );
-            return (IDeserializationDriver)Activator.CreateInstance( tR, ctor )!;
+            return (IDeserializationDriver)Activator.CreateInstance( tR, ctor, true )!;
         }
 
         sealed class VersionedBinaryDeserializableDriverVFromRef<T> : ValueTypeDeserializerWithRef<T> where T : struct
@@ -150,7 +172,8 @@ namespace CK.BinarySerialization
         {
             readonly Func<ICKBinaryReader, int, T> _factory;
 
-            public VersionedBinaryDeserializableDriverV( ConstructorInfo ctor )
+            public VersionedBinaryDeserializableDriverV( ConstructorInfo ctor, bool isCached )
+                : base( isCached )
             {
                 _factory = BinaryDeserializer.Helper.CreateVersionedNewDelegate<T>( ctor );
             }
@@ -162,7 +185,8 @@ namespace CK.BinarySerialization
         {
             readonly Func<ICKBinaryReader, int, T> _factory;
 
-            public VersionedBinaryDeserializableDriverR( ConstructorInfo ctor )
+            public VersionedBinaryDeserializableDriverR( ConstructorInfo ctor, bool isCached )
+                : base( isCached )
             {
                 _factory = BinaryDeserializer.Helper.CreateVersionedNewDelegate<T>( ctor );
             }
@@ -170,15 +194,15 @@ namespace CK.BinarySerialization
             protected override T ReadInstance( ICKBinaryReader r, ITypeReadInfo readInfo ) => _factory( r, readInfo.SerializationVersion );
         }
 
-        static IDeserializationDriver CreateCachedSealed( Type t, ConstructorInfo ctor )
+        static IDeserializationDriver CreateCachedVersioned( Type t, ConstructorInfo ctor )
         {
             if( t.IsValueType )
             {
                 var tV = typeof( VersionedBinaryDeserializableDriverV<> ).MakeGenericType( t );
-                return (IDeserializationDriver)Activator.CreateInstance( tV, ctor )!;
+                return (IDeserializationDriver)Activator.CreateInstance( tV, ctor, true )!;
             }
             var tR = typeof( VersionedBinaryDeserializableDriverR<> ).MakeGenericType( t );
-            return (IDeserializationDriver)Activator.CreateInstance( tR , ctor )!;
+            return (IDeserializationDriver)Activator.CreateInstance( tR , ctor, true )!;
         }
 
     }

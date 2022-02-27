@@ -17,6 +17,7 @@ namespace CK.BinarySerialization
     {
         readonly Dictionary<string,object> _knownObjects;
         readonly SharedBinaryDeserializerContext _shared;
+        // Avoids a lookup in the shared concurrent dictionary. Is this clever?
         readonly Dictionary<Type,IDeserializationDriver> _abstractDrivers;
         readonly SimpleServiceContainer _services;
         BinaryDeserializerImpl? _deserializer;

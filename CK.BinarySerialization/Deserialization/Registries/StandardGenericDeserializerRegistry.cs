@@ -19,16 +19,16 @@ namespace CK.BinarySerialization
     /// </summary>
     public sealed class StandardGenericDeserializerRegistry : IDeserializerResolver
     {
-        // Caching here relies on the subordinated deserializers and the generic type to synthesize.
+        // Caching here relies on the subordinated cached deserializers and the generic type to synthesize.
         // We can use a simple ConcurrentDictionary and its simple GetOrAdd method since 2
-        // deserializers with the same subordinated deserializers: we can accept the concurrency issue
+        // deserializers with the same subordinated cached deserializers: we can accept the concurrency issue
         // and duplicated calls to create functions (this should barely happen) and the GetOrAdd will
         // always return the winner.
         // The key is an object that contains the resolved subordinated items drivers (and may be an
         // optional type indicator) to the resolved driver.
         // Only if all the subtypes drivers are available do we build the final driver.
         // This lookup obviously costs but this is done only once per deserialization session
-        // since the TypeReadInfo caches the final driver (including unresolved ones).
+        // since the TypeReadInfo ultimately caches the final driver (including unresolved and non cached ones).
         // The object key is:
         //  - The (Type LocalType, IDeserializationDriver WrittenUnderlyingDriverType) for an enum: the target enum
         //    must exist locally but its current underlying type may not be the same as the written one.
@@ -116,7 +116,9 @@ namespace CK.BinarySerialization
                         Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Array );
                         Debug.Assert( info.ReadInfo.SubTypes.Count == 1 );
                         var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver();
-                        return _cache.GetOrAdd( (item, info.ReadInfo.ArrayRank), CreateArray );
+                        return item.IsCached
+                                ? _cache.GetOrAdd( (item, info.ReadInfo.ArrayRank), CreateCachedArray )
+                                : CreateArray( item, info.ReadInfo.ArrayRank );
                     }
                 case "Dictionary": return TryGetDoubleGenericParameter( info.ReadInfo, typeof( Deserialization.DDictionary<,> ) );
                 case "List": return TryGetSingleGenericParameter( info.ReadInfo, typeof( Deserialization.DList<> ) );
@@ -126,79 +128,106 @@ namespace CK.BinarySerialization
             return null;
         }
 
-        IDeserializationDriver? CreateTuple( ITypeReadInfo info, bool isValueTuple )
+        IDeserializationDriver CreateTuple( ITypeReadInfo info, bool isValueTuple )
         {
             var tA = new IDeserializationDriver[info.SubTypes.Count];
+            bool isCached = true;
             for( int i = 0; i < tA.Length; ++i )
             {
-                tA[i] = info.SubTypes[i].GetPotentiallyAbstractDriver();
+                var d = info.SubTypes[i].GetPotentiallyAbstractDriver();
+                isCached &= d.IsCached;
+                tA[i] = d;
             }
             var key = new TupleKey( tA, isValueTuple );
-            return _cache.GetOrAdd( key, DoCreateTuple );
+            return isCached 
+                    ? _cache.GetOrAdd( key, CreateCached )
+                    : CreateTuple( tA, isValueTuple, false );
 
-            static IDeserializationDriver DoCreateTuple( object key )
+            static IDeserializationDriver CreateCached( object key )
             {
                 var k = (TupleKey)key;
-                var types = k.Drivers.Select( d => d.ResolvedType ).ToArray();
+                return CreateTuple( k.Drivers, k.IsValueTuple, true );
+            }
+            
+            static IDeserializationDriver CreateTuple( IDeserializationDriver[] drivers, bool isValueTuple, bool isCached )
+            {
+                var types = drivers.Select( d => d.ResolvedType ).ToArray();
                 var tG = types.Length switch
                 {
-                    1 => k.IsValueTuple ? typeof( Deserialization.DValueTuple<> ) : typeof( Deserialization.DTuple<> ),
-                    2 => k.IsValueTuple ? typeof( Deserialization.DValueTuple<,> ) : typeof( Deserialization.DTuple<,> ),
-                    3 => k.IsValueTuple ? typeof( Deserialization.DValueTuple<,,> ) : typeof( Deserialization.DTuple<,,> ),
-                    4 => k.IsValueTuple ? typeof( Deserialization.DValueTuple<,,,> ) : typeof( Deserialization.DTuple<,,,> ),
-                    5 => k.IsValueTuple ? typeof( Deserialization.DValueTuple<,,,,> ) : typeof( Deserialization.DTuple<,,,,> ),
-                    6 => k.IsValueTuple ? typeof( Deserialization.DValueTuple<,,,,,> ) : typeof( Deserialization.DTuple<,,,,,> ),
-                    7 => k.IsValueTuple ? typeof( Deserialization.DValueTuple<,,,,,,> ) : typeof( Deserialization.DTuple<,,,,,,> ),
+                    1 => isValueTuple ? typeof( Deserialization.DValueTuple<> ) : typeof( Deserialization.DTuple<> ),
+                    2 => isValueTuple ? typeof( Deserialization.DValueTuple<,> ) : typeof( Deserialization.DTuple<,> ),
+                    3 => isValueTuple ? typeof( Deserialization.DValueTuple<,,> ) : typeof( Deserialization.DTuple<,,> ),
+                    4 => isValueTuple ? typeof( Deserialization.DValueTuple<,,,> ) : typeof( Deserialization.DTuple<,,,> ),
+                    5 => isValueTuple ? typeof( Deserialization.DValueTuple<,,,,> ) : typeof( Deserialization.DTuple<,,,,> ),
+                    6 => isValueTuple ? typeof( Deserialization.DValueTuple<,,,,,> ) : typeof( Deserialization.DTuple<,,,,,> ),
+                    7 => isValueTuple ? typeof( Deserialization.DValueTuple<,,,,,,> ) : typeof( Deserialization.DTuple<,,,,,,> ),
                     _ => throw new NotSupportedException( "Tuple or ValueTuple with 8 or more parameters are not supported." )
                 };
                 var tD = tG.MakeGenericType( types );
-                return (IDeserializationDriver)Activator.CreateInstance( tD, new object?[] { k.Drivers.Select( d => d.TypedReader ).ToArray() } )!;
+                return (IDeserializationDriver)Activator.CreateInstance( tD, drivers.Select( d => d.TypedReader ).ToArray(), isCached )!;
             }
+
         }
 
-        IDeserializationDriver? TryGetSingleGenericParameter( ITypeReadInfo info, Type tGenD )
+        IDeserializationDriver TryGetSingleGenericParameter( ITypeReadInfo info, Type tGenD )
         {
             Debug.Assert( info.SubTypes.Count == 1 );
             var item = info.SubTypes[0].GetPotentiallyAbstractDriver();
-            var k = (item, tGenD);
-            var d = _cache.GetOrAdd( k, CreateSingleGenericTypeParam );
-            return d;
+            return item.IsCached
+                    ? _cache.GetOrAdd( (item, tGenD), CreateCached )
+                    : Create( item, tGenD );
 
-            static IDeserializationDriver CreateSingleGenericTypeParam( object key )
+            static IDeserializationDriver CreateCached( object key )
             {
-                var k = ((IDeserializationDriver I, Type D))key;
-                var tS = k.D.MakeGenericType( k.I.ResolvedType );
-                return (IDeserializationDriver)Activator.CreateInstance( tS, k.I.TypedReader )!;
+                var (item, tGenD) = ((IDeserializationDriver, Type))key;
+                return Create( item, tGenD );
+            }
+
+            static IDeserializationDriver Create( IDeserializationDriver item, Type tGenD )
+            {
+                var tS = tGenD.MakeGenericType( item.ResolvedType );
+                return (IDeserializationDriver)Activator.CreateInstance( tS, item )!;
             }
         }
 
-        IDeserializationDriver? TryGetDoubleGenericParameter( ITypeReadInfo info, Type tGenD )
+        IDeserializationDriver TryGetDoubleGenericParameter( ITypeReadInfo info, Type tGenD )
         {
             Debug.Assert( info.SubTypes.Count == 2 );
             var item1 = info.SubTypes[0].GetPotentiallyAbstractDriver();
             var item2 = info.SubTypes[1].GetPotentiallyAbstractDriver();
-            var k = (item1, item2, tGenD);
-            return _cache.GetOrAdd( k, CreateDoubleGenericTypeParam );
+            return item1.IsCached && item2.IsCached
+                    ? _cache.GetOrAdd( (item1, item2, tGenD), CreateCached )
+                    : Create( item1, item2, tGenD );
 
-            static IDeserializationDriver CreateDoubleGenericTypeParam( object key )
+            static IDeserializationDriver CreateCached( object key )
             {
-                var k = ((IDeserializationDriver I1, IDeserializationDriver I2, Type D))key;
-                var tS = k.D.MakeGenericType( k.I1.ResolvedType, k.I2.ResolvedType );
-                return (IDeserializationDriver)Activator.CreateInstance( tS, k.I1.TypedReader, k.I2.TypedReader )!;
+                var (item1, item2, tGenD) = ((IDeserializationDriver, IDeserializationDriver, Type))key;
+                return Create( item1, item2, tGenD );
+            }
+            
+            static IDeserializationDriver Create( IDeserializationDriver item1, IDeserializationDriver item2, Type tGenD )
+            {
+                var tS = tGenD.MakeGenericType( item1.ResolvedType, item2.ResolvedType );
+                return (IDeserializationDriver)Activator.CreateInstance( tS, item1, item2 )!;
             }
         }
 
-        IDeserializationDriver CreateArray( object key )
+        static IDeserializationDriver CreateCachedArray( object key )
         {
-            var k = ((IDeserializationDriver I, int Rank))key;
-            if( k.Rank == 1 )
+            var (item, rank) = ((IDeserializationDriver I, int Rank))key;
+            return CreateArray( item, rank );
+        }
+
+        static IDeserializationDriver CreateArray( IDeserializationDriver item, int rank )
+        {
+            if( rank == 1 )
             {
-                var t1 = typeof( Deserialization.DArray<> ).MakeGenericType( k.I.ResolvedType );
-                return (IDeserializationDriver)Activator.CreateInstance( t1, k.I.TypedReader )!;
+                var t1 = typeof( Deserialization.DArray<> ).MakeGenericType( item.ResolvedType );
+                return (IDeserializationDriver)Activator.CreateInstance( t1, item )!;
             }
-            var tA = k.I.ResolvedType.MakeArrayType( k.Rank );
-            var tM = typeof( Deserialization.DArrayMD<,> ).MakeGenericType( tA, k.I.ResolvedType );
-            return (IDeserializationDriver)Activator.CreateInstance( tM, k.I.TypedReader )!;
+            var tA = item.ResolvedType.MakeArrayType( rank );
+            var tM = typeof( Deserialization.DArrayMD<,> ).MakeGenericType( tA, item.ResolvedType );
+            return (IDeserializationDriver)Activator.CreateInstance( tM, item )!;
         }
 
         IDeserializationDriver CreateNominalEnum( object key )

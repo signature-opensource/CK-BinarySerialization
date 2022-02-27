@@ -7,7 +7,7 @@ namespace CK.BinarySerialization
 {
     /// <summary>
     /// Direct deserializer for value type <typeparamref name="T"/> bound to a <see cref="TypedReader{T}"/> 
-    /// that avoids a useless intermediate 
+    /// that avoids a useless intermediate relay.
     /// <para>
     /// This deserializer cannot read a previously written reference type: when a type has changed from class
     /// to struct, the <see cref="ValueTypeDeserializerWithRef{T}"/> must be used (as long as previously written 
@@ -37,6 +37,8 @@ namespace CK.BinarySerialization
 
             public Delegate TypedReader => _reader;
 
+            public bool IsCached => _deserializer.IsCached;
+
             IDeserializationDriver IDeserializationDriver.ToNullable => this;
 
             IDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
@@ -57,20 +59,25 @@ namespace CK.BinarySerialization
         readonly TypedReader<T> _reader;
 
         /// <summary>
-        /// Initializes a new <see cref="ValueTypedReaderDeserializer{T}"/> bound to a reader function.
+        /// Initializes a new <see cref="ValueTypedReaderDeserializer{T}"/> bound to a reader function
+        /// that states whether it is cached or not.
         /// </summary>
-        public ValueTypedReaderDeserializer( TypedReader<T> reader )
+        /// <param name="isCached">Whether this deserializer is cached.</param>
+        public ValueTypedReaderDeserializer( TypedReader<T> reader, bool isCached )
         {
             _null = new NullableAdapter( this );
             _reader = reader;
+            IsCached = isCached;
         }
 
         /// <summary>
         /// Initializes a new <see cref="ValueTypedReaderDeserializer{T}"/> from a constructor 
         /// from which a reader function that calls the constructor is derived.
         /// </summary>
-        public ValueTypedReaderDeserializer( ConstructorInfo ctor )
-            : this( BinaryDeserializer.Helper.CreateTypedReaderNewDelegate<T>( ctor ) )
+        /// <param name="ctor">Deserialization constructor. See <see cref="BinaryDeserializer.Helper.GetTypedReaderConstructor(Type)"/>.</param>
+        /// <param name="isCached">Whether this deserializer is cached.</param>
+        public ValueTypedReaderDeserializer( ConstructorInfo ctor, bool isCached )
+            : this( BinaryDeserializer.Helper.CreateTypedReaderNewDelegate<T>( ctor ), isCached )
         {
         }
 
@@ -79,6 +86,9 @@ namespace CK.BinarySerialization
 
         /// <inheritdoc />
         public Delegate TypedReader => _reader;
+
+        /// <inheritdoc />
+        public bool IsCached { get; }
 
         /// <inheritdoc />
         public IValueTypeNullableDeserializationDriver<T> ToNullable => _null;

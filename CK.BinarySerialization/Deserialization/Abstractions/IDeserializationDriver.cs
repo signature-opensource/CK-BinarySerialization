@@ -21,6 +21,16 @@ namespace CK.BinarySerialization
         Delegate TypedReader { get; }
 
         /// <summary>
+        /// Gets whether this driver is cached and will be reused.
+        /// <para>
+        /// A driver that relies on other drivers can only be cached and reused if 
+        /// all the drivers it relies on are cached (this is a necessary and not 
+        /// sufficient condition).
+        /// </para>
+        /// </summary>
+        bool IsCached { get; }
+
+        /// <summary>
         /// Gets the nullable driver.
         /// </summary>
         IDeserializationDriver ToNullable { get; }

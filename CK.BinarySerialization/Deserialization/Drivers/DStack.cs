@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace CK.BinarySerialization.Deserialization
@@ -11,9 +12,10 @@ namespace CK.BinarySerialization.Deserialization
     {
         readonly TypedReader<T> _item;
 
-        public DStack( TypedReader<T> item )
+        public DStack( IDeserializationDriver item )
+            : base( item.IsCached )
         {
-            _item = item;
+            _item = Unsafe.As<TypedReader<T>>( item.TypedReader );
         }
 
         protected override void ReadInstance( ref RefReader r )

@@ -11,6 +11,10 @@ namespace CK.BinarySerialization
     /// to struct, the <see cref="ValueTypeDeserializerWithRef{T}"/> must be used (as long as previously written 
     /// reference types must still be read).
     /// </para>
+    /// <para>
+    /// The default constructor sets <see cref="IsCached"/> to true. This is fine for basic drivers but as soon as
+    /// the driver depends on others (like generics drivers), the non default constructor should be used. 
+    /// </para>
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
     public abstract class ValueTypeDeserializer<T> : IDeserializationDriverInternal, IValueTypeNonNullableDeserializationDriver<T> where T : struct
@@ -35,6 +39,8 @@ namespace CK.BinarySerialization
 
             public Delegate TypedReader => _reader;
 
+            public bool IsCached => _deserializer.IsCached;
+
             IDeserializationDriver IDeserializationDriver.ToNullable => this;
 
             IDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
@@ -55,12 +61,27 @@ namespace CK.BinarySerialization
         readonly TypedReader<T> _reader;
 
         /// <summary>
-        /// Initializes a new <see cref="ValueTypeDeserializer{T}"/>.
+        /// Initializes a new <see cref="ValueTypeDeserializer{T}"/> where <see cref="IsCached"/> is true.
+        /// <para>
+        /// Caution: this cached default is easier for basic types but not for composite drivers that relies on other ones (like generic ones).
+        /// </para>
         /// </summary>
         protected ValueTypeDeserializer()
         {
             _null = new NullableAdapter( this );
             _reader = ReadInstance;
+            IsCached = true;
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="ValueTypeDeserializer{T}"/> that states whether it is cached or not.
+        /// </summary>
+        /// <param name="isCached">Whether this deserializer is cached.</param>
+        protected ValueTypeDeserializer( bool isCached )
+        {
+            _null = new NullableAdapter( this );
+            _reader = ReadInstance;
+            IsCached = isCached;
         }
 
         /// <summary>
@@ -76,6 +97,9 @@ namespace CK.BinarySerialization
 
         /// <inheritdoc />
         public Delegate TypedReader => _reader;
+
+        /// <inheritdoc />
+        public bool IsCached { get; }
 
         /// <inheritdoc />
         public IValueTypeNullableDeserializationDriver<T> ToNullable => _null;

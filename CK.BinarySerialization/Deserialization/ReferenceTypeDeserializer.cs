@@ -7,10 +7,34 @@ namespace CK.BinarySerialization
     /// <summary>
     /// Deserializer for reference type <typeparamref name="T"/>.
     /// This deserializer handles the value to reference type mutation natively.
+    /// <para>
+    /// The default constructor sets <see cref="IsCached"/> to true. This is fine for basic drivers but as soon as
+    /// the driver depends on others (like generics drivers), the non default constructor should be used. 
+    /// </para>
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
     public abstract class ReferenceTypeDeserializer<T> : ReferenceTypeDeserializerBase<T> where T : class
     {
+        /// <summary>
+        /// Initializes a new <see cref="ReferenceTypeDeserializer{T}"/> where <see cref="IsCached"/> is true.
+        /// <para>
+        /// Caution: this cached default is easier for basic types but not for composite drivers that relies on other ones (like generic ones).
+        /// </para>
+        /// </summary>
+        protected ReferenceTypeDeserializer()
+            : base( true )
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="ReferenceTypeDeserializer{T}"/> that states whether it is cached or not.
+        /// </summary>
+        /// <param name="isCached">Whether this deserializer is cached.</param>
+        protected ReferenceTypeDeserializer( bool isCached )
+            : base( isCached )
+        {
+        }
+
         /// <summary>
         /// Secures object tracking by requiring the deserialized object to first be 
         /// instantiated before enabling the reading of its content.

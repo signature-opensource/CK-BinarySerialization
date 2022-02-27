@@ -93,6 +93,7 @@ namespace CK.BinarySerialization
             readonly ConstructorInfo _ctor;
 
             public SlicedDeserializerDriverRMonoCtor( ConstructorInfo ctor )
+                :  base( true )
             {
                 _ctor = ctor;
             }
@@ -115,6 +116,7 @@ namespace CK.BinarySerialization
             readonly ConstructorInfo[] _ctors;
 
             public SlicedDeserializerDriverRNominal( List<ConstructorInfo> ctors )
+                : base( true )
             {
                 Debug.Assert( ctors.Count > 1 );
                 _ctors = ctors.ToArray();
@@ -153,7 +155,9 @@ namespace CK.BinarySerialization
             readonly ITypeReadInfo[] _readTypes;
 
             public SlicedDeserializerDriverGoodLuck( List<ConstructorInfo> ctors, ITypeReadInfo[] readTypes )
+                : base( false )
             {
+                Debug.Assert( ctors.Count == readTypes.Length );
                 _ctors = ctors;
                 _readTypes = readTypes;
             }
@@ -163,6 +167,17 @@ namespace CK.BinarySerialization
                 // Call the top one.
                 var parameters = new object?[] { d, _readTypes[0] };
                 _ctors[0].Invoke( o, parameters );
+                // Challenge the IDestroyable and calls the remainders if the object is not destroyed.
+                if( o is not IDestroyable destroyed || !destroyed.IsDestroyed )
+                {
+                    int idxCtor = 1;
+                    do
+                    {
+                        parameters[1] = readInfo.TypePath[idxCtor];
+                        _ctors[idxCtor].Invoke( o, parameters );
+                    }
+                    while( ++idxCtor < _readTypes.Length );
+                }
             }
 
             protected override void ReadInstance( ref RefReader r )
@@ -184,22 +199,21 @@ namespace CK.BinarySerialization
                     {
                         return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateCachedValueTypeDriver );
                     }
-                    return CreateMonoConstructorDriver( info.TargetType, typeof( SlicedDeserializerDriverVWithRef<> ) );
+                    var tV = typeof( SlicedDeserializerDriverVWithRef<> ).MakeGenericType( info.TargetType );
+                    return (IDeserializationDriver)Activator.CreateInstance( tV, GetDeserializationCtor( info.TargetType ) )!;
                 }
                 // Looking for mono constructor: the base type (that may be Object) is not a ICKSlicedSerializable.
                 var b = info.TargetType.BaseType;
                 Debug.Assert( b != null );  
                 if( !typeof( ICKSlicedSerializable ).IsAssignableFrom( b ) )
                 {
-                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, 
-                                                                                                   CreateMonoConstructorDriver, 
-                                                                                                   typeof( SlicedDeserializerDriverRMonoCtor<> ) );
+                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateCachedMonoConstructorDriver );
                 }
                 // Multiple constructors case: check the TypePath and only if it matches cache the driver.
                 List<ConstructorInfo> ctors = new();
                 if( GetConstructorsTopDownAndCheckNominality( info.TargetType, ctors, info.ReadInfo ) )
                 {
-                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateNominalDriver, ctors );
+                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateCachedNominalDriver, ctors );
                 }
                 // The TypeReadInfos don't match deserialization constructors.
                 // We build a driver that tries its best to associate the TypeReadInfos to the constructors and don't cache it:
@@ -219,20 +233,19 @@ namespace CK.BinarySerialization
         IDeserializationDriver CreateCachedValueTypeDriver( Type t )
         {
             var tD = typeof( ValueTypedReaderDeserializer<> ).MakeGenericType( t );
-            return (IDeserializationDriver)Activator.CreateInstance( tD, BinaryDeserializer.Helper.GetTypedReaderConstructor( t ) )!;
+            return (IDeserializationDriver)Activator.CreateInstance( tD, BinaryDeserializer.Helper.GetTypedReaderConstructor( t ), true )!;
         }
 
-        IDeserializationDriver CreateNominalDriver( Type t, List<ConstructorInfo> ctors )
+        IDeserializationDriver CreateCachedNominalDriver( Type t, List<ConstructorInfo> ctors )
         {
             var tV = typeof( SlicedDeserializerDriverRNominal<> ).MakeGenericType( t );
             return (IDeserializationDriver)Activator.CreateInstance( tV, ctors )!;
         }
 
-        IDeserializationDriver CreateMonoConstructorDriver( Type t, Type tGenD )
+        IDeserializationDriver CreateCachedMonoConstructorDriver( Type t )
         {
-            var ctor = GetDeserializationCtor( t );
-            var tV = tGenD.MakeGenericType( t );
-            return (IDeserializationDriver)Activator.CreateInstance( tV, ctor )!;
+            var tV = typeof( SlicedDeserializerDriverRMonoCtor<> ).MakeGenericType( t );
+            return (IDeserializationDriver)Activator.CreateInstance( tV, GetDeserializationCtor( t ) )!;
         }
 
         static bool GetConstructorsTopDownAndCheckNominality( Type t, List<ConstructorInfo> w, ITypeReadInfo? info )

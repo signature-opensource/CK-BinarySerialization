@@ -10,10 +10,31 @@ namespace CK.BinarySerialization
     /// <para>
     /// This deserializer handles the value to reference type mutation natively.
     /// </para>
+    /// <para>
+    /// The default constructor sets <see cref="IsCached"/> to true. This is fine for basic drivers but as soon as
+    /// the driver depends on others (like generics drivers), the non default constructor should be used. 
+    /// </para>
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
     public abstract class SimpleReferenceTypeDeserializer<T> : ReferenceTypeDeserializerBase<T> where T : class
     {
+        /// <summary>
+        /// Initializes a new <see cref="SimpleReferenceTypeDeserializer{T}"/> that states whether it is cached or not.
+        /// </summary>
+        protected SimpleReferenceTypeDeserializer()
+            : base( true )
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="SimpleReferenceTypeDeserializer{T}"/> that states whether it is cached or not.
+        /// </summary>
+        /// <param name="isCached">Whether this deserializer is cached.</param>
+        protected SimpleReferenceTypeDeserializer( bool isCached )
+            : base( isCached )
+        {
+        }
+
         protected override sealed T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
         {
             var o = ReadInstance( d.Reader, readInfo );

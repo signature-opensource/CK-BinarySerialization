@@ -27,7 +27,8 @@ namespace CK.BinarySerialization.Deserialization
     {
         <#=TypeReaderDecl( i )#>;
 
-        public DTuple( Delegate[] d )
+        public DTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             <#=AssignCtorParams( i )#>;
         }
@@ -49,7 +50,8 @@ namespace CK.BinarySerialization.Deserialization
     {
         <#=TypeReaderDecl( i )#>;
 
-        public DValueTuple( Delegate[] d )
+        public DValueTuple( Delegate[] d, bool isCached )
+            : base( isCached )
         {
             <#=AssignCtorParams( i )#>;
         }

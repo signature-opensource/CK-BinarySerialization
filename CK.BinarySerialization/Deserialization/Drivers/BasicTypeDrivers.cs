@@ -7,11 +7,15 @@ namespace CK.BinarySerialization.Deserialization
 {
     sealed class DString : SimpleReferenceTypeDeserializer<string>
     {
+        public DString() : base( true ) { }
+
         protected override string ReadInstance( ICKBinaryReader r, ITypeReadInfo readInfo ) => r.ReadString();
     }
 
     sealed class DByteArray : SimpleReferenceTypeDeserializer<byte[]>
     {
+        public DByteArray() : base( true ) { }
+        
         protected override byte[] ReadInstance( ICKBinaryReader r, ITypeReadInfo readInfo ) => r.ReadBytes( r.ReadNonNegativeSmallInt32() );
     }
 

@@ -18,10 +18,11 @@ namespace CK.BinarySerialization.Deserialization
             SharedDeserializerKnownObject.Default.RegisterKnownKey( k, c );
         }
 
-        public DDictionary( Delegate k, Delegate v )
+        public DDictionary( IDeserializationDriver k, IDeserializationDriver v )
+            : base( k.IsCached && v.IsCached )
         {
-            _key = Unsafe.As<TypedReader<TKey>>( k );
-            _value = Unsafe.As<TypedReader<TValue>>( v );
+            _key = Unsafe.As<TypedReader<TKey>>( k.TypedReader );
+            _value = Unsafe.As<TypedReader<TValue>>( v.TypedReader );
         }
 
         protected override void ReadInstance( ref RefReader r )

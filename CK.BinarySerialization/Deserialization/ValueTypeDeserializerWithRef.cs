@@ -12,6 +12,9 @@ namespace CK.BinarySerialization
     /// Once only value types can be read, the standard <see cref="ValueTypeDeserializer{T}"/> should be used since it's
     /// more efficient than this one.
     /// </para>
+    /// <para>
+    /// By design, <see cref="IDeserializationDriver.IsCached"/> is false.
+    /// </para>
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
     public abstract class ValueTypeDeserializerWithRef<T> : IDeserializationDriverInternal, IValueTypeNonNullableDeserializationDriver<T> where T : struct
@@ -35,6 +38,8 @@ namespace CK.BinarySerialization
             public Type ResolvedType { get; }
 
             public Delegate TypedReader => _reader;
+
+            public bool IsCached => false;  
 
             IDeserializationDriver IDeserializationDriver.ToNullable => this;
 
@@ -106,6 +111,9 @@ namespace CK.BinarySerialization
 
         /// <inheritdoc />
         public IValueTypeNonNullableDeserializationDriver<T> ToNonNullable => this;
+
+        /// <inheritdoc />
+        public bool IsCached => false;
 
         IDeserializationDriver IDeserializationDriver.ToNullable => _null;
 
