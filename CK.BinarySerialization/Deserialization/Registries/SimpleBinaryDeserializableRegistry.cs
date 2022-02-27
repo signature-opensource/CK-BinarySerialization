@@ -44,11 +44,13 @@ namespace CK.BinarySerialization
             // standard .Net TypeConverters).
             // For the moment, there's no such conversions.
 
-            // We cache the driver only if the TargetType is the LocalType ("nominal" deserializers).
+            // We cache the driver only if the TargetType is the LocalType ("nominal" deserializers) since if they differ,
+            // an adaptation via VersionedBinaryDeserializableDriverVFromRef may be required (for the moment, this is
+            // the only existing adaptation).
             // We may have duplicate calls to Create here (that should barely happen but who knows), but GetOrAdd
             // will return the winner.
             // 
-            var ctor = info.TargetType.GetConstructor( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, _sealedCPTypes, null );
+            var ctor = BinaryDeserializer.Helper.GetVersionedConstructor( info.TargetType );
             if( ctor != null )
             {
                 if( info.IsTargetSameAsLocalType )
@@ -58,14 +60,14 @@ namespace CK.BinarySerialization
                 if( info.TargetType.IsValueType )
                 {
                     var tGen = info.ReadInfo.IsValueType
-                                ? typeof( SealedBinaryDeserializableDriverV<> )
-                                : typeof( SealedBinaryDeserializableDriverVFromRef<> );
+                                ? typeof( VersionedBinaryDeserializableDriverV<> )
+                                : typeof( VersionedBinaryDeserializableDriverVFromRef<> );
                     return (IDeserializationDriver)Activator.CreateInstance( tGen.MakeGenericType( info.TargetType ), ctor )!;
                 }
-                var tR = typeof( SealedBinaryDeserializableDriverR<> ).MakeGenericType( info.TargetType );
+                var tR = typeof( VersionedBinaryDeserializableDriverR<> ).MakeGenericType( info.TargetType );
                 return (IDeserializationDriver)Activator.CreateInstance( tR, ctor )!;
             }
-            ctor = info.TargetType.GetConstructor( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, _simpleCPTypes, null );
+            ctor = BinaryDeserializer.Helper.GetSimpleConstructor( info.TargetType );
             if( ctor != null )
             {
                 if( info.IsTargetSameAsLocalType )
@@ -85,16 +87,13 @@ namespace CK.BinarySerialization
             return null;
         }
 
-        static readonly Type[] _simpleCPTypes = new Type[] { typeof( ICKBinaryReader ) };
-        static readonly ParameterExpression[] _simpleCPExpressions = new ParameterExpression[] { Expression.Parameter( typeof( ICKBinaryReader ) ) };
-
         sealed class SimpleBinaryDeserializableDriverVFromRef<T> : ValueTypeDeserializerWithRef<T> where T : struct
         {
             readonly Func<ICKBinaryReader, T> _factory;
 
             public SimpleBinaryDeserializableDriverVFromRef( ConstructorInfo ctor )
             {
-                _factory = (Func<ICKBinaryReader, T>)CreateNewDelegate<T>( typeof( Func<ICKBinaryReader, T> ), _simpleCPExpressions, ctor );
+                _factory = BinaryDeserializer.Helper.CreateSimpleNewDelegate<T>( ctor );
             }
 
             protected override T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => _factory( d.Reader );
@@ -106,7 +105,7 @@ namespace CK.BinarySerialization
 
             public SimpleBinaryDeserializableDriverV( ConstructorInfo ctor )
             {
-                _factory = (Func<ICKBinaryReader, T>)CreateNewDelegate<T>( typeof( Func<ICKBinaryReader, T> ), _simpleCPExpressions, ctor );
+                _factory = BinaryDeserializer.Helper.CreateSimpleNewDelegate<T>( ctor );
             }
 
             protected override T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => _factory( d.Reader );
@@ -118,7 +117,7 @@ namespace CK.BinarySerialization
 
             public SimpleBinaryDeserializableDriverR( ConstructorInfo ctor )
             {
-                _factory = (Func<ICKBinaryReader, T>)CreateNewDelegate<T>( typeof( Func<ICKBinaryReader, T> ), _simpleCPExpressions, ctor );
+                _factory = BinaryDeserializer.Helper.CreateSimpleNewDelegate<T>( ctor );
             }
 
             protected override T ReadInstance( ICKBinaryReader r, ITypeReadInfo readInfo ) => _factory( r );
@@ -135,40 +134,37 @@ namespace CK.BinarySerialization
             return (IDeserializationDriver)Activator.CreateInstance( tR, ctor )!;
         }
 
-        static readonly Type[] _sealedCPTypes = new Type[] { typeof( ICKBinaryReader ), typeof( int ) };
-        static readonly ParameterExpression[] _sealedCPExpressions = new ParameterExpression[] { Expression.Parameter( typeof( ICKBinaryReader ) ), Expression.Parameter( typeof( int ) ) };
-
-        sealed class SealedBinaryDeserializableDriverVFromRef<T> : ValueTypeDeserializerWithRef<T> where T : struct
+        sealed class VersionedBinaryDeserializableDriverVFromRef<T> : ValueTypeDeserializerWithRef<T> where T : struct
         {
             readonly Func<ICKBinaryReader, int, T> _factory;
 
-            public SealedBinaryDeserializableDriverVFromRef( ConstructorInfo ctor )
+            public VersionedBinaryDeserializableDriverVFromRef( ConstructorInfo ctor )
             {
-                _factory = (Func<ICKBinaryReader, int, T>)CreateNewDelegate<T>( typeof( Func<ICKBinaryReader, int, T> ), _sealedCPExpressions, ctor );
+                _factory = BinaryDeserializer.Helper.CreateVersionedNewDelegate<T>( ctor );
             }
 
             protected override T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => _factory( d.Reader, d.SerializerVersion );
         }
 
-        sealed class SealedBinaryDeserializableDriverV<T> : ValueTypeDeserializer<T> where T : struct
+        sealed class VersionedBinaryDeserializableDriverV<T> : ValueTypeDeserializer<T> where T : struct
         {
             readonly Func<ICKBinaryReader, int, T> _factory;
 
-            public SealedBinaryDeserializableDriverV( ConstructorInfo ctor )
+            public VersionedBinaryDeserializableDriverV( ConstructorInfo ctor )
             {
-                _factory = (Func<ICKBinaryReader, int, T>)CreateNewDelegate<T>( typeof( Func<ICKBinaryReader, int, T> ), _sealedCPExpressions, ctor );
+                _factory = BinaryDeserializer.Helper.CreateVersionedNewDelegate<T>( ctor );
             }
 
             protected override T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => _factory( d.Reader, d.SerializerVersion );
         }
 
-        sealed class SealedBinaryDeserializableDriverR<T> : SimpleReferenceTypeDeserializer<T> where T : class
+        sealed class VersionedBinaryDeserializableDriverR<T> : SimpleReferenceTypeDeserializer<T> where T : class
         {
             readonly Func<ICKBinaryReader, int, T> _factory;
 
-            public SealedBinaryDeserializableDriverR( ConstructorInfo ctor )
+            public VersionedBinaryDeserializableDriverR( ConstructorInfo ctor )
             {
-                _factory = (Func<ICKBinaryReader, int, T>)CreateNewDelegate<T>( typeof( Func<ICKBinaryReader, int, T> ), _sealedCPExpressions, ctor );
+                _factory = BinaryDeserializer.Helper.CreateVersionedNewDelegate<T>( ctor );
             }
 
             protected override T ReadInstance( ICKBinaryReader r, ITypeReadInfo readInfo ) => _factory( r, readInfo.SerializationVersion );
@@ -178,27 +174,11 @@ namespace CK.BinarySerialization
         {
             if( t.IsValueType )
             {
-                var tV = typeof( SealedBinaryDeserializableDriverV<> ).MakeGenericType( t );
+                var tV = typeof( VersionedBinaryDeserializableDriverV<> ).MakeGenericType( t );
                 return (IDeserializationDriver)Activator.CreateInstance( tV, ctor )!;
             }
-            var tR = typeof( SealedBinaryDeserializableDriverR<> ).MakeGenericType( t );
+            var tR = typeof( VersionedBinaryDeserializableDriverR<> ).MakeGenericType( t );
             return (IDeserializationDriver)Activator.CreateInstance( tR , ctor )!;
-        }
-
-        /// <summary>
-        /// Helper that generates a new call.
-        /// </summary>
-        /// <typeparam name="T">The instance type.</typeparam>
-        /// <param name="delegateType">The signature of the delegate.</param>
-        /// <param name="expressionParameters">The parameters of the delegate.</param>
-        /// <param name="c">The constructor to call.</param>
-        /// <returns>The delegate.</returns>
-        public static Delegate CreateNewDelegate<T>( Type delegateType, ParameterExpression[] expressionParameters, ConstructorInfo c )
-        {
-            var newExpression = Expression.Lambda( delegateType,
-                                                   Expression.Convert( Expression.New( c, expressionParameters ), typeof( T ) ),
-                                                   expressionParameters );
-            return newExpression.Compile();
         }
 
     }

@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace CK.BinarySerialization
@@ -53,5 +55,94 @@ namespace CK.BinarySerialization
             return new BinaryDeserializerImpl( v, reader, leaveOpen, context, sameEndianness );
         }
 
+        /// <summary>
+        /// Deserializers implementation helpers.
+        /// </summary>
+        public static class Helper
+        {
+            static readonly Type[] _simpleTypes = new Type[] { typeof( ICKBinaryReader ) };
+            static readonly ParameterExpression[] _simpleExpressions = new ParameterExpression[] { Expression.Parameter( typeof( ICKBinaryReader ) ) };
+
+            static readonly Type[] _versionedTypes = new Type[] { typeof( ICKBinaryReader ), typeof( int ) };
+            static readonly ParameterExpression[] _versionedExpressions = new ParameterExpression[] { Expression.Parameter( typeof( ICKBinaryReader ) ), Expression.Parameter( typeof( int ) ) };
+
+            static readonly Type[] _typedReaderTypes = new Type[] { typeof( IBinaryDeserializer ), typeof( ITypeReadInfo ) };
+            static readonly ParameterExpression[] _typedReaderExpressions = new ParameterExpression[] { Expression.Parameter( typeof( IBinaryDeserializer ) ), Expression.Parameter( typeof( ITypeReadInfo ) ) };
+
+            /// <summary>
+            /// Tries to get the simple constructor with a single <see cref="ICKBinaryReader"/> parameter.
+            /// </summary>
+            /// <param name="t">The type.</param>
+            /// <returns>The simple constructor or null.</returns>
+            public static ConstructorInfo? GetSimpleConstructor( Type t )
+            {
+                return t.GetConstructor( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, _simpleTypes, null );
+            }
+
+            /// <summary>
+            /// Creates a delegate that can instantiate a new <typeparamref name="T"/> by calling the simple 
+            /// constructor (see <see cref="GetSimpleConstructor(Type)"/>).
+            /// </summary>
+            /// <typeparam name="T">The type to deserialize.</typeparam>
+            /// <param name="ctor">The constructor.</param>
+            /// <returns>A delegate that calls new with the simple constructor.</returns>
+            public static Func<ICKBinaryReader, T> CreateSimpleNewDelegate<T>( ConstructorInfo ctor )
+            {
+                return (Func<ICKBinaryReader, T>)CreateNewDelegate<T>( typeof( Func<ICKBinaryReader, T> ), _simpleExpressions, ctor );
+            }
+
+            /// <summary>
+            /// Tries to get the versioned constructor with <see cref="ICKBinaryReader"/> and int version parameters.
+            /// </summary>
+            /// <param name="t">The type.</param>
+            /// <returns>The versioned constructor or null.</returns>
+            public static ConstructorInfo? GetVersionedConstructor( Type t )
+            {
+                return t.GetConstructor( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, _versionedTypes, null );
+            }
+
+            /// <summary>
+            /// Creates a delegate that can instantiate a new <typeparamref name="T"/> by calling the versioned 
+            /// constructor (see <see cref="GetVersionedConstructor(Type)"/>).
+            /// </summary>
+            /// <typeparam name="T">The type to deserialize.</typeparam>
+            /// <param name="ctor">The constructor.</param>
+            /// <returns>A delegate that calls new with the versioned constructor.</returns>
+            public static Func<ICKBinaryReader, int, T> CreateVersionedNewDelegate<T>( ConstructorInfo ctor )
+            {
+                return (Func<ICKBinaryReader, int, T>)CreateNewDelegate<T>( typeof( Func<ICKBinaryReader, int, T> ), _versionedExpressions, ctor );
+            }
+
+            /// <summary>
+            /// Tries to get the constructor with <see cref="IBinaryDeserializer"/> and <see cref="ITypeReadInfo"/> parameters.
+            /// </summary>
+            /// <param name="t">The type.</param>
+            /// <returns>The deserialization constructor or null.</returns>
+            public static ConstructorInfo? GetTypedReaderConstructor( Type t )
+            {
+                return t.GetConstructor( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, _typedReaderTypes, null );
+            }
+
+            /// <summary>
+            /// Creates a delegate that can instantiate a new <typeparamref name="T"/> by calling the deserialization 
+            /// constructor (see <see cref="GetTypedReaderConstructor(Type)"/>).
+            /// </summary>
+            /// <typeparam name="T">The type to deserialize.</typeparam>
+            /// <param name="ctor">The constructor.</param>
+            /// <returns>A delegate that calls new with the versioned constructor.</returns>
+            public static TypedReader<T> CreateTypedReaderNewDelegate<T>( ConstructorInfo ctor )
+            {
+                return (TypedReader<T>)CreateNewDelegate<T>( typeof( TypedReader<T> ), _typedReaderExpressions, ctor );
+            }
+
+
+            static Delegate CreateNewDelegate<T>( Type delegateType, ParameterExpression[] expressionParameters, ConstructorInfo c )
+            {
+                var newExpression = Expression.Lambda( delegateType,
+                                                       Expression.Convert( Expression.New( c, expressionParameters ), typeof( T ) ),
+                                                       expressionParameters );
+                return newExpression.Compile();
+            }
+        }
     }
 }

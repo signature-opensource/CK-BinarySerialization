@@ -18,20 +18,42 @@ namespace CK.BinarySerialization
     /// "nominal drivers" are:
     /// <list type="bullet">
     ///     <item>
-    ///     When the local type is a ValueType, we have no other options to trust its constructor that must then be able to handle 
-    ///     any "previous" writes with potentially multiple TypeReadInfo from previous base classes.
-    ///     </item>
-    ///     <item>
-    ///     When the local type is a class with only one existing deserialization constructor, we are in the same case as for ValueTypes: it's up
-    ///     to the deserialization constructor to handle the TypeReadInfo and its potential base types.
+    ///     When the local type is a class with only one existing deserialization constructor (its base class is Object or a non ICKSlicedSerializable 
+    ///     object), we have no other options to trust its constructor that must then be able to handle 
+    ///     any "previous" writes with potentially multiple TypeReadInfo from previous base classes and the standard <see cref="ReferenceTypeDeserializer{T}"/>
+    ///     gracefully handles previously written struct: we can cache and reuse the driver.
     ///     </item>
     ///     <item>
     ///     When the local type is a class with more than one deserialization constructors on its base types, it's much more complex: 
     ///     some base classes may have disappeared or appeared. Knowing which "Slice" can or should handle which TypeReadInfo is (more than) tricky. 
-    ///     Whatever heuristic we use for this "mapping", the point is that during one application run as well as across multiple runs, the "nominal" workload is to deserialize the same types that has been 
-    ///     serialized. 
+    ///     <para>
+    ///     The "mapping" heuristic is rather simple:
+    ///     <list type="bullet">
+    ///         <item>
+    ///         First we associate each constructor to the TypeReadInfo that has the same local type regardless of its position
+    ///         in the TyperReadInfo chain. This handles renaming (as long as type has been mapped) and suppression of base classes.
+    ///         </item>
+    ///         <item>
+    ///         Constructors that are "unbound" are provided with a <see cref="MissingSlicedTypeReadInfo"/>... and let it be.
+    ///         </item>
+    ///     </list>
+    ///     </para>
+    ///     <para>
+    ///     As soon as we have to use a "mapping" like this, the driver is not nominal. 
+    ///     </para>
     ///     <para>
     ///     We cache (and reuse) the deserializer only if the TypeReadInfo.TypePath's local types match the local constructor's chain.
+    ///     </para>
+    ///     </item>
+    ///     <item>
+    ///     When the local type is a ValueType, we have no other options to trust its constructor that must then be able to handle 
+    ///     any "previous" writes with potentially multiple TypeReadInfo from previous base classes.
+    ///     <para>
+    ///     This differs from the first case above on one point: if the written type was a reference type we must use the <see cref="ValueTypeDeserializerWithRef{T}"/>
+    ///     adapter instead of the efficient <see cref="ValueTypedReaderDeserializer{T}"/> we can use.
+    ///     <para>
+    ///     Only if the written type was a struct can we cache and reuse the driver in this case.
+    ///     </para>
     ///     </para>
     ///     </item>
     /// </list>
@@ -54,18 +76,13 @@ namespace CK.BinarySerialization
         }
 #endif
 
-        /// <summary>
-        /// Deserializer for value types. We reuse the standard ValueTypeDeserializer even if
-        /// a useless intermediate call is at stake here instead of writing another deserializer 
-        /// that would use the generated delegate directly.
-        /// </summary>
-        sealed class SlicedDeserializerDriverV<T> : ValueTypeDeserializer<T> where T : struct
+        sealed class SlicedDeserializerDriverVWithRef<T> : ValueTypeDeserializerWithRef<T> where T : struct
         {
-            readonly Func<IBinaryDeserializer, ITypeReadInfo, T> _factory;
+            readonly TypedReader<T> _factory;
 
-            public SlicedDeserializerDriverV( ConstructorInfo ctor )
+            public SlicedDeserializerDriverVWithRef( ConstructorInfo ctor )
             {
-                _factory = (Func<IBinaryDeserializer, ITypeReadInfo, T>)SimpleBinaryDeserializableRegistry.CreateNewDelegate<T>( typeof( Func<IBinaryDeserializer, ITypeReadInfo, T> ), _ctorExpressions, ctor );
+                _factory = BinaryDeserializer.Helper.CreateTypedReaderNewDelegate<T>( ctor );
             }
 
             protected override T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => _factory( d, readInfo );
@@ -163,9 +180,11 @@ namespace CK.BinarySerialization
             {
                 if( info.TargetType.IsValueType )
                 {
-                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, 
-                                                                                                   CreateMonoConstructorDriver, 
-                                                                                                   typeof( SlicedDeserializerDriverV<> ) );
+                    if( info.ReadInfo.IsValueType )
+                    {
+                        return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateCachedValueTypeDriver );
+                    }
+                    return CreateMonoConstructorDriver( info.TargetType, typeof( SlicedDeserializerDriverVWithRef<> ) );
                 }
                 // Looking for mono constructor: the base type (that may be Object) is not a ICKSlicedSerializable.
                 var b = info.TargetType.BaseType;
@@ -176,7 +195,7 @@ namespace CK.BinarySerialization
                                                                                                    CreateMonoConstructorDriver, 
                                                                                                    typeof( SlicedDeserializerDriverRMonoCtor<> ) );
                 }
-                // Multiple constructors case.
+                // Multiple constructors case: check the TypePath and only if it matches cache the driver.
                 List<ConstructorInfo> ctors = new();
                 if( GetConstructorsTopDownAndCheckNominality( info.TargetType, ctors, info.ReadInfo ) )
                 {
@@ -187,10 +206,6 @@ namespace CK.BinarySerialization
                 // it will be dedicated to this deserialization session.
                 // By resolving the mapping here (the best we can), we optimize the run: the specific driver will have less
                 // work to do for each instance of that type.
-                // The heuristic is rather simple:
-                //  - First we associate each constructor to the TypeReadInfo that has the same local type regardless of its position
-                //    in the TyperReadInfo chain. This handles renaming (as long as type has been mapped) and suppression of base classes.
-                //  - Constructors that are "free" are provided with a MissingSlicedTypeReadInfo... and let it be.
                 var readTypeInfo = info.ReadInfo;
                 Lazy<MissingSlicedTypeReadInfo> missing = new( () => new MissingSlicedTypeReadInfo( readTypeInfo.TypePath ) );
                 var types = ctors.Select( ctor => readTypeInfo.TypePath.FirstOrDefault( i => i.TryResolveLocalType() == ctor.DeclaringType ) ?? missing.Value ).ToArray();
@@ -199,6 +214,12 @@ namespace CK.BinarySerialization
 
             }
             return null;
+        }
+
+        IDeserializationDriver CreateCachedValueTypeDriver( Type t )
+        {
+            var tD = typeof( ValueTypedReaderDeserializer<> ).MakeGenericType( t );
+            return (IDeserializationDriver)Activator.CreateInstance( tD, BinaryDeserializer.Helper.GetTypedReaderConstructor( t ) )!;
         }
 
         IDeserializationDriver CreateNominalDriver( Type t, List<ConstructorInfo> ctors )
@@ -213,9 +234,6 @@ namespace CK.BinarySerialization
             var tV = tGenD.MakeGenericType( t );
             return (IDeserializationDriver)Activator.CreateInstance( tV, ctor )!;
         }
-
-        static readonly Type[] _ctorTypes = new Type[] { typeof( IBinaryDeserializer ), typeof( ITypeReadInfo ) };
-        static readonly ParameterExpression[] _ctorExpressions = new ParameterExpression[] { Expression.Parameter( typeof( IBinaryDeserializer ) ), Expression.Parameter( typeof( ITypeReadInfo ) ) };
 
         static bool GetConstructorsTopDownAndCheckNominality( Type t, List<ConstructorInfo> w, ITypeReadInfo? info )
         {
@@ -232,7 +250,7 @@ namespace CK.BinarySerialization
 
         static ConstructorInfo GetDeserializationCtor( Type t )
         {
-            var c = t.GetConstructor( _ctorTypes );
+            var c = BinaryDeserializer.Helper.GetTypedReaderConstructor( t );
             if( c == null ) throw new InvalidOperationException( $"Type '{t}' requires a public constructor with (IBinaryDeserializer d, ITypeReadInfo info) parameters." );
             return c;
         }
