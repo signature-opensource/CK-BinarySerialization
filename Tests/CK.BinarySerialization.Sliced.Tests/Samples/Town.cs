@@ -28,6 +28,11 @@ namespace CK.BinarySerialization.Tests.Samples
             _persons.Add( e );
         }
         
+        internal void OnDestroying( Person e )
+        {
+            _persons.Remove( e );
+        }
+        
         internal void OnNewGarage( Garage g )
         {
             _garages.Add( g );

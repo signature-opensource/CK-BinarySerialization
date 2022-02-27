@@ -75,6 +75,13 @@ namespace CK.BinarySerialization
         T? ReadNullableValue<T>() where T : struct;
 
         /// <summary>
+        /// Gets a simple deferred container of <see cref="Action"/> that 
+        /// enables deserialization constructors to execute any code once the 
+        /// whole object graph is deserialized and all the objects are properly restored.
+        /// </summary>
+        Deserialization.PostActions PostActions { get; }
+
+        /// <summary>
         /// Gets whether this deserializer is currently in debug mode.
         /// </summary>
         bool IsDebugMode { get; }

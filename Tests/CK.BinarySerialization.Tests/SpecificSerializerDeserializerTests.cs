@@ -31,6 +31,17 @@ namespace CK.BinarySerialization.Tests
             }
         }
 
+
+        // We don't specify IsCached = false here (via the constructor overload):
+        // we accept the true default IsCached. By doing this, even if this
+        // driver is resolved in priority (see SharedBinaryDeserializerContext.AddLocalTypeDeserializer)
+        // we'll cache any composite drivers that relies on this one like the one for List<Node> for instance.
+        // As of today, it would not make a lot of sense to set IsCached to false here since there is no way to remove 
+        // or replace a registered AddLocalTypeDeserializer from a shared deserializer context.
+        // It this happens to be useful (I doubt that), then we could implement a ReplaceLocalTypeDeserializer and/or
+        // RemoveLocalTypeDeserializer that will accept only to update/remove non cached drivers: this will be perfectly
+        // coherent (ignoring concurrent issues of updating the share cache when there are deserialization sessions running...)
+        // since absolutely no driver that rely on it are cached. 
         class NodeDeserializer : ReferenceTypeDeserializer<Node>
         {
             protected override void ReadInstance( ref RefReader r )

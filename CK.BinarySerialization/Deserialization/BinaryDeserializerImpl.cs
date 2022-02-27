@@ -34,17 +34,19 @@ namespace CK.BinarySerialization
                                          BinaryDeserializerContext context,
                                          bool sameEndianness )
         {
-            (_context = context).Acquire( this );
+            ( _context = context).Acquire( this );
             SerializerVersion = version;
             _reader = reader;
             _leaveOpen = leaveOpen;
             _types = new List<ITypeReadInfo>();
             _objects = new List<object>();
             _sameEndianness = sameEndianness;
+            PostActions = new Deserialization.PostActions();
         }
 
         public void Dispose()
         {
+            PostActions.Execute();
             _context.Release();
             if( !_leaveOpen && _reader is IDisposable d )
             {
@@ -52,6 +54,8 @@ namespace CK.BinarySerialization
                 d.Dispose();
             }
         }
+
+        public Deserialization.PostActions PostActions { get; }
 
         public ICKBinaryReader Reader => _reader;
 

@@ -62,5 +62,32 @@ namespace CK.BinarySerialization.Tests
             BinarySerializer.IdempotenceCheck( town );
         }
 
+        [Test]
+        public void Destroyable_simple_test()
+        {
+            var t = new Samples.Town( "Paris" );
+            var g = new Samples.Garage( t );
+            var e = new Samples.Employee( g ) { Name = "Albert" };
+            var m = new Samples.Manager( g ) { Name = "Alice", Rank = 42 };
+            e.BestFriend = m;
+
+            var backT = TestHelper.SaveAndLoadObject( t );
+            backT.Should().BeEquivalentTo( t, o => o.IgnoringCyclicReferences() );
+            var eBack = backT.Persons.OfType<Samples.Employee>().Single( p => p.Name == "Albert" );
+            ((Samples.Manager)eBack.BestFriend!).Rank.Should().Be( 42 );
+
+            BinarySerializer.IdempotenceCheck( t );
+
+            m.Destroy();
+            backT = TestHelper.SaveAndLoadObject( t );
+            backT.Should().BeEquivalentTo( t, o => o.IgnoringCyclicReferences() );
+
+            eBack = backT.Persons.OfType<Samples.Employee>().Single( p => p.Name == "Albert" );
+            eBack.BestFriend!.IsDestroyed.Should().BeTrue();
+            ((Samples.Manager)eBack.BestFriend!).Rank.Should().Be( 0, "Rank has NOT been read back." );
+
+            BinarySerializer.IdempotenceCheck( t );
+        }
+
     }
 }

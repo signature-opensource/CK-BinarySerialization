@@ -20,6 +20,7 @@ namespace CK.BinarySerialization.Tests.Samples
 
         public Employee? BestFriend { get; set; }
 
+
         #region Serialization
 
 #pragma warning disable CS8618
