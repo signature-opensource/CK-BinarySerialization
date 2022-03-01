@@ -19,14 +19,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Common\Shared.props = Common\Shared.props
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CK.BinarySerialization.Sliced", "CK.BinarySerialization.Sliced\CK.BinarySerialization.Sliced.csproj", "{1B5B6799-B3EA-453A-BFE2-94222F994CBC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization.Sliced", "CK.BinarySerialization.Sliced\CK.BinarySerialization.Sliced.csproj", "{1B5B6799-B3EA-453A-BFE2-94222F994CBC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CK.BinarySerialization.Sliced.Tests", "Tests\CK.BinarySerialization.Sliced.Tests\CK.BinarySerialization.Sliced.Tests.csproj", "{0B322956-C8AC-4D51-A25E-5AED319537EC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization.Sliced.Tests", "Tests\CK.BinarySerialization.Sliced.Tests\CK.BinarySerialization.Sliced.Tests.csproj", "{0B322956-C8AC-4D51-A25E-5AED319537EC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Doc", "Doc", "{42FA6687-C89D-4B8F-BB4D-78016526CD0E}"
 	ProjectSection(SolutionItems) = preProject
 		Doc\IBinarySerializer.png = Doc\IBinarySerializer.png
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeCakeBuilder", "CodeCakeBuilder\CodeCakeBuilder.csproj", "{19F23EAD-A2C3-47A2-875D-E5D3E0EFA053}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,6 +52,10 @@ Global
 		{0B322956-C8AC-4D51-A25E-5AED319537EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0B322956-C8AC-4D51-A25E-5AED319537EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0B322956-C8AC-4D51-A25E-5AED319537EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19F23EAD-A2C3-47A2-875D-E5D3E0EFA053}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19F23EAD-A2C3-47A2-875D-E5D3E0EFA053}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19F23EAD-A2C3-47A2-875D-E5D3E0EFA053}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19F23EAD-A2C3-47A2-875D-E5D3E0EFA053}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
