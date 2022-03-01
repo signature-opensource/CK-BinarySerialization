@@ -57,6 +57,13 @@ namespace CK.BinarySerialization
         /// </summary>
         public SharedBinarySerializerContext Shared => _shared;
 
+        /// <summary>
+        /// Gets whether a type is serializable: a <see cref="ISerializationDriver"/> is available.
+        /// </summary>
+        /// <param name="t">The type.</param>
+        /// <returns>True if a driver is available, false otherwise.</returns>
+        public bool IsSerializable( Type t ) => TryFindDriver( t ) != null;
+
         /// <inheritdoc />
         public ISerializationDriver? TryFindDriver( Type t )
         {

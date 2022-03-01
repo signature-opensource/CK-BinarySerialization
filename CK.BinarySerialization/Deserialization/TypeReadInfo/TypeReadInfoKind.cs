@@ -20,6 +20,7 @@ namespace CK.BinarySerialization
 
         /// <summary>
         /// Sealed class. Instances may be deserialized.
+        /// Note that <see cref="Delegate"/> are sealed class.
         /// </summary>
         SealedClass,
 

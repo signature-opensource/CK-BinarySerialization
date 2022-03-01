@@ -23,6 +23,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CK.BinarySerialization.Slic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CK.BinarySerialization.Sliced.Tests", "Tests\CK.BinarySerialization.Sliced.Tests\CK.BinarySerialization.Sliced.Tests.csproj", "{0B322956-C8AC-4D51-A25E-5AED319537EC}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Doc", "Doc", "{42FA6687-C89D-4B8F-BB4D-78016526CD0E}"
+	ProjectSection(SolutionItems) = preProject
+		Doc\IBinarySerializer.png = Doc\IBinarySerializer.png
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,6 +57,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{FD7CB9D0-080E-4649-B8FD-3B801F0596C0} = {A5FD7DA3-11D3-459F-98D5-91778C4DB4BC}
 		{0B322956-C8AC-4D51-A25E-5AED319537EC} = {A5FD7DA3-11D3-459F-98D5-91778C4DB4BC}
+		{42FA6687-C89D-4B8F-BB4D-78016526CD0E} = {5AF86BF8-AD20-4F0C-B3B1-120CB23FA7CD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {93CA138B-7F46-47B4-89F6-5E6DC5E83F95}

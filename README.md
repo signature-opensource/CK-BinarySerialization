@@ -48,6 +48,19 @@ The plan regarding full NRT support is to:
     - When writing a null non nullable reference type, the library will throw a NullReferenceException or an InvalidDataException.
     - The serialized form will then be optimal for non nullable value types (no extra null byte required).
 
+## IBinarySerializer and ICKBinaryWriter, IBinaryDeserializer and ICKBinaryReader
+
+The `ICKBinaryWriter` and `ICKBinaryReader` are defined and implemented by `CKBinaryWriter`
+and `CKBinaryReader` in CK.Core. They are specialize the .Net System.IO.BinaryReader/Writer classes
+and provides an enriched API that reads/writes basic types like `Guid` or `DateTimeOffset` and support
+nullable value types once for all.
+
+Those are basic APIs. The CK.BinarySerialization.IBinarySerializer/Deserializer supports objects
+serialization (object reference tracking, struct/class neutrality and versioning) but relies
+on the basic Reader/Writer (and expose them).
+
+![IBinarySerializer and its Writer](Doc/IBinarySerializer.png)
+
 ## Basic serialization: ICKSimpleBinarySerializable (any type)
 This is the simplest pattern where versioning must be handled explicitly ant that applies
 to any POCO-like type since there is no support for object graphs: the only allowed references
@@ -123,7 +136,9 @@ The `CK.BinarySerialization.ICKSlicedSerializable` interface is a pure marker in
 
 ## Automatic mutations supported
 
-Only a few mutations are currently supported but the objective is be able to transparently handle mutations:
+Only a few mutations are currently supported, they are detailed below.
+
+However the objective is be able to transparently handle mutations:
 - From nullable to non nullable types and vice versa for value as well as reference types.
 - Between `List<T>`, `T[]`, `Queue<T>` (and may be others).
 - Between Tuple and ValueTuple.

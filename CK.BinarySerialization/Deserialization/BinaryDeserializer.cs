@@ -45,11 +45,36 @@ namespace CK.BinarySerialization
                                                             bool leaveOpen,
                                                             BinaryDeserializerContext context )
         {
+            return TryCreate( s, leaveOpen, context, true )!;
+        }
+
+        /// <summary>
+        /// Tries to create a new disposable deserializer bound to a <see cref="BinaryDeserializerContext"/>
+        /// that can be reused when the deserializer is disposed.
+        /// <para>
+        /// The first byte must be a between 10 and <see cref="BinarySerializer.SerializerVersion"/> otherwise
+        /// null is returned.
+        /// </para>
+        /// </summary>
+        /// <param name="s">The stream.</param>
+        /// <param name="leaveOpen">True to leave the stream opened, false to close it when the deserializer is disposed.</param>
+        /// <param name="context">The context to use.</param>
+        /// <param name="throwOnError">True to throw an error instead of returning null (behaves like <see cref="Create(Stream, bool, BinaryDeserializerContext)"/>).</param>
+        /// <returns>A disposable deserializer or null if the version byte is invalid.</returns>
+        public static IDisposableBinaryDeserializer? TryCreate( Stream s,
+                                                                bool leaveOpen,
+                                                                BinaryDeserializerContext context,
+                                                                bool throwOnError = false )
+        {
             var reader = new CKBinaryReader( s, Encoding.UTF8, leaveOpen );
             var v = reader.ReadSmallInt32();
             if( v < 10 || v > BinarySerializer.SerializerVersion )
             {
-                throw new InvalidDataException( $"Invalid deserializer version: {v}. Minimal is 10 and current is {BinarySerializer.SerializerVersion}." );
+                if( throwOnError )
+                {
+                    throw new InvalidDataException( $"Invalid deserializer version: {v}. Minimal is 10 and current is {BinarySerializer.SerializerVersion}." );
+                }
+                return null;
             }
             var sameEndianness = reader.ReadBoolean() == BitConverter.IsLittleEndian;
             return new BinaryDeserializerImpl( v, reader, leaveOpen, context, sameEndianness );

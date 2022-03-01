@@ -10,8 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="CK.Core" Version="14.2.2" />
-    <PackageReference Include="CK.Core" Version="14.2.2" />
-<!---->  </ItemGroup>
+  </ItemGroup>
 
   <ItemGroup>
     <None Update="Deserialization\Drivers\DDTuple.tt">

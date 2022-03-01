@@ -59,7 +59,14 @@ namespace CK.BinarySerialization
             return new BinarySerializerImpl( writer, leaveOpen, context );
         }
 
-        internal class CheckedWriteStream : Stream
+        /// <summary>
+        /// Creates a writable stream that must be filled with the exact same bytes as the <paramref name="existingBytes"/>.
+        /// </summary>
+        /// <param name="existingBytes">Existing bytes.</param>
+        /// <returns>A writable stream.</returns>
+        public static Stream CreateCheckedWriteStream( byte[] existingBytes ) => new CheckedWriteStream( existingBytes );
+
+        class CheckedWriteStream : Stream
         {
             readonly byte[] _already;
             int _position;
@@ -115,7 +122,10 @@ namespace CK.BinarySerialization
             }
         }
 
-
+        /// <summary>
+        /// Captures the result of the <see cref="IdempotenceCheck(object, BinarySerializerContext?, BinaryDeserializerContext?, bool)"/>
+        /// helper.
+        /// </summary>
         public sealed class IdempotenceCheckResult
         {
             /// <summary>

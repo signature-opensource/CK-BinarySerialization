@@ -264,7 +264,7 @@ namespace CK.BinarySerialization
         static ConstructorInfo GetDeserializationCtor( Type t )
         {
             var c = BinaryDeserializer.Helper.GetTypedReaderConstructor( t );
-            if( c == null ) throw new InvalidOperationException( $"Type '{t}' requires a public constructor with (IBinaryDeserializer d, ITypeReadInfo info) parameters." );
+            if( c == null ) throw new InvalidOperationException( $"Type '{t}' requires a constructor with (IBinaryDeserializer d, ITypeReadInfo info) parameters." );
             return c;
         }
     }

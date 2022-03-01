@@ -125,6 +125,32 @@ namespace CK.BinarySerialization
         }
 
         /// <summary>
+        /// Sets a type as a non serializable one: a null driver will always be returned.
+        /// </summary>
+        /// <para>
+        /// The type MUST not already be associated to a driver otherwise an <see cref="InvalidOperationException"/> is raised
+        /// but this method can be called multiple times for the same type.
+        /// </para>
+        /// <param name="t">The type that must not be serializable.</param>
+        public void SetNotSerializable( Type t )
+        {
+            if( t == null ) throw new ArgumentNullException( nameof( t ) );
+            bool done = false;
+            if( _typedDrivers.AddOrUpdate( t, (ISerializationDriver?)null, (t, existing) => existing ) == null )
+            {
+                done = true;
+                if( t.IsValueType )
+                {
+                    if( Nullable.GetUnderlyingType( t ) != null ) throw new ArgumentException( "Type must not be a nullable value type.", nameof( t ) );
+                    t = typeof( Nullable<> ).MakeGenericType( t );
+                    done = _typedDrivers.AddOrUpdate( t, (ISerializationDriver?)null, ( t, existing ) => existing ) == null;
+                }
+            }
+            if( !done ) throw new InvalidOperationException( $"A serialization driver for type '{t}' is already registered." );
+        }
+
+
+        /// <summary>
         /// Helper methods that gets the public static void Write( IBinarySerializer s, in T o ) method
         /// or throws an <see cref="InvalidOperationException"/>.
         /// </summary>
@@ -135,7 +161,7 @@ namespace CK.BinarySerialization
             var writer = writerHost.GetMethod( "Write", BindingFlags.Static | BindingFlags.DeclaredOnly | BindingFlags.Public, null, new[] { typeof( IBinarySerializer ), instanceType.MakeByRefType() }, null );
             if( writer == null )
             {
-                throw new InvalidOperationException( $"Type '{writerHost}' must have a public static void Write( IBinarySerializer s, in {instanceType.Name} o ) static writer." );
+                throw new InvalidOperationException( $"Type '{writerHost}' must have a 'public static void Write( IBinarySerializer s, in {instanceType.Name} o )' static writer. Beware of the 'in' modifier!" );
             }
             return writer;
         }

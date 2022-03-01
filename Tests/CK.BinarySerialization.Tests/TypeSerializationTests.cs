@@ -134,7 +134,15 @@ namespace CK.BinarySerialization.Tests
 
         }
 
-
+        [Test]
+        public void Delegate_type_serialization()
+        {
+            var l = new List<int>();
+            Delegate d = (Action<int>)l.Add;
+            var type = d.GetType();
+            Type backT = TestHelper.SaveAndLoad( type, ( type, w ) => w.WriteTypeInfo( type ), r => r.ReadTypeInfo().ResolveLocalType() );
+            backT.Should().BeSameAs( type );
+        }
     }
 }
 

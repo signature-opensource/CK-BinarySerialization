@@ -76,14 +76,21 @@ namespace CK.BinarySerialization
 
             protected override void Write( IBinarySerializer w, in T o )
             {
-                var p = new object[] { w, o };  
-                _writers[0].Invoke( null, p );
-                if( _writers.Count > 1 && (!_isDestroyable || !((IDestroyable)o).IsDestroyed) )
+                try
                 {
-                    for( int i = 1; i < _writers.Count; i++ )
+                    var p = new object[] { w, o };  
+                    _writers[0].Invoke( null, p );
+                    if( _writers.Count > 1 && (!_isDestroyable || !((IDestroyable)o).IsDestroyed) )
                     {
-                        _writers[i].Invoke( null, p );
+                        for( int i = 1; i < _writers.Count; i++ )
+                        {
+                            _writers[i].Invoke( null, p );
+                        }
                     }
+                }
+                catch( TargetInvocationException ex )
+                {
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture( ex.InnerException! ).Throw();
                 }
             }
         }
