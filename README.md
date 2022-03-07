@@ -61,6 +61,12 @@ on the basic Reader/Writer (and expose them).
 
 ![IBinarySerializer and its Writer](Doc/IBinarySerializer.png)
 
+Recommended conventions are:
+- Serializer is **s**: `IBinarySerializer s`
+- Writer is **w**: `ICKBinaryWriter w`
+- Deserializer is **d**: `IBinaryDeserializer d`
+- Reader is **r**: `ICKBinaryReader r`
+
 ## Basic serialization: ICKSimpleBinarySerializable (any type)
 This is the simplest pattern where versioning must be handled explicitly ant that applies
 to any POCO-like type since there is no support for object graphs: the only allowed references
@@ -96,29 +102,39 @@ from CK.Core: the `CK.Core.ICKBinaryReader` and `CK.Core.ICKBinaryWriter` interf
 respective default implementations can be used without the CK.BinarySerialization package.
 
 ## Sharing version: ICKVersionedBinarySerializable (struct & sealed classes only)
-This `CK.BinarySerialization.ICKVersionedBinarySerializable` works like the simple one, except that the
+This `CK.Core.ICKVersionedBinarySerializable` works like the simple one, except that the
 version is kindly handled once for all at the type level (the version is written only once per type even if thousands of
 objects are serialized) and the current version is specified by a simple `[SerializationVersion( 42 )]` attribute:
 ```c#
     /// <summary>
-    /// Interface for versioned binary serialization of sealed class or value type.
-    /// The version must be defined by a <see cref="SerializationVersionAttribute"/> on the type and
-    /// is written once.
+    /// Interface for versioned binary serialization that uses an externally 
+    /// stored or known version number. This should be used only on sealed classes or value types 
+    /// (since inheritance or any other traits or composite objects will have to share the same version).
     /// <para>
-    /// A deserialization constructor must be implemented (that accepts a CK.Core.ICKBinaryReader and a int version).
+    /// The version must be defined by a <see cref="SerializationVersionAttribute"/> on the type and
+    /// should be written once for all instances of the type.
     /// </para>
     /// <para>
-    /// This is for "simple" serialization where "Simple" means that there is no support for object graph (no reference
+    /// A deserialization constructor must be implemented (that accepts a <see cref="ICKBinaryReader"/> and a int version).
+    /// </para>
+    /// <para>
+    /// This is for "simple object" serialization where "simple" means that there is no support for object graph (no reference
     /// management).
     /// </para>
     /// </summary>
     public interface ICKVersionedBinarySerializable
     {
+        /// <summary>
+        /// Must write the binary layout only, without the version number that must be handled externally.
+        /// This binary layout will be read by a deserialization constructor that takes a <see cref="ICKBinaryReader"/> 
+        /// and a int version.
+        /// </summary>
+        /// <param name="w">The writer.</param>
         void Write( ICKBinaryWriter w );
     }
 ``` 
 This can only be applied to value types or sealed classes (an `InvalidOperationException` will be raised 
-if non sealed class appears in a serialization or deserialization session). Can you see why?
+if non sealed class appears in a serialization or deserialization session).
 
 To overcome this limitation, a more complex model is required: this is what the CK.BinarySerialization.Sliced package
 brings to the table.

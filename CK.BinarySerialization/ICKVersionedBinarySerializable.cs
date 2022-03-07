@@ -8,7 +8,7 @@ namespace CK.Core
     /// <summary>
     /// Interface for versioned binary serialization that uses an externally 
     /// stored or known version number. This should be used only on sealed classes or value types 
-    /// (inheritance or any other traits or composite objects will have to share the same version).
+    /// (since inheritance or any other traits or composite objects will have to share the same version).
     /// <para>
     /// The version must be defined by a <see cref="SerializationVersionAttribute"/> on the type and
     /// should be written once for all instances of the type.
