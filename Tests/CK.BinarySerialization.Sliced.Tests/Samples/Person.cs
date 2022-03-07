@@ -42,16 +42,22 @@ namespace CK.BinarySerialization.Tests.Samples
         {
             IsDestroyed = d.Reader.ReadBoolean();
             Name = d.Reader.ReadNullableString();
-            Friends = d.ReadObject<List<Person>>();
-            Town = d.ReadObject<Town>();
+            if( !IsDestroyed )
+            {
+                Friends = d.ReadObject<List<Person>>();
+                Town = d.ReadObject<Town>();
+            }
         }
 
         public static void Write( IBinarySerializer s, in Person o )
         {
             s.Writer.Write( o.IsDestroyed );
             s.Writer.WriteNullableString( o.Name );
-            s.WriteObject( o.Friends );
-            s.WriteObject( o.Town );
+            if( !o.IsDestroyed )
+            {
+                s.WriteObject( o.Friends );
+                s.WriteObject( o.Town );
+            }
         }
 
         #endregion

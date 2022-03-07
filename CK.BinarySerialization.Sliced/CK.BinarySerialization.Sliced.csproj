@@ -1,9 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
+	<Import Project="..\Common\Shared.props" />
+
+	<PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
 	<Nullable>enable</Nullable>
 	  <LangVersion>9</LangVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CK.BinarySerialization\CK.BinarySerialization.csproj" />
+  </ItemGroup>
 
 </Project>

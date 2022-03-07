@@ -51,7 +51,7 @@ The plan regarding full NRT support is to:
 ## IBinarySerializer and ICKBinaryWriter, IBinaryDeserializer and ICKBinaryReader
 
 The `ICKBinaryWriter` and `ICKBinaryReader` are defined and implemented by `CKBinaryWriter`
-and `CKBinaryReader` in CK.Core. They are specialize the .Net System.IO.BinaryReader/Writer classes
+and `CKBinaryReader` in CK.Core. They specialize the .Net System.IO.BinaryReader/Writer classes
 and provides an enriched API that reads/writes basic types like `Guid` or `DateTimeOffset` and support
 nullable value types once for all.
 
@@ -149,6 +149,99 @@ The `CK.BinarySerialization.ICKSlicedSerializable` interface is a pure marker in
     {
     }
 ```
+
+This interface implies that the type must support the SerializationVersion attribute, a deserialization constructor, a `public static Write`
+method (and, if the class is not sealed, a special empty deserialization constructor to be called by specialized types). 
+Below is a typical specialized and non sealed class implementation:
+```c#
+[SerializationVersion(0)]
+public class Employee : Person
+{
+    // ...
+
+    protected Employee( Sliced _ ) : base( _ ) { }
+
+    public Employee( IBinaryDeserializer d, ITypeReadInfo info )
+        : base( Sliced.Instance )
+    {
+        BestFriend = d.ReadNullableObject<Employee>();
+        EmployeeNumber = d.Reader.ReadInt32();
+        Garage = d.ReadObject<Garage>();
+    }
+
+    public static void Write( IBinarySerializer s, in Employee o )
+    {
+        // Writes the BestFriend first: this enters a recursion on the stack
+        // that is handled thanks to the IDeserializationDeferredDriver.
+        s.WriteNullableObject( o.BestFriend );
+        s.Writer.Write( o.EmployeeNumber );
+        s.WriteObject( o.Garage );
+    }
+}
+```
+Where the base class must be marked with `ICKSlicedSerializable`:
+
+```c#
+[SerializationVersion(0)]
+public class Person : ICKSlicedSerializable, IDestroyable
+{
+    // ...
+
+    protected Person( Sliced _ ) { }
+
+    public Person( IBinaryDeserializer d, ITypeReadInfo info )
+    {
+        IsDestroyed = d.Reader.ReadBoolean();
+        Name = d.Reader.ReadNullableString();
+        if( !IsDestroyed )
+        {
+            Friends = d.ReadObject<List<Person>>();
+            Town = d.ReadObject<Town>();
+        }
+    }
+
+    public static void Write( IBinarySerializer s, in Person o )
+    {
+        s.Writer.Write( o.IsDestroyed );
+        s.Writer.WriteNullableString( o.Name );
+        if( !o.IsDestroyed )
+        {
+            s.WriteObject( o.Friends );
+            s.WriteObject( o.Town );
+        }
+    }
+}
+```
+
+The `IDestroyable` interface is a minimalist interface:
+
+```c#
+    /// <summary>
+    /// Optional interface that exposes a <see cref="IsDestroyed"/> property that can be implemented 
+    /// by reference types that have a "alive" semantics (they may be <see cref="IDisposable"/> but this 
+    /// is not required).
+    /// <para>
+    /// <see cref="IBinarySerializer.OnDestroyedObject"/> event is raised whenever a destroyed object
+    /// is written: this supports tracking of "dead" objects in serialized graphs.
+    /// </para>
+    /// <para>
+    /// When used with "sliced serializable", this must be implemented at the root of the serializable
+    /// hierarchy and automatically skips calls to specialized Write methods and deserialization constructors.
+    /// </para>
+    /// <para>
+    /// Only reference types are supported: implementing this interface on value type is ignored.
+    /// </para>
+    /// </summary>
+    public interface IDestroyable
+    {
+        /// <summary>
+        /// Gets whether this object has been disposed.
+        /// </summary>
+        bool IsDestroyed { get; }
+    }
+```
+As the comment states, a destroyed instance is "optimized" by the serializer since only the root Write/Deserialization
+constructor is called, specialized ones are skipped (this is why `Employee` doesn't need to handle it). 
 
 ## Automatic mutations supported
 
