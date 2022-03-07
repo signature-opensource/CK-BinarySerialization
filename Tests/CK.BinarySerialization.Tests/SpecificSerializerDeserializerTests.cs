@@ -46,7 +46,7 @@ namespace CK.BinarySerialization.Tests
         {
             protected override void ReadInstance( ref RefReader r )
             {
-                r.ReadInfo.SerializationVersion.Should().Be( 3712 );
+                r.ReadInfo.Version.Should().Be( 3712 );
                 var n = new Node();
                 var d = r.SetInstance( n );
                 n.Name = r.Reader.ReadNullableString();
@@ -98,7 +98,7 @@ namespace CK.BinarySerialization.Tests
         {
             protected override void ReadInstance( ref RefReader r )
             {
-                r.ReadInfo.SerializationVersion.Should().Be( 0 );
+                r.ReadInfo.Version.Should().Be( 0 );
                 var n = new NodeRoot();
                 var d = r.SetInstance( n );
                 n.FirstRoot = d.ReadNullableObject<Node>();

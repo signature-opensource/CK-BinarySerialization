@@ -30,7 +30,7 @@ namespace CK.BinarySerialization
         {
             _deserializer = deserializer;
             Kind = k;
-            SerializationVersion = -1;
+            Version = -1;
             SubTypes = Array.Empty<ITypeReadInfo>();
             IsValueType = k == TypeReadInfoKind.ValueType || k == TypeReadInfoKind.GenericValueType || k == TypeReadInfoKind.Enum;
             IsSealed = k != TypeReadInfoKind.Class && k != TypeReadInfoKind.GenericClass;
@@ -41,7 +41,7 @@ namespace CK.BinarySerialization
         {
             if( (DriverName = r.ReadSharedString()) != null )
             {
-                SerializationVersion = r.ReadSmallInt32();
+                Version = r.ReadSmallInt32();
             }
             TypeNamespace = r.ReadSharedString()!;
             TypeName = r.ReadString()!;
@@ -162,7 +162,7 @@ namespace CK.BinarySerialization
 
         public string AssemblyName { get; private set; }
 
-        public int SerializationVersion { get; private set; }
+        public int Version { get; private set; }
 
         public int ArrayRank { get; private set; }
 

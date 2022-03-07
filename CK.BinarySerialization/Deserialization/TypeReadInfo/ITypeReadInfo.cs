@@ -67,7 +67,7 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Gets the serialization version. -1 when no version is defined.
         /// </summary>
-        int SerializationVersion { get; }
+        int Version { get; }
 
         /// <summary>
         /// Gets the type informations for the generic parameters if any or

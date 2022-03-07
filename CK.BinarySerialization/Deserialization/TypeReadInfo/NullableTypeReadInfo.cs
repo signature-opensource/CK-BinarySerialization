@@ -51,7 +51,7 @@ namespace CK.BinarySerialization
 
         public string? DriverName => _nonNull.DriverName;
 
-        public int SerializationVersion => _nonNull.SerializationVersion;
+        public int Version => _nonNull.Version;
 
         public IReadOnlyList<ITypeReadInfo> SubTypes => _nonNull.SubTypes;
 

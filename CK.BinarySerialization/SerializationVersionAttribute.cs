@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CK.BinarySerialization
+namespace CK.Core
 {
     /// <summary>
-    /// Associates a version to a class or struct.
+    /// Associates a serialization version to a class or struct.
     /// </summary>
     [AttributeUsage( AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false )]
     public class SerializationVersionAttribute : Attribute
@@ -36,6 +36,17 @@ namespace CK.BinarySerialization
             var a = (SerializationVersionAttribute?)GetCustomAttribute( t, typeof( SerializationVersionAttribute ) );
             if( a == null ) throw new InvalidOperationException( $"Type '{t}' must be decorated with a [SerializationVersion()] attribute." );
             return a.Version;
+        }
+
+        /// <summary>
+        /// Public helper that retrieves the version on a type or returns -1 if the attribute is not defined.
+        /// </summary>
+        /// <param name="t">The type that may be decorated with the SerializationVersion attribute.</param>
+        /// <returns>The version number or -1 if it is not defined.</returns>
+        public static int TryGetRequiredVersion( Type t )
+        {
+            var a = (SerializationVersionAttribute?)GetCustomAttribute( t, typeof( SerializationVersionAttribute ) );
+            return a == null ? -1 : a.Version;
         }
     }
 }

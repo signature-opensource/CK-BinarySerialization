@@ -191,7 +191,7 @@ namespace CK.BinarySerialization
                 _factory = BinaryDeserializer.Helper.CreateVersionedNewDelegate<T>( ctor );
             }
 
-            protected override T ReadInstance( ICKBinaryReader r, ITypeReadInfo readInfo ) => _factory( r, readInfo.SerializationVersion );
+            protected override T ReadInstance( ICKBinaryReader r, ITypeReadInfo readInfo ) => _factory( r, readInfo.Version );
         }
 
         static IDeserializationDriver CreateCachedVersioned( Type t, ConstructorInfo ctor )

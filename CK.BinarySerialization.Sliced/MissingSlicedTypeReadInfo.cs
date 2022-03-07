@@ -70,7 +70,7 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Always -1.
         /// </summary>
-        public int SerializationVersion => -1;
+        public int Version => -1;
 
         /// <summary>
         /// Always empty.

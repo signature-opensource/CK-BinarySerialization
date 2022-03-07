@@ -16,7 +16,7 @@ namespace CK.BinarySerialization.Tests
 
             public Simple( IBinaryDeserializer d, ITypeReadInfo info )
             {
-                info.SerializationVersion.Should().Be( 3712 );
+                info.Version.Should().Be( 3712 );
                 One = d.Reader.ReadInt32();
                 Two = d.Reader.ReadInt32();
             }
