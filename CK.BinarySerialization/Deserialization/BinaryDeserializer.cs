@@ -53,7 +53,7 @@ namespace CK.BinarySerialization
         /// that can be reused when the deserializer is disposed.
         /// <para>
         /// The first byte must be a between 10 and <see cref="BinarySerializer.SerializerVersion"/> otherwise
-        /// null is returned.
+        /// null is returned BUT one or more bytes have been consumed!
         /// </para>
         /// </summary>
         /// <param name="s">The stream.</param>

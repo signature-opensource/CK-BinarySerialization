@@ -104,7 +104,7 @@ respective default implementations can be used without the CK.BinarySerializatio
 ## Sharing version: ICKVersionedBinarySerializable (struct & sealed classes only)
 This `CK.Core.ICKVersionedBinarySerializable` works like the simple one, except that the
 version is kindly handled once for all at the type level (the version is written only once per type even if thousands of
-objects are serialized) and the current version is specified by a simple `[SerializationVersion( 42 )]` attribute:
+objects are serialized) and the current version is specified by the `[SerializationVersion( 42 )]` attribute:
 ```c#
     /// <summary>
     /// Interface for versioned binary serialization that uses an externally 
@@ -171,15 +171,13 @@ public class Employee : Person
 
     public static void Write( IBinarySerializer s, in Employee o )
     {
-        // Writes the BestFriend first: this enters a recursion on the stack
-        // that is handled thanks to the IDeserializationDeferredDriver.
         s.WriteNullableObject( o.BestFriend );
         s.Writer.Write( o.EmployeeNumber );
         s.WriteObject( o.Garage );
     }
 }
 ```
-Where the base class must be marked with `ICKSlicedSerializable`:
+Where the base class **must** be marked with `ICKSlicedSerializable`:
 
 ```c#
 [SerializationVersion(0)]

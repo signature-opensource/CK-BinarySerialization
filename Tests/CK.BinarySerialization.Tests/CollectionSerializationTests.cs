@@ -239,7 +239,7 @@ namespace CK.BinarySerialization.Tests
         
 
         [Test]
-        public void dictionary_comparer_support()
+        public void dictionary_comparer_support_OrdinalIgnoreCase_and_InvariantCultureIgnoreCase()
         {
             var a = new Dictionary<string, int>( StringComparer.OrdinalIgnoreCase );
             a.Add( "A", 1 );
@@ -247,6 +247,13 @@ namespace CK.BinarySerialization.Tests
             var backA = TestHelper.SaveAndLoadObject( a );
             backA.Should().BeEquivalentTo( a );
             FluentActions.Invoking( () => backA.Add( "a", 1 ) ).Should().Throw<ArgumentException>();
+
+            var a2 = new Dictionary<string, string>( StringComparer.InvariantCultureIgnoreCase );
+            a2.Add( "A", "plop" );
+            FluentActions.Invoking( () => a2.Add( "a", "no way" ) ).Should().Throw<ArgumentException>();
+            var backA2 = TestHelper.SaveAndLoadObject( a2 );
+            backA2.Should().BeEquivalentTo( a2 );
+            FluentActions.Invoking( () => backA2.Add( "a", "no way again" ) ).Should().Throw<ArgumentException>();
         }
 
 
