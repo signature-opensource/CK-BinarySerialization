@@ -105,4 +105,5 @@ namespace CK.BinarySerialization.Deserialization
     {
         protected override decimal ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => d.Reader.ReadDecimal();
     }
+
 }

@@ -19,10 +19,10 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        protected internal override void Write( IBinarySerializer w, in T o )
+        protected internal override void Write( IBinarySerializer s, in T o )
         {
             var c = o;
-            _underlying( w, Unsafe.As<T, TU>( ref c ) );
+            _underlying( s, Unsafe.As<T, TU>( ref c ) );
         }
 
     }

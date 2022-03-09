@@ -43,6 +43,12 @@ namespace CK.BinarySerialization
             Register( new Serialization.DTimeSpan() );
             Register( new Serialization.DGuid() );
             Register( new Serialization.DDecimal() );
+
+            Register( new Serialization.DSVersion() );
+            Register( new Serialization.DCSVersion() );
+            Register( new Serialization.DSVersionBound() );
+            Register( new Serialization.DPackageQualityVector() );
+            Register( new Serialization.DPackageQualityFilter() );
         }
 
         static void Register<T>( StaticValueTypeSerializer<T> driver ) where T : struct

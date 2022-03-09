@@ -28,6 +28,7 @@ namespace CK.BinarySerialization
             {
                 { "string", new Deserialization.DString() },
                 { "byte[]", new Deserialization.DByteArray() },
+                
                 { "bool", new Deserialization.DBool() },
                 { "int", new Deserialization.DInt32() },
                 { "uint", new Deserialization.DUInt32() },
@@ -45,6 +46,12 @@ namespace CK.BinarySerialization
                 { "TimeSpan", new Deserialization.DTimeSpan() },
                 { "Guid", new Deserialization.DGuid() },
                 { "decimal", new Deserialization.DDecimal() },
+
+                { "SVersion", new Deserialization.DSVersion() },
+                { "CSVersion", new Deserialization.DCSVersion() },
+                { "SVersionBound", new Deserialization.DSVersionBound() },
+                { "PackageQualityVector", new Deserialization.DPackageQualityVector() },
+                { "PackageQualityFilter", new Deserialization.DPackageQualityFilter() },
             };
         }
 

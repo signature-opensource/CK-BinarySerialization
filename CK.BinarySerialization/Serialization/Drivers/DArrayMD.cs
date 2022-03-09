@@ -15,7 +15,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        internal protected override void Write( IBinarySerializer w, in T o )
+        internal protected override void Write( IBinarySerializer s, in T o )
         {
             Array a = Unsafe.As<Array>(o);
             // Rank is in the TypeReadInfo. No need to write it here.
@@ -26,7 +26,7 @@ namespace CK.BinarySerialization.Serialization
                 var l = a.GetLength( i );
                 isEmpty |= l == 0;
                 lengths[i] = l;
-                w.Writer.WriteNonNegativeSmallInt32( l );
+                s.Writer.WriteNonNegativeSmallInt32( l );
             }
             if( !isEmpty )
             {
@@ -35,7 +35,7 @@ namespace CK.BinarySerialization.Serialization
                 while( BinarySerializerImpl.NextInArray( coords, lengths ) )
                 {
                     var i = (TItem)a.GetValue( coords )!;
-                    _item( w, in i );
+                    _item( s, in i );
                 }
             }
         }

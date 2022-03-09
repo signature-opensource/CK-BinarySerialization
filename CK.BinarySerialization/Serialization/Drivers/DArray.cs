@@ -15,10 +15,10 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        internal protected override void Write( IBinarySerializer w, in T[] o )
+        internal protected override void Write( IBinarySerializer s, in T[] o )
         {
-            w.Writer.WriteNonNegativeSmallInt32( o.Length );
-            for( int i = 0; i < o.Length; ++i ) _item( w, in o[i] );
+            s.Writer.WriteNonNegativeSmallInt32( o.Length );
+            for( int i = 0; i < o.Length; ++i ) _item( s, in o[i] );
         }
     }
 }

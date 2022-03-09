@@ -53,7 +53,7 @@ namespace CK.BinarySerialization
         /// that can be reused when the deserializer is disposed.
         /// <para>
         /// The first byte must be a between 10 and <see cref="BinarySerializer.SerializerVersion"/> otherwise
-        /// null is returned BUT one or more bytes have been consumed!
+        /// null is returned AND one or more bytes have been consumed!
         /// </para>
         /// </summary>
         /// <param name="s">The stream.</param>
@@ -72,12 +72,30 @@ namespace CK.BinarySerialization
             {
                 if( throwOnError )
                 {
-                    throw new InvalidDataException( $"Invalid deserializer version: {v}. Minimal is 10 and current is {BinarySerializer.SerializerVersion}." );
+                    throw new InvalidDataException( $"Invalid deserializer version: {v}. Minimal is 10 and the current is {BinarySerializer.SerializerVersion} ({CSemVer.InformationalVersion.ReadFromAssembly(Assembly.GetExecutingAssembly())})." );
                 }
                 return null;
             }
             var sameEndianness = reader.ReadBoolean() == BitConverter.IsLittleEndian;
             return new BinaryDeserializerImpl( v, reader, leaveOpen, context, sameEndianness );
+        }
+
+#if NET6
+Temporary for the transition: remove.
+#endif
+        public static IDisposableBinaryDeserializer? TryCreateFromPreviousVersion( Stream s,
+                                                                                   bool leaveOpen,
+                                                                                   BinaryDeserializerContext context,
+                                                                                   out int version )
+        {
+            var reader = new CKBinaryReader( s, Encoding.UTF8, leaveOpen );
+            version = reader.ReadSmallInt32();
+            if( version < 10 || version > BinarySerializer.SerializerVersion )
+            {
+                return null;
+            }
+            var sameEndianness = reader.ReadBoolean() == BitConverter.IsLittleEndian;
+            return new BinaryDeserializerImpl( version, reader, leaveOpen, context, sameEndianness );
         }
 
         /// <summary>

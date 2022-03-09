@@ -42,20 +42,20 @@ namespace CK.BinarySerialization
 
             public ISerializationDriver ToNonNullable => _serializer;
 
-            public void WriteNullable( IBinarySerializer w, in T? o )
+            public void WriteNullable( IBinarySerializer s, in T? o )
             {
                 if( o.HasValue )
                 {
-                    w.Writer.Write( (byte)SerializationMarker.Struct );
-                    _serializer._tWriter( w, o.Value );
+                    s.Writer.Write( (byte)SerializationMarker.Struct );
+                    _serializer._tWriter( s, o.Value );
                 }
                 else
                 {
-                    w.Writer.Write( (byte)SerializationMarker.Null );
+                    s.Writer.Write( (byte)SerializationMarker.Null );
                 }
             }
 
-            public void WriteNullableObject( IBinarySerializer w, in object? o ) => WriteNullable( w, (T?)o );
+            public void WriteNullableObject( IBinarySerializer s, in object? o ) => WriteNullable( s, (T?)o );
         }
 
         readonly ValueTypeNullable _nullable;
@@ -99,7 +99,7 @@ namespace CK.BinarySerialization
 
         Delegate ISerializationDriver.TypedWriter => _tWriter;
 
-        void ISerializationDriverInternal.WriteObjectData( IBinarySerializer w, in object o ) => _tWriter( w, (T)o );
+        void ISerializationDriverInternal.WriteObjectData( IBinarySerializer s, in object o ) => _tWriter( s, (T)o );
 
         public ISerializationDriver ToNullable => _nullable;
 
@@ -111,6 +111,6 @@ namespace CK.BinarySerialization
         /// <inheritdoc />
         public abstract int SerializationVersion { get; }
 
-        void WriteUntyped( IBinarySerializer w, in object o ) => _tWriter( w, (T)o );
+        void WriteUntyped( IBinarySerializer s, in object o ) => _tWriter( s, (T)o );
     }
 }

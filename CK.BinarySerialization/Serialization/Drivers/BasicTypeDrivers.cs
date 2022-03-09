@@ -10,7 +10,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        protected internal override void Write( IBinarySerializer w, in string o ) => w.Writer.Write( o );
+        protected internal override void Write( IBinarySerializer s, in string o ) => s.Writer.Write( o );
     }
 
     sealed class DByteArray : ReferenceTypeSerializer<byte[]>
@@ -19,10 +19,10 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        protected internal override void Write( IBinarySerializer w, in byte[] o )
+        protected internal override void Write( IBinarySerializer s, in byte[] o )
         {
-            w.Writer.WriteNonNegativeSmallInt32( o.Length );
-            w.Writer.Write( o );
+            s.Writer.WriteNonNegativeSmallInt32( o.Length );
+            s.Writer.Write( o );
         }
     }
 
@@ -32,7 +32,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in bool o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in bool o ) => s.Writer.Write( o );
     }
 
     sealed class DInt32 : StaticValueTypeSerializer<int>
@@ -41,7 +41,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in int o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in int o ) => s.Writer.Write( o );
     }
 
     sealed class DUInt32 : StaticValueTypeSerializer<uint>
@@ -50,7 +50,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in uint o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in uint o ) => s.Writer.Write( o );
     }
 
     sealed class DInt8 : StaticValueTypeSerializer<sbyte>
@@ -59,7 +59,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in sbyte o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in sbyte o ) => s.Writer.Write( o );
     }
 
     sealed class DUInt8 : StaticValueTypeSerializer<byte>
@@ -68,7 +68,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in byte o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in byte o ) => s.Writer.Write( o );
     }
 
     sealed class DInt16 : StaticValueTypeSerializer<short>
@@ -77,7 +77,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in short o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in short o ) => s.Writer.Write( o );
     }
 
     sealed class DUInt16 : StaticValueTypeSerializer<ushort>
@@ -86,7 +86,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in ushort o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in ushort o ) => s.Writer.Write( o );
     }
 
     sealed class DInt64 : StaticValueTypeSerializer<long>
@@ -95,7 +95,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in long o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in long o ) => s.Writer.Write( o );
     }
 
     sealed class DUInt64 : StaticValueTypeSerializer<ulong>
@@ -104,7 +104,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in ulong o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in ulong o ) => s.Writer.Write( o );
     }
 
     sealed class DSingle : StaticValueTypeSerializer<float>
@@ -113,7 +113,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in float o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in float o ) => s.Writer.Write( o );
     }
 
     sealed class DDouble : StaticValueTypeSerializer<double>
@@ -122,7 +122,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in double o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in double o ) => s.Writer.Write( o );
     }
 
     sealed class DChar : StaticValueTypeSerializer<char>
@@ -131,7 +131,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in char o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in char o ) => s.Writer.Write( o );
     }
 
     sealed class DDateTime : StaticValueTypeSerializer<DateTime>
@@ -140,7 +140,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in DateTime o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in DateTime o ) => s.Writer.Write( o );
     }
 
     sealed class DDateTimeOffset : StaticValueTypeSerializer<DateTimeOffset>
@@ -149,7 +149,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in DateTimeOffset o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in DateTimeOffset o ) => s.Writer.Write( o );
     }
 
     sealed class DTimeSpan : StaticValueTypeSerializer<TimeSpan>
@@ -158,7 +158,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in TimeSpan o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in TimeSpan o ) => s.Writer.Write( o );
     }
 
     sealed class DGuid : StaticValueTypeSerializer<Guid>
@@ -167,7 +167,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in Guid o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in Guid o ) => s.Writer.Write( o );
     }
 
     sealed class DDecimal : StaticValueTypeSerializer<decimal>
@@ -176,7 +176,7 @@ namespace CK.BinarySerialization.Serialization
 
         public override int SerializationVersion => -1;
 
-        public static void Write( IBinarySerializer w, in decimal o ) => w.Writer.Write( o );
+        public static void Write( IBinarySerializer s, in decimal o ) => s.Writer.Write( o );
     }
 
 }

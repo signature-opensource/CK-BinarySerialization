@@ -75,11 +75,11 @@ namespace CK.BinarySerialization
 
             public override int SerializationVersion { get; }
 
-            protected override void Write( IBinarySerializer w, in T o )
+            protected override void Write( IBinarySerializer s, in T o )
             {
                 try
                 {
-                    var p = new object[] { w, o };  
+                    var p = new object[] { s, o };  
                     _writers[0].Invoke( null, p );
                     if( _writers.Count > 1 && (!_isDestroyable || !((IDestroyable)o).IsDestroyed) )
                     {

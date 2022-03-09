@@ -24,10 +24,10 @@ namespace CK.BinarySerialization.Tests
 
             public override int SerializationVersion => 3712;
 
-            protected override void Write( IBinarySerializer w, in Node o )
+            protected override void Write( IBinarySerializer s, in Node o )
             {
-                w.Writer.WriteNullableString( o.Name );
-                w.WriteNullableObject( o.Parent );
+                s.Writer.WriteNullableString( o.Name );
+                s.WriteNullableObject( o.Parent );
             }
         }
 
@@ -86,11 +86,11 @@ namespace CK.BinarySerialization.Tests
 
             public override int SerializationVersion => 0;
 
-            protected override void Write( IBinarySerializer w, in NodeRoot o )
+            protected override void Write( IBinarySerializer s, in NodeRoot o )
             {
-                w.WriteNullableObject( o.FirstRoot );
-                w.WriteNullableObject( o.SecondRoot );
-                w.WriteNullableObject( o.Nodes );
+                s.WriteNullableObject( o.FirstRoot );
+                s.WriteNullableObject( o.SecondRoot );
+                s.WriteNullableObject( o.Nodes );
             }
         }
 

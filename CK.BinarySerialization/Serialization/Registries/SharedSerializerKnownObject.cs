@@ -40,17 +40,6 @@ namespace CK.BinarySerialization
         /// </summary>
         public SharedSerializerKnownObject()
         {
-            // In NetCoreApp3.1 the System.Collections.Generic.NonRandomizedStringEqualityComparer is not exposed :(.
-            // See it here: https://source.dot.net/#System.Private.CoreLib/NonRandomizedStringEqualityComparer.cs
-            // And the dictionary constructor here: https://source.dot.net/#System.Private.CoreLib/Dictionary.cs,65
-            // This trick implies that the Comparer is not the real one.
-            // We need to retrieve the 3 actual singletons that wraps the EqualityComparer<string>.Default, StringComparer.Ordinal, and StringComparer.OrdinalIgnoreCase.
-            // In Net6 this won't be an issue: we'll call the public GetStringComparer(object? comparer) with null, StringComparer.Ordinal, and StringComparer.OrdinalIgnoreCase.
-            // In NetCoreApp3.1 it appears that only one static field exists. Take it.
-            var tHidden = typeof( int ).Assembly.GetType( "System.Collections.Generic.NonRandomizedStringEqualityComparer", true );
-            var single = tHidden!.GetField( "<Default>k__BackingField", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic )?.GetValue( null );
-            if( single == null ) throw new CKException( "Unable to retrieve the default wrapper Comparer from NonRandomizedStringEqualityComparer." );
-
             _objects = new (object O, string K)[]
             {
                 (StringComparer.Ordinal, "StringComparer.Ordinal" ),
@@ -58,8 +47,7 @@ namespace CK.BinarySerialization
                 (StringComparer.InvariantCulture, "StringComparer.InvariantCulture" ),
                 (StringComparer.InvariantCultureIgnoreCase, "StringComparer.InvariantCultureIgnoreCase" ),
                 (StringComparer.CurrentCulture, "StringComparer.CurrentCulture" ),
-                (StringComparer.CurrentCultureIgnoreCase, "StringComparer.CurrentCultureIgnoreCase" ),
-                (single, "StringComparer.WrappedAroundDefaultComparer" )
+                (StringComparer.CurrentCultureIgnoreCase, "StringComparer.CurrentCultureIgnoreCase" )
             };
         }
 

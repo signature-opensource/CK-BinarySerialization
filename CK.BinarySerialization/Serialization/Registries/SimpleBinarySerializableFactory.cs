@@ -59,7 +59,7 @@ namespace CK.BinarySerialization
 
             public override int SerializationVersion => -1;
 
-            protected internal override void Write( IBinarySerializer w, in T o ) => o.Write( w.Writer );
+            protected internal override void Write( IBinarySerializer s, in T o ) => o.Write( s.Writer );
         }
 
         sealed class SimpleBinarySerializableDriverV<T> : StaticValueTypeSerializer<T> where T : struct, ICKSimpleBinarySerializable
@@ -68,7 +68,7 @@ namespace CK.BinarySerialization
 
             public override int SerializationVersion => -1;
 
-            public static void Write( IBinarySerializer w, in T o ) => o.Write( w.Writer );
+            public static void Write( IBinarySerializer s, in T o ) => o.Write( s.Writer );
         }
 
         static ISerializationDriver CreateSimple( Type t )
@@ -90,7 +90,7 @@ namespace CK.BinarySerialization
 
             public override int SerializationVersion { get; }
 
-            protected internal override void Write( IBinarySerializer w, in T o ) => o.Write( w.Writer );
+            protected internal override void Write( IBinarySerializer s, in T o ) => o.Write( s.Writer );
         }
 
         sealed class SealedBinarySerializableDriverV<T> : StaticValueTypeSerializer<T> where T : struct, ICKVersionedBinarySerializable
@@ -101,7 +101,7 @@ namespace CK.BinarySerialization
 
             public override int SerializationVersion { get; }
 
-            public static void Write( IBinarySerializer w, in T o ) => o.Write( w.Writer );
+            public static void Write( IBinarySerializer s, in T o ) => o.Write( s.Writer );
         }
 
         static ISerializationDriver CreateSealed( Type t )

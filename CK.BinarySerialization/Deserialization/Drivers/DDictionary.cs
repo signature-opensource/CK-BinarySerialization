@@ -13,19 +13,9 @@ namespace CK.BinarySerialization.Deserialization
 
         static DDictionary()
         {
-#if NETCOREAPP3_1
             var k = typeof( EqualityComparer<TKey> ).AssemblyQualifiedName!;
             var c = EqualityComparer<TKey>.Default;
             SharedDeserializerKnownObject.Default.RegisterKnownKey( k, c );
-#else
-            ... ? To be checked in Net6!
-            if( typeof( TKey ) != typeof( string ) )
-            {
-                var k = typeof( EqualityComparer<TKey> ).AssemblyQualifiedName!;
-                var c = EqualityComparer<TKey>.Default;
-                SharedDeserializerKnownObject.Default.RegisterKnownKey( k, c );
-            }
-#endif
         }
 
         public DDictionary( IDeserializationDriver k, IDeserializationDriver v )

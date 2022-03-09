@@ -32,15 +32,15 @@ namespace CK.BinarySerialization
 
             public ISerializationDriver ToNonNullable => _serializer;
 
-            public void WriteNullable( IBinarySerializer w, in T? o )
+            public void WriteNullable( IBinarySerializer s, in T? o )
             {
                 if( o != null )
                 {
-                    _serializer.WriteRefOrInstance( w, o );
+                    _serializer.WriteRefOrInstance( s, o );
                 }
                 else
                 {
-                    w.Writer.Write( (byte)SerializationMarker.Null );
+                    s.Writer.Write( (byte)SerializationMarker.Null );
                 }
             }
         }
@@ -63,7 +63,7 @@ namespace CK.BinarySerialization
             }
         }
 
-        void ISerializationDriverInternal.WriteObjectData( IBinarySerializer w, in object o ) => Write( w, (T)o );
+        void ISerializationDriverInternal.WriteObjectData( IBinarySerializer s, in object o ) => Write( s, (T)o );
 
         /// <summary>
         /// Must write the instance data.

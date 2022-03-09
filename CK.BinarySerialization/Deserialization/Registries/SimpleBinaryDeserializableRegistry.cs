@@ -165,7 +165,7 @@ namespace CK.BinarySerialization
                 _factory = BinaryDeserializer.Helper.CreateVersionedNewDelegate<T>( ctor );
             }
 
-            protected override T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => _factory( d.Reader, d.SerializerVersion );
+            protected override T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => _factory( d.Reader, readInfo.Version );
         }
 
         sealed class VersionedBinaryDeserializableDriverV<T> : ValueTypeDeserializer<T> where T : struct
@@ -178,7 +178,7 @@ namespace CK.BinarySerialization
                 _factory = BinaryDeserializer.Helper.CreateVersionedNewDelegate<T>( ctor );
             }
 
-            protected override T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => _factory( d.Reader, d.SerializerVersion );
+            protected override T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => _factory( d.Reader, readInfo.Version );
         }
 
         sealed class VersionedBinaryDeserializableDriverR<T> : SimpleReferenceTypeDeserializer<T> where T : class

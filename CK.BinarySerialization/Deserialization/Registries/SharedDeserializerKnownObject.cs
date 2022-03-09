@@ -38,11 +38,6 @@ namespace CK.BinarySerialization
         /// </summary>
         public SharedDeserializerKnownObject()
         {
-            // See Serializer...
-            var tHidden = typeof( int ).Assembly.GetType( "System.Collections.Generic.NonRandomizedStringEqualityComparer", true );
-            var single = tHidden!.GetField( "<Default>k__BackingField", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic )?.GetValue( null );
-            if( single == null ) throw new CKException( "Unable to retrieve the default wrapper Comparer from NonRandomizedStringEqualityComparer." );
-
             _knownKeys = new (string K, object O)[]
             {
                 ("StringComparer.Ordinal", StringComparer.Ordinal ),
@@ -50,8 +45,7 @@ namespace CK.BinarySerialization
                 ("StringComparer.InvariantCulture", StringComparer.InvariantCulture ),
                 ("StringComparer.InvariantCultureIgnoreCase", StringComparer.InvariantCultureIgnoreCase ),
                 ("StringComparer.CurrentCulture", StringComparer.CurrentCulture ),
-                ("StringComparer.CurrentCultureIgnoreCase", StringComparer.CurrentCultureIgnoreCase ),
-                ("StringComparer.WrappedAroundDefaultComparer", single )
+                ("StringComparer.CurrentCultureIgnoreCase", StringComparer.CurrentCultureIgnoreCase )
             };
         }
 

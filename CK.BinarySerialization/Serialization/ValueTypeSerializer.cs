@@ -34,20 +34,20 @@ namespace CK.BinarySerialization
 
             public ISerializationDriver ToNonNullable => _serializer;
 
-            public void WriteNullable( IBinarySerializer w, in T? o )
+            public void WriteNullable( IBinarySerializer s, in T? o )
             {
                 if( o.HasValue )
                 {
-                    w.Writer.Write( (byte)SerializationMarker.Struct );
-                    _serializer.Write( w, o.Value );
+                    s.Writer.Write( (byte)SerializationMarker.Struct );
+                    _serializer.Write( s, o.Value );
                 }
                 else
                 {
-                    w.Writer.Write( (byte)SerializationMarker.Null );
+                    s.Writer.Write( (byte)SerializationMarker.Null );
                 }
             }
 
-            public void WriteNullableObject( IBinarySerializer w, in object? o ) => WriteNullable( w, (T?)o );
+            public void WriteNullableObject( IBinarySerializer s, in object? o ) => WriteNullable( s, (T?)o );
 
         }
 
@@ -66,13 +66,13 @@ namespace CK.BinarySerialization
         /// <param name="r">The binary reader.</param>
         /// <param name="readInfo">The read type info.</param>
         /// <returns>The new instance.</returns>
-        internal protected abstract void Write( IBinarySerializer w, in T o );
+        internal protected abstract void Write( IBinarySerializer s, in T o );
 
         public Delegate UntypedWriter => _tWriter;
 
         public Delegate TypedWriter => _tWriter;
 
-        void ISerializationDriverInternal.WriteObjectData( IBinarySerializer w, in object o ) => Write( w, (T)o );
+        void ISerializationDriverInternal.WriteObjectData( IBinarySerializer s, in object o ) => Write( s, (T)o );
 
         public ISerializationDriver ToNullable => _nullable;
 
