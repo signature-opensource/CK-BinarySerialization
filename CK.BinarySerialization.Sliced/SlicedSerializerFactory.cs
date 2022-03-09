@@ -5,7 +5,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
+
+#pragma warning disable CA2255 // The 'ModuleInitializer' attribute should not be used in libraries
+                               // This seems a perfectly valid scenario for me here: it's a library 
+                               // that registers itself to another library. The final application
+                               // doesn't have to interfere here.
 
 namespace CK.BinarySerialization
 {
@@ -16,13 +22,16 @@ namespace CK.BinarySerialization
     {
         readonly SharedBinarySerializerContext _resolver;
 
-#if NET6_0_OR_GREATER
+        /// <summary>
+        /// Gets the default factory that is automatically registered in the <see cref="BinarySerializer.DefaultSharedContext"/>.
+        /// </summary>
+        static readonly SlicedSerializerFactory Default = new SlicedSerializerFactory( BinarySerializer.DefaultSharedContext );
+
         [ModuleInitializer]
         internal static void AutoSharedRegister()
         {
             BinarySerializer.DefaultSharedContext.Register( Default, false );
         }
-#endif
 
         /// <summary>
         /// Initializes a new factory.

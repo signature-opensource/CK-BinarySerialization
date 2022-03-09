@@ -3,13 +3,12 @@
   <Import Project="..\Common\Shared.props" />
 	
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6</TargetFramework>
 	<Nullable>enable</Nullable>
-	<LangVersion>9</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-	  <PackageReference Include="CK.Core" Version="14.2.2" />
+	  <PackageReference Include="CK.Core" Version="15.0.0-r04-02-0002-develop" />
 	  <PackageReference Include="CSemVer" Version="10.1.0" />
   </ItemGroup>
 

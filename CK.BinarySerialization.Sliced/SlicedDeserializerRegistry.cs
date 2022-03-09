@@ -8,6 +8,11 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 
+#pragma warning disable CA2255 // The 'ModuleInitializer' attribute should not be used in libraries
+                               // This seems a perfectly valid scenario for me here: it's a library 
+                               // that registers itself to another library. The final application
+                               // doesn't have to interfere here.
+
 namespace CK.BinarySerialization
 {
     /// <summary>
@@ -59,7 +64,7 @@ namespace CK.BinarySerialization
     /// </list>
     /// </para>
     /// </summary>
-    public class SlicedDeserializerRegistry : IDeserializerResolver
+    public sealed class SlicedDeserializerRegistry : IDeserializerResolver
     {
         /// <summary>
         /// Gets the registry.
@@ -68,13 +73,11 @@ namespace CK.BinarySerialization
 
         SlicedDeserializerRegistry() { }
 
-#if NET6_0_OR_GREATER
         [ModuleInitializer]
         internal static void AutoSharedRegister()
         {
             BinaryDeserializer.DefaultSharedContext.Register( Instance, false );
         }
-#endif
 
         sealed class SlicedDeserializerDriverVWithRef<T> : ValueTypeDeserializerWithRef<T> where T : struct
         {

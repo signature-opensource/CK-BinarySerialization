@@ -29,17 +29,7 @@ namespace CK.BinarySerialization
         static BinarySerializer()
         {
             DefaultSharedContext = new SharedBinarySerializerContext();
-#if NETCOREAPP3_1
-            // Works around the lack of [ModuleInitializer] by an awful trick.
-            Type? tSliced = Type.GetType( "CK.BinarySerialization.SlicedSerializerFactory, CK.BinarySerialization.Sliced", throwOnError: false );
-            if( tSliced != null )
-            {
-                var sliced = (ISerializerResolver)Activator.CreateInstance( tSliced, DefaultSharedContext )!;
-                DefaultSharedContext.Register( sliced, false );
-            }
-#endif
         }
-
 
         /// <summary>
         /// Creates a new disposable serializer bound to a <see cref="BinarySerializerContext"/>
