@@ -52,6 +52,7 @@ namespace CK.BinarySerialization
                 { "SVersionBound", new Deserialization.DSVersionBound() },
                 { "PackageQualityVector", new Deserialization.DPackageQualityVector() },
                 { "PackageQualityFilter", new Deserialization.DPackageQualityFilter() },
+                { "Version", new Deserialization.DVersion() },
             };
         }
 

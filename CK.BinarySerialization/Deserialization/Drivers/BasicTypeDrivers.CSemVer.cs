@@ -75,4 +75,24 @@ namespace CK.BinarySerialization.Deserialization
         }
     }
 
+    sealed class DVersion : SimpleReferenceTypeDeserializer<Version>
+    {
+        protected override Version ReadInstance( ICKBinaryReader r, ITypeReadInfo readInfo )
+        {
+            int major = r.ReadNonNegativeSmallInt32();
+            int minor = r.ReadNonNegativeSmallInt32();
+            int build = r.ReadSmallInt32();
+            if( build != -1 )
+            {
+                int revision = r.ReadSmallInt32();
+                if( revision != -1 )
+                {
+                    return new Version( major, minor, build, revision );
+                }
+                return new Version( major, minor, build );
+            }
+            return new Version( major, minor );
+        }
+    }
+
 }

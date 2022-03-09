@@ -1,5 +1,6 @@
 ﻿using CK.Core;
 using CSemVer;
+using System;
 using System.Diagnostics;
 
 namespace CK.BinarySerialization.Serialization
@@ -132,4 +133,20 @@ namespace CK.BinarySerialization.Serialization
             s.Writer.Write( (byte)o.Max );
         }
     }
+
+    sealed class DVersion : ReferenceTypeSerializer<Version>
+    {
+        public override string DriverName => "Version";
+
+        public override int SerializationVersion => 0;
+
+        protected internal override void Write( IBinarySerializer s, in Version o )
+        {
+            s.Writer.WriteNonNegativeSmallInt32( o.Major );
+            s.Writer.WriteNonNegativeSmallInt32( o.Minor );
+            s.Writer.WriteSmallInt32( o.Build );
+            if( o.Build != -1 ) s.Writer.WriteSmallInt32( o.Revision );
+        }
+    }
+
 }

@@ -106,5 +106,30 @@ namespace CK.BinarySerialization.Tests
             var backQ = TestHelper.SaveAndLoadValue( q );
             backQ.Should().BeEquivalentTo( q );
         }
+
+        [Test]
+        public void System_Version_serialization()
+        {
+            {
+                var v = new Version();
+                var backV = TestHelper.SaveAndLoadObject( v );
+                backV.Should().BeEquivalentTo( v );
+            }
+            {
+                var v = new Version( 1, 2 );
+                var backV = TestHelper.SaveAndLoadObject( v );
+                backV.Should().BeEquivalentTo( v );
+            }
+            {
+                var v = new Version( 1, 2, 3 );
+                var backV = TestHelper.SaveAndLoadObject( v );
+                backV.Should().BeEquivalentTo( v );
+            }
+            {
+                var v = new Version( 1, 2, 3, 4 );
+                var backV = TestHelper.SaveAndLoadObject( v );
+                backV.Should().BeEquivalentTo( v );
+            }
+        }
     }
 }

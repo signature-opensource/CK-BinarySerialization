@@ -49,6 +49,7 @@ namespace CK.BinarySerialization
             Register( new Serialization.DSVersionBound() );
             Register( new Serialization.DPackageQualityVector() );
             Register( new Serialization.DPackageQualityFilter() );
+            Register( new Serialization.DVersion() );
         }
 
         static void Register<T>( StaticValueTypeSerializer<T> driver ) where T : struct
