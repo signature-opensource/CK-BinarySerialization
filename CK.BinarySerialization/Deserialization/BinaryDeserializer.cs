@@ -72,7 +72,7 @@ namespace CK.BinarySerialization
             {
                 if( throwOnError )
                 {
-                    throw new InvalidDataException( $"Invalid deserializer version: {v}. Minimal is 10 and the current is {BinarySerializer.SerializerVersion} ({CSemVer.InformationalVersion.ReadFromAssembly(Assembly.GetExecutingAssembly())})." );
+                    throw new InvalidDataException( $"Invalid deserializer version: {v}. Minimal is 10 and the current is {BinarySerializer.SerializerVersion}." );
                 }
                 return null;
             }

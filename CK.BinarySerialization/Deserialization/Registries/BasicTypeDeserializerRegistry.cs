@@ -45,13 +45,7 @@ namespace CK.BinarySerialization
                 { "DateTimeOffset", new Deserialization.DDateTimeOffset() },
                 { "TimeSpan", new Deserialization.DTimeSpan() },
                 { "Guid", new Deserialization.DGuid() },
-                { "decimal", new Deserialization.DDecimal() },
-
-                { "SVersion", new Deserialization.DSVersion() },
-                { "CSVersion", new Deserialization.DCSVersion() },
-                { "SVersionBound", new Deserialization.DSVersionBound() },
-                { "PackageQualityVector", new Deserialization.DPackageQualityVector() },
-                { "PackageQualityFilter", new Deserialization.DPackageQualityFilter() },
+                { "decimal", new Deserialization.DDecimal() }
             };
         }
 
