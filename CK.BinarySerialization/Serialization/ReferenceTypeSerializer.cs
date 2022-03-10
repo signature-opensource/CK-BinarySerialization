@@ -48,6 +48,9 @@ namespace CK.BinarySerialization
         readonly ReferenceTypeNullable _nullable;
         readonly TypedWriter<T> _tWriter;
 
+        /// <summary>
+        /// Initializes a new <see cref="ReferenceTypeSerializer{T}"/>.
+        /// </summary>
         public ReferenceTypeSerializer()
         {
             _tWriter = WriteRefOrInstance;
@@ -78,12 +81,16 @@ namespace CK.BinarySerialization
         /// <inheritdoc />
         public Delegate TypedWriter => _tWriter;
 
+        /// <inheritdoc />
         public ISerializationDriver ToNullable => _nullable;
 
+        /// <inheritdoc />
         public ISerializationDriver ToNonNullable => this;
 
+        /// <inheritdoc />
         public abstract string DriverName { get; }
 
+        /// <inheritdoc />
         public abstract int SerializationVersion { get; }
 
     }

@@ -83,6 +83,14 @@ namespace CK.BinarySerialization
 #if NET6
 Temporary for the transition: remove.
 #endif
+        /// <summary>
+        /// Temporary for the transition from legacy serializer.
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="leaveOpen"></param>
+        /// <param name="context"></param>
+        /// <param name="version"></param>
+        /// <returns></returns>
         public static IDisposableBinaryDeserializer? TryCreateFromPreviousVersion( Stream s,
                                                                                    bool leaveOpen,
                                                                                    BinaryDeserializerContext context,

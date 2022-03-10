@@ -62,6 +62,7 @@ namespace CK.BinarySerialization
         /// Initializes a new <see cref="ValueTypedReaderDeserializer{T}"/> bound to a reader function
         /// that states whether it is cached or not.
         /// </summary>
+        /// <param name="reader">The reader function.</param>
         /// <param name="isCached">Whether this deserializer is cached.</param>
         public ValueTypedReaderDeserializer( TypedReader<T> reader, bool isCached )
         {

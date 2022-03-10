@@ -9,6 +9,9 @@ namespace CK.BinarySerialization
     /// </summary>
     public class Sliced
     {
+        /// <summary>
+        /// Single instance.
+        /// </summary>
         public static readonly Sliced Instance = new Sliced();
 
         Sliced() {}

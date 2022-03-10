@@ -85,9 +85,9 @@ namespace CK.BinarySerialization
         }
 
         /// <summary>
-        /// Must read a non null instance from the binary reader.
+        /// Must read a non null instance from the deserializer.
         /// </summary>
-        /// <param name="r">The binary reader.</param>
+        /// <param name="d">The deserializer.</param>
         /// <param name="readInfo">The read type info.</param>
         /// <returns>The new instance.</returns>
         protected abstract T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo );

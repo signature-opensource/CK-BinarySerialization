@@ -26,7 +26,7 @@ namespace CK.BinarySerialization
         ICKBinaryReader Reader { get; }
 
         /// <summary>
-        /// Reads a <see cref="ITypeReadInfo"/> written by <see cref="IBinarySerializer.WriteTypeInfo(Type)"/>.
+        /// Reads a <see cref="ITypeReadInfo"/> written by <see cref="IBinarySerializer.WriteTypeInfo(Type, bool?)"/>.
         /// </summary>
         /// <returns>The type information.</returns>
         ITypeReadInfo ReadTypeInfo();
@@ -56,7 +56,6 @@ namespace CK.BinarySerialization
         /// Reads a nullable object reference.
         /// </summary>
         /// <typeparam name="T">The object's expected type.</typeparam>
-        /// <returns>
         /// <returns>The object or value type (possibly in an intermediate state) or null.</returns>
         T? ReadNullableObject<T>() where T : class;
 

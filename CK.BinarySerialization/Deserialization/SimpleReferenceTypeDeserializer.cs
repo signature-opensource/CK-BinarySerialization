@@ -11,7 +11,7 @@ namespace CK.BinarySerialization
     /// This deserializer handles the value to reference type mutation natively.
     /// </para>
     /// <para>
-    /// The default constructor sets <see cref="IsCached"/> to true. This is fine for basic drivers but as soon as
+    /// The default constructor sets <see cref="ReferenceTypeDeserializerBase{T}.IsCached"/> to true. This is fine for basic drivers but as soon as
     /// the driver depends on others (like generics drivers), the non default constructor should be used. 
     /// </para>
     /// </summary>
@@ -35,6 +35,13 @@ namespace CK.BinarySerialization
         {
         }
 
+        /// <summary>
+        /// Calls the protected <see cref="ReadInstance(ICKBinaryReader, ITypeReadInfo)"/> and
+        /// handles struct to class migration if needed.
+        /// </summary>
+        /// <param name="d">The deserializer.</param>
+        /// <param name="readInfo">The information.</param>
+        /// <returns>The new instance.</returns>
         protected override sealed T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
         {
             var o = ReadInstance( d.Reader, readInfo );

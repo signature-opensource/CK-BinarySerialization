@@ -66,7 +66,7 @@ namespace CK.BinarySerialization
         /// <returns>A writable stream.</returns>
         public static Stream CreateCheckedWriteStream( byte[] existingBytes ) => new CheckedWriteStream( existingBytes );
 
-        class CheckedWriteStream : Stream
+        sealed class CheckedWriteStream : Stream
         {
             readonly byte[] _already;
             int _position;

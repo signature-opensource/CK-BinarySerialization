@@ -101,8 +101,10 @@ namespace CK.BinarySerialization
 
         void ISerializationDriverInternal.WriteObjectData( IBinarySerializer s, in object o ) => _tWriter( s, (T)o );
 
+        /// <inheritdoc />
         public ISerializationDriver ToNullable => _nullable;
 
+        /// <inheritdoc />
         public ISerializationDriver ToNonNullable => this;
 
         /// <inheritdoc />

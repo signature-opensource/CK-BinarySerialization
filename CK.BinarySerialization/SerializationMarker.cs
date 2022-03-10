@@ -4,7 +4,7 @@ using System.Text;
 
 namespace CK.BinarySerialization
 {
-    public enum SerializationMarker : byte
+    enum SerializationMarker : byte
     {
         Null,
         Object,

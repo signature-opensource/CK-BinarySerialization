@@ -49,6 +49,11 @@ namespace CK.BinarySerialization
             };
         }
 
+        /// <summary>
+        /// Simple lookup in type to deserialization drivers lookup.
+        /// </summary>
+        /// <param name="info">The info to resolve.</param>
+        /// <returns>A deserialization driver or null.</returns>
         public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info ) => _byName.GetValueOrDefault( info.DriverName );
 
     }

@@ -71,6 +71,12 @@ namespace CK.BinarySerialization
             _context = context;
         }
 
+        /// <summary>
+        /// Synthesizes a deserialization driver for enumerations, list, array, value tuples and other 
+        /// basic types.
+        /// </summary>
+        /// <param name="info">The info to resolve.</param>
+        /// <returns>The driver or null.</returns>
         public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
             if( _context != info.Context ) throw new ArgumentException( "Deserialization context mismatch." );

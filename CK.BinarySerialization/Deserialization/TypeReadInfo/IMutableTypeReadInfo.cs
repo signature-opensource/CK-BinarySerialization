@@ -3,7 +3,7 @@
 namespace CK.BinarySerialization
 {
     /// <summary>
-    /// Exposed by <see cref="IBinaryDeserializer.OnTypeReadInfo"/> event.
+    /// Provided to hooks registered by <see cref="SharedBinaryDeserializerContext.AddDeserializationHook"/>.
     /// </summary>
     public interface IMutableTypeReadInfo
     {

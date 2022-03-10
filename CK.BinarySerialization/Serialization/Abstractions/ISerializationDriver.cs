@@ -17,8 +17,9 @@ namespace CK.BinarySerialization
         string DriverName { get; }
 
         /// <summary>
-        /// Gets the serialization version if <see cref="SerializationVersionAttribute"/> is on the type.
-        /// This is -1 when no version is defined.
+        /// Gets the serialization version. This driver can directly hard codes its version or
+        /// uses the <see cref="SerializationVersionAttribute"/> on the type.
+        /// This can be -1 when no version is defined.
         /// </summary>
         int SerializationVersion { get; }
 

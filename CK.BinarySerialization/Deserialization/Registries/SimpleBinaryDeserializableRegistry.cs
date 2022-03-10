@@ -29,6 +29,13 @@ namespace CK.BinarySerialization
 
         SimpleBinaryDeserializableRegistry() { }
 
+        /// <summary>
+        /// Synthesizes a deserialization driver if the <see cref="DeserializerResolverArg.DriverName"/>
+        /// is "SimpleBinarySerializable" or "VersionedBinarySerializable" and the corresponding 
+        /// constructor exists.
+        /// </summary>
+        /// <param name="info">The info to resolve.</param>
+        /// <returns>The driver or null.</returns>
         public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
             // Only the "SimpleBinarySerializable" or "VersionedBinarySerializable" drivers are handled here.
