@@ -9,6 +9,7 @@ namespace CK.BinarySerialization
 {
     /// <summary>
     /// Thread safe composite implementation for <see cref="IDeserializerResolver"/>.
+    /// A singleton instance is exposed by <see cref="BinaryDeserializer.DefaultSharedContext"/>.
     /// <para>
     /// Caching deserialization drivers is not as easy as caching serializers: two serialized types
     /// can perfectly be deserialized into the same local type. The actual cache is the <see cref="ITypeReadInfo"/>

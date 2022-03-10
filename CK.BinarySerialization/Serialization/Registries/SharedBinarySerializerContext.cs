@@ -9,6 +9,7 @@ namespace CK.BinarySerialization
     /// <summary>
     /// Thread safe composite implementation for <see cref="ISerializerResolver"/> and concurrent 
     /// cache of type to <see cref="ISerializationDriver"/> mappings.
+    /// A singleton instance is exposed by <see cref="BinarySerializer.DefaultSharedContext"/>.
     /// <para>
     /// Unresolved serializers are cached (by definitely storing a null driver): a driver must be resolved
     /// the first time or it will never be by this shared context.
