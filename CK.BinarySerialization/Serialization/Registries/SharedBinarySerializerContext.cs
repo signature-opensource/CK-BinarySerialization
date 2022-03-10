@@ -75,6 +75,12 @@ namespace CK.BinarySerialization
             return driver;
         }
 
+        /// <summary>
+        /// If the type is not sealed (it's necessarily a class) then returns a generic driver that relies
+        /// on the actual runtime type. Otherwise calls <see cref="TryFindDriver(Type)"/>.
+        /// </summary>
+        /// <param name="t">The type for which a driver is needed.</param>
+        /// <returns>The driver or null.</returns>
         public ISerializationDriver? TryFindPossiblyAbstractDriver( Type t )
         {
             if( !t.IsSealed )
@@ -155,6 +161,7 @@ namespace CK.BinarySerialization
         /// or throws an <see cref="InvalidOperationException"/>.
         /// </summary>
         /// <param name="writerHost">The type that must contain the method.</param>
+        /// <param name="instanceType">The type to write.</param>
         /// <returns>The writer method.</returns>
         public static MethodInfo GetStaticWriter( Type writerHost, Type instanceType )
         {

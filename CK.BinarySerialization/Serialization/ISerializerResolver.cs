@@ -24,6 +24,9 @@ namespace CK.BinarySerialization
         ISerializationDriver? TryFindDriver( Type t );
     }
 
+    /// <summary>
+    /// Extends <see cref="ISerializerResolver"/>.
+    /// </summary>
     public static class SerializerResolverExtensions
     {
         /// <summary>
@@ -32,8 +35,7 @@ namespace CK.BinarySerialization
         /// <param name="r">This resolver.</param>
         /// <param name="t">The type for which a driver must be resolved.</param>
         /// <param name="nullable">
-        /// When not null, requests the <see cref="INullableSerializationDriver"/> or <see cref="INonNullableSerializationDriver"/>
-        /// regardless of the nullability of type itself.
+        /// When not null, requests the nullable or not nullable driver regardless of the nullability of type itself.
         /// </param>
         /// <returns>The driver or null.</returns>
         public static ISerializationDriver? TryFindDriver( this ISerializerResolver r, Type t, bool? nullable )
@@ -45,7 +47,16 @@ namespace CK.BinarySerialization
                         ? d.ToNullable
                         : d.ToNonNullable;
         }
-        
+
+        /// <summary>
+        /// Finds a driver or throws a <see cref="InvalidOperationException"/>.
+        /// </summary>
+        /// <param name="r">This resolver.</param>
+        /// <param name="t">The type for which a driver must be resolved.</param>
+        /// <param name="nullable">
+        /// When not null, requests the nullable or not nullable driver regardless of the nullability of type itself.
+        /// </param>
+        /// <returns>The driver.</returns>
         public static ISerializationDriver FindDriver( this ISerializerResolver r, Type t, bool? nullable = null )
         {
             var d = r.TryFindDriver( t );

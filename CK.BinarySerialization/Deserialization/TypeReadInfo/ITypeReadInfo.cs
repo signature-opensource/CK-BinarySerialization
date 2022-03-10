@@ -57,7 +57,7 @@ namespace CK.BinarySerialization
         /// used to write instance of this type.
         /// <para>
         /// Null if no serialization's driver was resolved for the type.
-        /// This is totally possible since a type written by <see cref="IBinarySerializer.WriteTypeInfo(Type)"/> is not 
+        /// This is totally possible since a type written by <see cref="IBinarySerializer.WriteTypeInfo(Type, bool?)"/> is not 
         /// necessarily serializable and this is often the case for base types of a type that is itself serializable
         /// (like <see cref="TypeReadInfoKind.OpenGeneric"/> for instance).
         /// </para>

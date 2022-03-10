@@ -35,8 +35,7 @@ namespace CK.BinarySerialization
         /// A key must not already be associated to another instance and an instance must not
         /// already be associated to another key otherwise an <see cref="InvalidOperationException"/> is thrown.
         /// </summary>
-        /// <param name="o">The object instance to register.</param>
-        /// <param name="key">The unique key for this instance.</param>
+        /// <param name="association">The object instance to key association to register.</param>
         void RegisterKnownObject( params (object o, string key)[] association );
 
     }

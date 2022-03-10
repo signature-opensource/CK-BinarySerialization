@@ -23,7 +23,7 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Deserializes an already allocated object.
         /// </summary>
-        /// <param name="r">The deserializer.</param>
+        /// <param name="d">The deserializer.</param>
         /// <param name="readInfo">
         /// The read information of the type as it has been written.
         /// If type based serialization has been used (with versions and ancestors). 

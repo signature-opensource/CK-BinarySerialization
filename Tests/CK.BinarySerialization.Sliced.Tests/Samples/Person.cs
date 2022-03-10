@@ -36,7 +36,6 @@ namespace CK.BinarySerialization.Tests.Samples
 
 #pragma warning disable CS8618
         protected Person( Sliced _ ) { }
-#pragma warning restore CS8618
 
         public Person( IBinaryDeserializer d, ITypeReadInfo info )
         {
@@ -48,6 +47,7 @@ namespace CK.BinarySerialization.Tests.Samples
                 Town = d.ReadObject<Town>();
             }
         }
+#pragma warning restore CS8618
 
         public static void Write( IBinarySerializer s, in Person o )
         {

@@ -54,7 +54,10 @@ namespace CK.BinarySerialization
         readonly ValueTypeNullable _nullable;
         readonly TypedWriter<T> _tWriter;
 
-        public ValueTypeSerializer()
+        /// <summary>
+        /// Initializes this serializer.
+        /// </summary>
+        protected ValueTypeSerializer()
         {
             _nullable = new ValueTypeNullable( this );
             _tWriter = Write;
@@ -63,23 +66,28 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Must write the instance data.
         /// </summary>
-        /// <param name="r">The binary reader.</param>
-        /// <param name="readInfo">The read type info.</param>
-        /// <returns>The new instance.</returns>
+        /// <param name="s">The serializer.</param>
+        /// <param name="o">The object to write.</param>
         internal protected abstract void Write( IBinarySerializer s, in T o );
 
+        /// <inheritdoc />
         public Delegate UntypedWriter => _tWriter;
 
+        /// <inheritdoc />
         public Delegate TypedWriter => _tWriter;
 
         void ISerializationDriverInternal.WriteObjectData( IBinarySerializer s, in object o ) => Write( s, (T)o );
 
+        /// <inheritdoc />
         public ISerializationDriver ToNullable => _nullable;
 
+        /// <inheritdoc />
         public ISerializationDriver ToNonNullable => this;
 
+        /// <inheritdoc />
         public abstract string DriverName { get; }
 
+        /// <inheritdoc />
         public abstract int SerializationVersion { get; }
 
     }
