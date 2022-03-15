@@ -43,6 +43,11 @@ namespace CK.BinarySerialization
         public bool IsValueType => false;
 
         /// <summary>
+        /// Always true.
+        /// </summary>
+        public bool IsDirtyInfo => true;
+
+        /// <summary>
         /// Always this information.
         /// </summary>
         public ITypeReadInfo ToNonNullable => this;

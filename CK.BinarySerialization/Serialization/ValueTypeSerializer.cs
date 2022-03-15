@@ -38,7 +38,7 @@ namespace CK.BinarySerialization
             {
                 if( o.HasValue )
                 {
-                    s.Writer.Write( (byte)SerializationMarker.Struct );
+                    s.Writer.Write( (byte)SerializationMarker.ObjectData );
                     _serializer.Write( s, o.Value );
                 }
                 else

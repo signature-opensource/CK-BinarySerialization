@@ -56,9 +56,10 @@ namespace CK.BinarySerialization.Tests
                     garage.Employees[j - 1].BestFriend = garage.Employees[j];
                 }
             }
-            object? backG = TestHelper.SaveAndLoadAny( town );
-            backG.Should().BeEquivalentTo( town, o => o.IgnoringCyclicReferences() );
-
+            var backG = TestHelper.SaveAndLoadObject( town );
+            // This enters an infinite loop: backG.Should().BeEquivalentTo( town, o => o.IgnoringCyclicReferences() );
+            // Using the Statistics.
+            backG.Stats.Should().Be( town.Stats );
             BinarySerializer.IdempotenceCheck( town );
         }
 
@@ -67,26 +68,59 @@ namespace CK.BinarySerialization.Tests
         {
             var t = new Samples.Town( "Paris" );
             var g = new Samples.Garage( t );
-            var e = new Samples.Employee( g ) { Name = "Albert" };
-            var m = new Samples.Manager( g ) { Name = "Alice", Rank = 42 };
-            e.BestFriend = m;
+            var albert = new Samples.Employee( g ) { Name = "Albert" };
+            var alice = new Samples.Manager( g ) { Name = "Alice", Rank = 42 };
+            albert.BestFriend = alice;
 
-            var backT = TestHelper.SaveAndLoadObject( t );
-            backT.Should().BeEquivalentTo( t, o => o.IgnoringCyclicReferences() );
-            var eBack = backT.Persons.OfType<Samples.Employee>().Single( p => p.Name == "Albert" );
-            ((Samples.Manager)eBack.BestFriend!).Rank.Should().Be( 42 );
-
-            BinarySerializer.IdempotenceCheck( t );
-
-            m.Destroy();
-            backT = TestHelper.SaveAndLoadObject( t );
-            backT.Should().BeEquivalentTo( t, o => o.IgnoringCyclicReferences() );
-
-            eBack = backT.Persons.OfType<Samples.Employee>().Single( p => p.Name == "Albert" );
-            eBack.BestFriend!.IsDestroyed.Should().BeTrue();
-            ((Samples.Manager)eBack.BestFriend!).Rank.Should().Be( 0, "Rank has NOT been read back." );
+            {
+                var backT = TestHelper.SaveAndLoadObject( t );
+                backT.Should().BeEquivalentTo( t, o => o.IgnoringCyclicReferences() );
+                var eBack = backT.Persons.OfType<Samples.Employee>().Single( p => p.Name == "Albert" );
+                ((Samples.Manager)eBack.BestFriend!).Rank.Should().Be( 42 );
+            }
 
             BinarySerializer.IdempotenceCheck( t );
+
+            // Alice is removed from t.Persons list.
+            // But Albert still has a reference to its BestFriend Alice.
+            // Alice will be serialized and deserialized as a Destroyed object
+            // that the deserialized Albert will still reference her.
+            alice.Destroy();
+            
+            {
+                var backT = TestHelper.SaveAndLoadObject( t );
+
+                // Albert is alone in the list.
+                var eBack = backT.Persons.Cast<Samples.Employee>().Single( p => p.Name == "Albert" );
+                // And its BestFriend is destroyed.
+                eBack.BestFriend!.IsDestroyed.Should().BeTrue();
+                // Specialized data of destroyed object is not written (and not read back).
+                // We, here, serialize the Person's Name (Person is the root of the hierarchy) to be able to identify them.
+                eBack.BestFriend!.Name.Should().Be( "Alice" );
+                ( (Samples.Manager)eBack.BestFriend!).Rank.Should().Be( 0, "Rank has NOT been read back." );
+            }
+
+            BinarySerializer.IdempotenceCheck( t );
+        }
+
+        [TestCase( null )]
+        [TestCase( 1 )]
+        [TestCase( 2 )]
+        public void serializing_towns( int? seed )
+        {
+            var town = Samples.Town.CreateTown( seed );
+            BinarySerializer.IdempotenceCheck( town );
+
+            var duplicate = BinarySerializer.DeepClone( town );
+            duplicate.Stats.Should().Be( town.Stats );
+
+            var town2 = SamplesV2.Town.CreateTown( seed );
+            if( seed != null ) town2.Stats.Should().Be( town.Stats );
+
+            BinarySerializer.IdempotenceCheck( town2 );
+
+            var duplicate2 = BinarySerializer.DeepClone( town2 );
+            duplicate2.Stats.Should().Be( town2.Stats );
         }
 
     }

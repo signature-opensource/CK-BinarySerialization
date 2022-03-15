@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CK.BinarySerialization.Tests.Samples
+namespace CK.BinarySerialization.Tests.SamplesV2
 {
     [SerializationVersion(0)]
     public sealed class Garage : ICKSlicedSerializable

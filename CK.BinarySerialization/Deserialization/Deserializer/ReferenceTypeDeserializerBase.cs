@@ -55,7 +55,7 @@ namespace CK.BinarySerialization
 
         T ReadRefOrInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
         {
-            var b = readInfo.IsValueType ? (byte)SerializationMarker.Object : d.Reader.ReadByte();
+            var b = readInfo.IsValueType ? (byte)SerializationMarker.ObjectData : d.Reader.ReadByte();
             return ReadRefOrInstance( d, readInfo, b );
         }
 

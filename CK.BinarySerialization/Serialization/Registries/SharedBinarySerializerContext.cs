@@ -21,6 +21,16 @@ namespace CK.BinarySerialization
         readonly ConcurrentDictionary<Type, ISerializationDriver?> _typedDrivers;
         readonly ISerializerKnownObject _knownObjects;
 
+        // Even .Net5 [ModuleInitializer] doesn't help us here.
+        // A module initialization is triggered when the first type in the module is solicited.
+        // To provide a true unattended initialization one would need to use 
+        // RuntimeHelpers.RunModuleConstructor on modules of assemblies loaded, typically from 
+        // a OnAssemblyLoad event. This doesn't seem to be a good idea: code generation may 
+        // be a better way of doing this.
+        // Currently, only the Sliced companion should be systematically registered, so let's do
+        // this rather awful trick.
+        static readonly Type? _tSliced = Type.GetType( "CK.BinarySerialization.SlicedSerializerFactory, CK.BinarySerialization.Sliced", throwOnError: false );
+
         /// <summary>
         /// Initializes a new independent shared context bound to a possibly independent <see cref="SharedSerializerKnownObject"/>, 
         /// optionally with the <see cref="BasicTypeSerializerRegistry.Instance"/>, <see cref="SimpleBinarySerializableFactory.Instance"/> 
@@ -36,14 +46,23 @@ namespace CK.BinarySerialization
         {
             _knownObjects = knownObjects ?? SharedSerializerKnownObject.Default;
             _typedDrivers = new ConcurrentDictionary<Type, ISerializationDriver?>();
-            _resolvers = useDefaultResolvers
-                            ? new ISerializerResolver[]
-                                {
-                                    BasicTypeSerializerRegistry.Instance,
-                                    SimpleBinarySerializableFactory.Instance,
-                                    new StandardGenericSerializerFactory( this )
-                                }
-                            : Array.Empty<ISerializerResolver>();
+            if( useDefaultResolvers )
+            {
+                _resolvers = _tSliced != null
+                                ? new ISerializerResolver[] { BasicTypeSerializerRegistry.Instance,
+                                                              SimpleBinarySerializableFactory.Instance,
+                                                              new StandardGenericSerializerFactory( this ),
+                                                              (ISerializerResolver)Activator.CreateInstance( _tSliced, this )!
+                                                            }
+                                : new ISerializerResolver[] { BasicTypeSerializerRegistry.Instance,
+                                                              SimpleBinarySerializableFactory.Instance,
+                                                              new StandardGenericSerializerFactory( this )
+                                                            };
+            }
+            else
+            {
+                _resolvers = Array.Empty<ISerializerResolver>();
+            }
         }
 
         /// <summary>

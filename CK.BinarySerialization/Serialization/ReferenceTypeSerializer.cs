@@ -61,7 +61,7 @@ namespace CK.BinarySerialization
         {
             if( Unsafe.As<BinarySerializerImpl>( s ).TrackObject( o ) )
             {
-                s.Writer.Write( (byte)SerializationMarker.Object );
+                s.Writer.Write( (byte)SerializationMarker.ObjectData );
                 Write( s, o );  
             }
         }

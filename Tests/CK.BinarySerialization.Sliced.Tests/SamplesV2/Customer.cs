@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CK.BinarySerialization.Tests.Samples
+namespace CK.BinarySerialization.Tests.SamplesV2
 {
     [SerializationVersion(0)]
     public sealed class Customer : Person
@@ -25,7 +25,7 @@ namespace CK.BinarySerialization.Tests.Samples
             d.DebugCheckSentinel();
             Contact = d.ReadNullableObject<Employee>();
             d.DebugCheckSentinel();
-            Car = d.ReadNullableObject<Car>();
+            Car = d.ReadNullableValue<Car>();
             d.DebugCheckSentinel();
         }
 
@@ -34,7 +34,7 @@ namespace CK.BinarySerialization.Tests.Samples
             s.DebugWriteSentinel();
             s.WriteNullableObject( o.Contact );
             s.DebugWriteSentinel();
-            s.WriteNullableObject( o.Car );
+            s.WriteNullableValue( o.Car );
             s.DebugWriteSentinel();
         }
 

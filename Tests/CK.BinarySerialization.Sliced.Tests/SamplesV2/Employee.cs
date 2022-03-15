@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CK.BinarySerialization.Tests.Samples
+namespace CK.BinarySerialization.Tests.SamplesV2
 {
     [SerializationVersion(0)]
     public class Employee : Person
@@ -36,7 +36,7 @@ namespace CK.BinarySerialization.Tests.Samples
             BestFriend = d.ReadNullableObject<Employee>();
             EmployeeNumber = d.Reader.ReadInt32();
             Garage = d.ReadObject<Garage>();
-            CurrentCar = d.ReadNullableObject<Car>();
+            CurrentCar = d.ReadNullableValue<Car>();
         }
 
         public static void Write( IBinarySerializer s, in Employee o )
@@ -47,7 +47,7 @@ namespace CK.BinarySerialization.Tests.Samples
             s.WriteNullableObject( o.BestFriend );
             s.Writer.Write( o.EmployeeNumber );
             s.WriteObject( o.Garage );
-            s.WriteNullableObject( o.CurrentCar );
+            s.WriteNullableValue( o.CurrentCar );
         }
 
         #endregion

@@ -31,7 +31,7 @@ namespace CK.Core
         }
 
 
-        [return: NotNullIfNotNull("o")]
+        [return: NotNullIfNotNull( "o" )]
         public static T SaveAndLoadObject<T>( this IBasicTestHelper @this, T o,
                                                                             BinarySerializerContext? serializerContext = null,
                                                                             BinaryDeserializerContext? deserializerContext = null ) where T : class
@@ -39,7 +39,7 @@ namespace CK.Core
             return SaveAndLoad( @this, o, ( x, w ) => w.WriteObject( x ), r => r.ReadObject<T>(), serializerContext, deserializerContext );
         }
 
-        [return: NotNullIfNotNull("o")]
+        [return: NotNullIfNotNull( "o" )]
         public static object? SaveAndLoadAny( this IBasicTestHelper @this, object? o,
                                                                            BinarySerializerContext? serializerContext = null,
                                                                            BinaryDeserializerContext? deserializerContext = null )
@@ -77,7 +77,7 @@ namespace CK.Core
                 {
                     writer.WriteAny( o1 );
                 }
-                
+
                 writer.DebugWriteSentinel();
                 w( o, writer );
                 writer.DebugWriteSentinel();
@@ -90,29 +90,31 @@ namespace CK.Core
                     writer.WriteAny( o2 );
                 }
                 s.Position = 0;
-                using( var reader = BinaryDeserializer.Create( s, true, deserializerContext ?? new BinaryDeserializerContext() ) )
-                {
-                    reader.DebugReadMode();
-                    
-                    object? r1 = null;
-                    if( CheckObjectReferences )
+                return BinaryDeserializer.Deserialize( s, deserializerContext ?? new BinaryDeserializerContext(),
+                    d =>
                     {
-                        r1 = reader.ReadAny();
-                    }
-                    
-                    reader.DebugCheckSentinel();
-                    T result = r( reader );
-                    reader.DebugCheckSentinel();
+                        d.DebugReadMode();
 
-                    if( CheckObjectReferences )
-                    {
-                        reader.ReadAny().Should().BeSameAs( r1 );
-                        var r2 = reader.ReadAny();
-                        r2.Should().BeOfType<object>();
-                        reader.ReadAny().Should().BeSameAs( r2 );
-                    }
-                    return result;
-                }
+                        object? r1 = null;
+                        if( CheckObjectReferences )
+                        {
+                            r1 = d.ReadAny();
+                        }
+
+                        d.DebugCheckSentinel();
+                        T result = r( d );
+                        d.DebugCheckSentinel();
+
+                        if( CheckObjectReferences )
+                        {
+                            d.ReadAny().Should().BeSameAs( r1 );
+                            var r2 = d.ReadAny();
+                            r2.Should().BeOfType<object>();
+                            d.ReadAny().Should().BeSameAs( r2 );
+                        }
+                        return result;
+                    } )
+                    .GetResult();
             }
         }
 
@@ -128,14 +130,16 @@ namespace CK.Core
                 w( writer );
                 writer.DebugWriteSentinel();
                 s.Position = 0;
-                using( var reader = BinaryDeserializer.Create( s, true, deserializerContext ?? new BinaryDeserializerContext() ) )
-                {
-                    reader.DebugCheckSentinel();
-                    r( reader );
-                    reader.DebugCheckSentinel();
-                }
+                BinaryDeserializer.Deserialize( s, deserializerContext ?? new BinaryDeserializerContext(),
+                    d =>
+                    {
+                        d.DebugCheckSentinel();
+                        r( d );
+                        d.DebugCheckSentinel();
+                    } )
+                    .ThrowOnInvalidResult();
             }
         }
-
     }
 }
+

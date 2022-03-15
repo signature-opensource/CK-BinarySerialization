@@ -24,12 +24,7 @@ namespace CK.BinarySerialization
         /// <see cref="SimpleBinarySerializableFactory.Instance"/> and a <see cref="StandardGenericSerializerFactory"/>
         /// deserializer resolvers and <see cref="SharedSerializerKnownObject.Default"/>.
         /// </summary>
-        public static readonly SharedBinarySerializerContext DefaultSharedContext;
-
-        static BinarySerializer()
-        {
-            DefaultSharedContext = new SharedBinarySerializerContext();
-        }
+        public static readonly SharedBinarySerializerContext DefaultSharedContext = new SharedBinarySerializerContext();
 
         /// <summary>
         /// Creates a new disposable serializer bound to a <see cref="BinarySerializerContext"/>
@@ -45,7 +40,9 @@ namespace CK.BinarySerialization
         {
             var writer = new CKBinaryWriter( s, Encoding.UTF8, leaveOpen );
             writer.WriteSmallInt32( SerializerVersion );
-            writer.Write( BitConverter.IsLittleEndian );
+            int b = BitConverter.IsLittleEndian ? 1 : 0;
+            if( Text.StringAndStringBuilderExtension.IsCRLF ) b |= 2;
+            writer.Write( (byte)b );
             return new BinarySerializerImpl( writer, leaveOpen, context );
         }
 
@@ -148,6 +145,30 @@ namespace CK.BinarySerialization
         }
 
         /// <summary>
+        /// Deep clones any object as long as it is serializable.
+        /// </summary>
+        /// <typeparam name="T">The object's type.</typeparam>
+        /// <param name="o">The object to clone.</param>
+        /// <param name="serializerContext">Optional serializer context.</param>
+        /// <param name="deserializerContext">Optional deserializer context.</param>
+        /// <returns>The result.</returns>
+        public static T DeepClone<T>( T o,
+                                      BinarySerializerContext? serializerContext = null,
+                                      BinaryDeserializerContext? deserializerContext = null )
+        {
+            if( o == null ) return o;
+            if( serializerContext == null ) serializerContext = new BinarySerializerContext();
+            using var s = new MemoryStream();
+            using var w = Create( s, true, serializerContext );
+            w.WriteAny( o );
+            s.Position = 0;
+            return BinaryDeserializer.Deserialize( RewindableStream.FromStream( s ), 
+                                                   deserializerContext ?? new BinaryDeserializerContext(), 
+                                                   d => (T)d.ReadAny() )
+                                     .GetResult();
+        }
+
+        /// <summary>
         /// Magic yet simple helper to check the serialization implementation: the object (and potentially the whole graph behind)
         /// is serialized then deserialized and the result of the deserialization is then serialized again but in a special stream
         /// that throws a <see cref="CKException"/> as soon as a byte differ.
@@ -158,9 +179,9 @@ namespace CK.BinarySerialization
         /// <param name="throwOnFailure">False to log silently fail and return false.</param>
         /// <returns>The result.</returns>
         public static IdempotenceCheckResult IdempotenceCheck( object o, 
-                                                               BinarySerializerContext? serializerContext = null,
-                                                               BinaryDeserializerContext? deserializerContext = null, 
-                                                               bool throwOnFailure = true )
+                                                            BinarySerializerContext? serializerContext = null,
+                                                            BinaryDeserializerContext? deserializerContext = null, 
+                                                            bool throwOnFailure = true )
         {
             Exception? error = null;
             List<IDestroyable> destroyed = new();
@@ -179,17 +200,18 @@ namespace CK.BinarySerialization
                     var originalBytes = s.ToArray();
                     size = originalBytes.Length;
                     s.Position = 0;
-                    using( var r = BinaryDeserializer.Create( s, true, deserializerContext ?? new BinaryDeserializerContext() ) )
+                    var r = BinaryDeserializer.Deserialize( s, deserializerContext ?? new BinaryDeserializerContext(), d =>
                     {
-                        r.DebugReadMode();
-                        var o2 = r.ReadAny();
+                        d.DebugReadMode();
+                        var o2 = d.ReadAny();
                         using( var checker = new CheckedWriteStream( originalBytes ) )
                         using( var w2 = Create( s, true, serializerContext ) )
                         {
                             w2.DebugWriteMode( true );
                             w2.WriteObject( o2 );
                         }
-                    }
+                    } );
+                    r.ThrowOnInvalidResult();
                 }
             }
             catch( Exception ex )

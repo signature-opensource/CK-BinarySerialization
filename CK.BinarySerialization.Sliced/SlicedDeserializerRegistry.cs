@@ -8,11 +8,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-#pragma warning disable CA2255 // The 'ModuleInitializer' attribute should not be used in libraries
-                               // This seems a perfectly valid scenario for me here: it's a library 
-                               // that registers itself to another library. The final application
-                               // doesn't have to interfere here.
-
 namespace CK.BinarySerialization
 {
     /// <summary>
@@ -72,12 +67,6 @@ namespace CK.BinarySerialization
         public static readonly SlicedDeserializerRegistry Instance = new SlicedDeserializerRegistry();
 
         SlicedDeserializerRegistry() { }
-
-        [ModuleInitializer]
-        internal static void AutoSharedRegister()
-        {
-            BinaryDeserializer.DefaultSharedContext.Register( Instance, false );
-        }
 
         sealed class SlicedDeserializerDriverVWithRef<T> : ValueTypeDeserializerWithRef<T> where T : struct
         {
@@ -194,8 +183,17 @@ namespace CK.BinarySerialization
         /// <inheritdoc />
         public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
-            if( info.DriverName == "Sliced" && typeof( ICKSlicedSerializable ).IsAssignableFrom( info.TargetType ) )
+            if( info.DriverName == "Sliced" )
             {
+                // Is the TargetType a ICKSlicedSerializable?
+                if( !typeof( ICKSlicedSerializable ).IsAssignableFrom( info.TargetType ) )
+                {
+                    // No: it has been written as a Sliced but this has changed.
+                    //     Let's try the Versioned and Simple deserialization constructor.
+                    return SimpleBinaryDeserializableRegistry.TryGetOrCreateVersionedDriver( ref info ) 
+                            ?? SimpleBinaryDeserializableRegistry.TryGetOrCreateSimpleDriver( ref info );
+                }
+                // We are on a Sliced deserialization.
                 if( info.TargetType.IsValueType )
                 {
                     if( info.ReadInfo.IsValueType )
@@ -236,7 +234,7 @@ namespace CK.BinarySerialization
         IDeserializationDriver CreateCachedValueTypeDriver( Type t )
         {
             var tD = typeof( ValueTypedReaderDeserializer<> ).MakeGenericType( t );
-            return (IDeserializationDriver)Activator.CreateInstance( tD, BinaryDeserializer.Helper.GetTypedReaderConstructor( t ), true )!;
+            return (IDeserializationDriver)Activator.CreateInstance( tD, GetDeserializationCtor( t ), true )!;
         }
 
         IDeserializationDriver CreateCachedNominalDriver( Type t, List<ConstructorInfo> ctors )

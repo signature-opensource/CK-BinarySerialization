@@ -7,8 +7,7 @@ namespace CK.BinarySerialization
     enum SerializationMarker : byte
     {
         Null,
-        Object,
-        Struct,
+        ObjectData,
         ObjectRef,
         Type,
         DeferredObject,

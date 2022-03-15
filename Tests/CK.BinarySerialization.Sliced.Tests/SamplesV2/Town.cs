@@ -6,21 +6,21 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
-namespace CK.BinarySerialization.Tests.Samples
+namespace CK.BinarySerialization.Tests.SamplesV2
 {
     [SerializationVersion( 0 )]
     public sealed partial class Town : ICKSlicedSerializable
     {
         readonly List<Person> _persons;
         readonly List<Garage> _garages;
-        readonly List<Car> _cars;
+        readonly List<Car?> _cars;
 
         public Town( string name )
         {
             Name = name;
             _persons = new List<Person>();
             _garages = new List<Garage>();
-            _cars = new List<Car>();
+            _cars = new List<Car?>();
         }
 
         public string Name { get; }
@@ -29,7 +29,7 @@ namespace CK.BinarySerialization.Tests.Samples
 
         public IReadOnlyList<Garage> Garages => _garages;
 
-        public IReadOnlyList<Car> Cars => _cars;
+        public IReadOnlyList<Car?> Cars => _cars;
 
         public IEnumerable<Employee> CurrenlyReparing => _garages.SelectMany( g => g.Employees ).Where( e => e.CurrentCar != null );
 
@@ -64,8 +64,8 @@ namespace CK.BinarySerialization.Tests.Samples
 
             public override string ToString()
             {
-                return $"PersonCount: {PersonCount}, PurePersonCount: {PurePersonCount}, GarageCount: {GarageCount}, " +
-                       $"CarCount: {CarCount}, CarUnderReparationCount: {CarUnderReparationCount}, UnownedCarCount: {UnownedCarCount}, " +
+                return $"PersonCount: {PersonCount}, PurePersonCount: {PurePersonCount}, GarageCount: {GarageCount}, " + 
+                       $"CarCount: {CarCount}, CarUnderReparationCount: {CarUnderReparationCount}, UnownedCarCount: {UnownedCarCount}, " + 
                        $"CustomerCount: {CustomerCount}, EmployeeCount: {EmployeeCount}, PureEmployeeCount: {PureEmployeeCount}, ManagerCount: {ManagerCount}";
             }
 
@@ -115,7 +115,7 @@ namespace CK.BinarySerialization.Tests.Samples
             Name = d.Reader.ReadString();
             _garages = d.ReadObject<List<Garage>>();
             _persons = d.ReadObject<List<Person>>();
-            _cars = d.ReadObject<List<Car>>();
+            _cars = d.ReadObject<List<Car?>>();
         }
 
         public static void Write( IBinarySerializer s, in Town o )
