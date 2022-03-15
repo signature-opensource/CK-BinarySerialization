@@ -17,7 +17,7 @@ namespace CK.BinarySerialization
     /// </para>
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
-    public abstract class ValueTypeDeserializerWithRef<T> : IDeserializationDriverInternal, IValueTypeNonNullableDeserializationDriver<T> where T : struct
+    public abstract class ValueTypeDeserializerWithRef<T> : IValueTypeDeserializerWithRefInternal, IValueTypeNonNullableDeserializationDriver<T> where T : struct
     {
         sealed class NullableFromRefAdapter : IValueTypeNullableDeserializationDriver<T>
         {
@@ -48,8 +48,8 @@ namespace CK.BinarySerialization
             public T? ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
             {
                 Debug.Assert( readInfo.IsNullable );
-                var b = d.Reader.ReadByte();
-                if( b != (byte)SerializationMarker.Null )
+                SerializationMarker b = (SerializationMarker)d.Reader.ReadByte();
+                if( b != SerializationMarker.Null )
                 {
                     return readInfo.IsValueType 
                             ? _deserializer.ReadInstance( d, readInfo.ToNonNullable ) 
@@ -75,13 +75,14 @@ namespace CK.BinarySerialization
         T ReadRefOrInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
         {
             if( readInfo.IsValueType ) return ReadInstance( d, readInfo );
-            return ReadRefOrInstance( d, readInfo, d.Reader.ReadByte() );
+            return ReadRefOrInstance( d, readInfo, (SerializationMarker)d.Reader.ReadByte() );
         }
 
-        T ReadRefOrInstance( IBinaryDeserializer d, ITypeReadInfo readInfo, byte b )
+        T ReadRefOrInstance( IBinaryDeserializer d, ITypeReadInfo readInfo, SerializationMarker b )
         {
             Debug.Assert( !readInfo.IsValueType );
-            if( b == (byte)SerializationMarker.ObjectRef ) return (T)Unsafe.As<BinaryDeserializerImpl>( d ).ReadObjectRef();
+            if( b == SerializationMarker.ObjectRef ) return (T)Unsafe.As<BinaryDeserializerImpl>( d ).ReadObjectRef();
+            if( b == SerializationMarker.DeferredObject ) return (T)Unsafe.As<BinaryDeserializerImpl>( d ).ReadObjectCore( b, readInfo, this );
             return ReadInstanceAndTrack( d, readInfo );
         }
 
@@ -119,9 +120,16 @@ namespace CK.BinarySerialization
 
         IDeserializationDriver IDeserializationDriver.ToNonNullable => this;
 
+        Type IDeserializationDriver.ResolvedType => throw new NotImplementedException();
+
+        Delegate IDeserializationDriver.TypedReader => throw new NotImplementedException();
+
+        bool IDeserializationDriver.IsCached => throw new NotImplementedException();
+
         T IValueTypeNonNullableDeserializationDriver<T>.ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstanceAndTrack( d, readInfo );
 
         object IDeserializationDriverInternal.ReadObjectData( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstanceAndTrack( d, readInfo );
 
+        object IValueTypeDeserializerWithRefInternal.ReadRawObjectData( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
     }
 }

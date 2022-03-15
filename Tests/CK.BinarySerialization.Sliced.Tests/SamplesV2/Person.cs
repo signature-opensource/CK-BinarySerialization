@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CK.BinarySerialization.Tests.Samples
+namespace CK.BinarySerialization.Tests.SamplesV2
 {
     [SerializationVersion(0)]
     public class Person : ICKSlicedSerializable, IDestroyable
@@ -55,8 +55,6 @@ namespace CK.BinarySerialization.Tests.Samples
         {
             s.DebugWriteSentinel();
             s.Writer.Write( o.IsDestroyed );
-            // Specialized data of destroyed object is not written (and not read back).
-            // We, here, serialize the Person's Name (Person is the root of the hierarchy) to be able to identify them.
             s.Writer.WriteNullableString( o.Name );
             if( !o.IsDestroyed )
             {

@@ -250,8 +250,7 @@ namespace CK.BinarySerialization
         public void WriteValue<T>( in T value ) where T : struct
         {
             var d = _context.FindDriver( typeof( T ) );
-            // Writing the Struct marker enables this to be read as any object.
-            _writer.Write( (byte)SerializationMarker.Struct );
+            _writer.Write( (byte)SerializationMarker.ObjectData );
             WriteTypeInfo( new NullableTypeRoot( typeof( T ), false ), d, true );
             ((TypedWriter<T>)d.TypedWriter)( this, value );
         }
@@ -295,9 +294,10 @@ namespace CK.BinarySerialization
                 _writer.Write( (byte)SerializationMarker.Type );
                 return WriteTypeInfo( oT );
             }
-            SerializationMarker marker;
+            SerializationMarker marker = SerializationMarker.ObjectData;
             var t = o.GetType();
-            if( t.IsClass )
+            bool isClass = t.IsClass;
+            if( isClass )
             {
                 if( !TrackObject( o ) ) return false;
                 if( t == typeof( object ) )
@@ -312,15 +312,10 @@ namespace CK.BinarySerialization
                     _writer.Write( knownObject );
                     return true;
                 }
-                marker = SerializationMarker.Object;
-            }
-            else
-            {
-                marker = SerializationMarker.Struct;
             }
             var driver = (ISerializationDriverInternal)_context.FindDriver( t ).ToNonNullable;
             if( _recurseCount > MaxRecurse 
-                && marker == SerializationMarker.Object
+                && isClass
                 && driver is ISerializationDriverAllowDeferredRead )
             {
                 if( _deferred == null ) _deferred = new Stack<(ISerializationDriverInternal D, object O)>( 200 );

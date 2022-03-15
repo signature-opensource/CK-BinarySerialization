@@ -34,9 +34,14 @@ namespace CK.BinarySerialization
         public readonly SharedBinaryDeserializerContext Context;
 
         /// <summary>
-        /// True if the <see cref="TargetType"/> is the same as the <see cref="ITypeReadInfo.TryResolveLocalType()"/>.
+        /// True if the <see cref="TargetType"/> is the same as the <see cref="ITypeReadInfo.TryResolveLocalType()"/>
+        /// and <see cref="ITypeReadInfo.IsDirtyInfo"/> is false.
+        /// <para>
+        /// Whether the resolved driver is eventually cached (<see cref="IDeserializationDriver.IsCached"/>) is up to
+        /// the resolvers.
+        /// </para>
         /// </summary>
-        public readonly bool IsTargetSameAsLocalType;
+        public readonly bool IsPossibleNominalDeserialization;
 
         /// <summary>
         /// Initializes a new <see cref="DeserializerResolverArg"/>.
@@ -60,7 +65,7 @@ namespace CK.BinarySerialization
             {
                 throw new ArgumentException( "Deserialization driver must not be already resolved.", nameof( info ) );
             }
-            IsTargetSameAsLocalType = TargetType == info.TryResolveLocalType();
+            IsPossibleNominalDeserialization = TargetType == info.TryResolveLocalType() && !info.IsDirtyInfo;
             Context = context;
         }
 

@@ -16,15 +16,6 @@ namespace CK.BinarySerialization
     {
         readonly SharedBinarySerializerContext _resolver;
 
-#if NET6_0_OR_GREATER
-        [ModuleInitializer]
-        internal static void AutoSharedRegister()
-        {
-            BinarySerializer.DefaultSharedContext.Register( Default, false );
-        }
-#endif
-
-        /// <summary>
         /// Initializes a new factory.
         /// </summary>
         /// <param name="resolver">The root resolver to use.</param>

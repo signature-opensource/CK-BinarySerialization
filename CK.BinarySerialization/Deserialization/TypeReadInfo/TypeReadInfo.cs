@@ -22,6 +22,8 @@ namespace CK.BinarySerialization
         Mutable? _mutating;
         ITypeReadInfo[]? _typePath;
         IDeserializationDriver? _abstractOrConcreteDriver;
+        string? _overriddenDriverName;
+        bool? _isDirtyInfo;
 
         bool _hooked;
         bool _driverLookupDone;
@@ -39,7 +41,7 @@ namespace CK.BinarySerialization
         #region Read methods called after instantiation by BinaryDeserializerImpl.ReadTypeInfo().
         internal void ReadNames( ICKBinaryReader r )
         {
-            if( (DriverName = r.ReadSharedString()) != null )
+            if( (OriginalDriverName = r.ReadSharedString()) != null )
             {
                 Version = r.ReadSmallInt32();
             }
@@ -76,7 +78,7 @@ namespace CK.BinarySerialization
             {
                 var item = _deserializer.ReadTypeInfo();
                 SubTypes = new[] { item };
-                DriverName = _deserializer.Reader.ReadSharedString();
+                OriginalDriverName = _deserializer.Reader.ReadSharedString();
                 eName = item.TypeName.Split( '+' )[^1];
             }
             else
@@ -126,7 +128,7 @@ namespace CK.BinarySerialization
             {
                 if( driverName == null ) throw new ArgumentNullException( nameof( driverName ) );
                 if( _closed ) throw new InvalidOperationException();
-                _info.DriverName = driverName;
+                _info._overriddenDriverName = driverName != _info.OriginalDriverName ? driverName : null;
             }
 
             public void SetTargetType( Type t )
@@ -142,13 +144,36 @@ namespace CK.BinarySerialization
                 if( _info._driver != null ) _info._driverLookupDone = true;
                 _info._mutating = null;
             }
+
+            public void SetLocalTypeNamespace( string typeNamespace )
+            {
+                if( typeNamespace == null ) throw new ArgumentNullException( nameof( typeNamespace ) );
+                if( _closed ) throw new InvalidOperationException();
+                _info.TypeNamespace = typeNamespace;
+            }
+
+            public void SetLocalTypeAssemblyName( string assemblyName )
+            {
+                if( assemblyName == null ) throw new ArgumentNullException( nameof( assemblyName ) );
+                if( _closed ) throw new InvalidOperationException();
+                _info.AssemblyName = assemblyName;
+            }
+
+            public void SetLocalTypeName( string typeName )
+            {
+                if( typeName == null ) throw new ArgumentNullException( nameof( typeName ) );
+                if( _closed ) throw new InvalidOperationException();
+                _info.AssemblyName = typeName;
+            }
         }
 
         public TypeReadInfoKind Kind { get; }
 
         public bool IsSealed { get; }
 
-        public string? DriverName { get; private set; }
+        public string? OriginalDriverName { get; private set; }
+
+        public string? DriverName => _overriddenDriverName ?? OriginalDriverName;
 
         public bool IsNullable => false;
 
@@ -198,6 +223,38 @@ namespace CK.BinarySerialization
             }
         }
 
+        public bool IsDirtyInfo
+        {
+            get
+            {
+                if( !_isDirtyInfo.HasValue )
+                {
+                    if( _overriddenDriverName == null )
+                    {
+                        // TryResolveLocalType may have updated _isDirtyInfo.
+                        var local = TryResolveLocalType();
+                        if( !_isDirtyInfo.HasValue
+                            && local != null
+                            && local.IsValueType == IsValueType
+                            && local.IsSealed == IsSealed
+                            && (BaseTypeReadInfo == null || !BaseTypeReadInfo.IsDirtyInfo) )
+                        {
+                            _isDirtyInfo = false;
+                        }
+                        else
+                        {
+                            _isDirtyInfo = true;
+                        }
+                    }
+                    else
+                    {
+                        _isDirtyInfo = true;
+                    }
+                }
+                return _isDirtyInfo.Value;
+            }
+        }
+
         public Type? TargetType
         {
             get
@@ -243,12 +300,15 @@ namespace CK.BinarySerialization
                         var p = new Type[SubTypes.Count];
                         for( int i = 0; i < p.Length; i++ )
                         {
-                            p[i] = SubTypes[i].ResolveLocalType();
+                            var subType = SubTypes[i];
+                            p[i] = subType.ResolveLocalType();
+                            if( subType.IsDirtyInfo ) _isDirtyInfo = true;
                         }
                         // Handling struct to class mutation here: if this was a Nullable<>,
                         // then if the subtype became a class, then its local type is the new class.
                         if( t == typeof( Nullable<> ) && !p[0].IsValueType )
                         {
+                            _isDirtyInfo = true;
                             _localType = p[0];
                         }
                         else
@@ -259,7 +319,9 @@ namespace CK.BinarySerialization
                     else if( Kind == TypeReadInfoKind.Array )
                     {
                         Debug.Assert( SubTypes.Count == 1 );
-                        var tE = SubTypes[0].ResolveLocalType();
+                        var subType = SubTypes[0];
+                        if( subType.IsDirtyInfo ) _isDirtyInfo = true;
+                        var tE = subType.ResolveLocalType();
                         _localType = ArrayRank == 1 ? tE.MakeArrayType() : tE.MakeArrayType( ArrayRank );
                     }
                     else if( Kind == TypeReadInfoKind.Ref )

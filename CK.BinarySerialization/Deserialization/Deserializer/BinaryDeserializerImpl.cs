@@ -8,14 +8,16 @@ using System.Text;
 
 namespace CK.BinarySerialization
 {
-    class BinaryDeserializerImpl : IDisposableBinaryDeserializer
+    class BinaryDeserializerImpl : IBinaryDeserializer, IDisposable
     {
-        readonly ICKBinaryReader _reader;
+        ICKBinaryReader _reader;
+        readonly RewindableStream _rewindableStream;
         readonly BinaryDeserializerContext _context;
         readonly List<ITypeReadInfo> _types;
         readonly List<object> _objects;
 
-        Stack<(IDeserializationDeferredDriver D, ITypeReadInfo T, object O)>? _deferred;
+        // Deferred drivers are either IDeserializationDeferredDriver or IValueTypeDeserializerWithRefInternal.
+        Stack<(IDeserializationDriverInternal D, ITypeReadInfo T, object O)>? _deferred;
         int _recurseCount;
 
         int _debugModeCounter;
@@ -23,36 +25,27 @@ namespace CK.BinarySerialization
         string? _lastWriteSentinel;
         string? _lastReadSentinel;
         Stack<string>? _debugContext;
+        
+        // Special class to struct mutation fields.
+        Queue<object>? _deferredValueQueue;
+        bool _secondPass;
+        
         public const string ExceptionPrefixContext = "[WithContext]";
 
-        bool _sameEndianness;
-        bool _leaveOpen;
-
-        internal BinaryDeserializerImpl( int version,
-                                         ICKBinaryReader reader,
-                                         bool leaveOpen,
-                                         BinaryDeserializerContext context,
-                                         bool sameEndianness )
+        public BinaryDeserializerImpl( RewindableStream s, BinaryDeserializerContext context )
         {
-            ( _context = context).Acquire( this );
-            SerializerVersion = version;
-            _reader = reader;
-            _leaveOpen = leaveOpen;
+            (_context = context).Acquire( this );
+            _rewindableStream = s;
+            _reader = s.Reader;
             _types = new List<ITypeReadInfo>();
             _objects = new List<object>();
-            _sameEndianness = sameEndianness;
             PostActions = new Deserialization.PostActions();
         }
 
         public void Dispose()
         {
-            PostActions.Execute();
             _context.Release();
-            if( !_leaveOpen && _reader is IDisposable d )
-            {
-                _leaveOpen = true;
-                d.Dispose();
-            }
+            _rewindableStream.Dispose();
         }
 
         public Deserialization.PostActions PostActions { get; }
@@ -61,7 +54,23 @@ namespace CK.BinarySerialization
 
         public BinaryDeserializerContext Context => _context;
 
-        public int SerializerVersion { get; }
+        public IBinaryDeserializer.IStreamInfo StreamInfo => _rewindableStream;
+
+        internal bool ShouldStartSecondPass()
+        {
+            Debug.Assert( !_secondPass );
+            if( _deferredValueQueue == null ) return false;
+
+            _rewindableStream.Reset();
+            _reader = _rewindableStream.Reader;
+            // Clears type and objects of the first pass.
+            // Reusing first pass types would be possible but requires the TypeReadInfo
+            // to be able to skip its data. This may be error prone and, since running the pass n°2
+            // is rather rare, it's not an issue.
+            _types.Clear();
+            _objects.Clear();
+            return _secondPass = true;
+        }
 
         public object ReadAny()
         {
@@ -132,22 +141,56 @@ namespace CK.BinarySerialization
                         return o;
                     }
             }
-            Debug.Assert( b == SerializationMarker.DeferredObject || b == SerializationMarker.Object || b == SerializationMarker.Struct );
+            if( b != SerializationMarker.DeferredObject && b != SerializationMarker.ObjectData )
+            {
+                ThrowInvalidDataException( $"Expecting marker ObjectData or DeferredObject. Got '{b}'." );
+            }
             var info = ReadTypeInfo();
-            var d = (IDeserializationDriverInternal)info.GetConcreteDriver().ToNonNullable;
+            return ReadObjectCore( b, info, (IDeserializationDriverInternal)info.GetConcreteDriver().ToNonNullable );
+        }
+
+        internal object ReadObjectCore( SerializationMarker b, ITypeReadInfo info, IDeserializationDriverInternal d )
+        {
             object result;
             if( b == SerializationMarker.DeferredObject )
             {
-                if( !(d is IDeserializationDeferredDriver defer) )
+                var defer = d as IDeserializationDeferredDriver;
+                // It the deserialization driver is not a Deferred one, check that we are on a class to struct
+                // mutation: if we are not, this is up to the drivers to handle this. We don't want the 2 passes to be a way to support badly written drivers!
+                if( defer == null )
                 {
-                    ThrowInvalidDataException( $"Type '{info.TypeName}' has been serialized as a deferred object but its deserializer ({d.GetType().FullName}) is not a {nameof( IDeserializationDeferredDriver )}." );
-                    return null!; // never
+                    if( !d.ResolvedType.IsValueType )
+                    {
+                        throw new CKException( $"Class '{info.TypeNamespace}.{info.TypeName}' has been serialized as a deferred object but its deserialization driver ({d.GetType().FullName}) is not a {nameof( IDeserializationDeferredDriver )} and the deserialized type '{d.ResolvedType.FullName}' is not a value type." );
+                    }
+                    if( d is not IValueTypeDeserializerWithRefInternal )
+                    {
+                        throw new CKException( $"Class '{info.TypeNamespace}.{info.TypeName}' is now the struct '{d.ResolvedType.FullName}'. Its deserialization driver ({d.GetType().FullName}) must be a ValueTypeDeserializerWithRef<T>." );
+                    }
                 }
-                if( _deferred == null ) _deferred = new Stack<(IDeserializationDeferredDriver D, ITypeReadInfo T, object O)>( 100 );
-
-                result = RuntimeHelpers.GetUninitializedObject( d.ResolvedType );
-                _deferred.Push( (defer, info, result) );
-                Track( result );
+                Debug.Assert( defer != null || (d.ResolvedType.IsValueType && d is IValueTypeDeserializerWithRefInternal), "Just to be clear: regular class or struct with a ValueTypeDeserializerWithRef driver." );
+                if( defer != null || !_secondPass )
+                {
+                    // For class, it's always the same code path.
+                    // For struct, the first pass is the same: we return and track a fake unitialized instance, except that
+                    // we know that a second pass is required
+                    result = RuntimeHelpers.GetUninitializedObject( d.ResolvedType );
+                    Track( result );
+                    if( _deferred == null ) _deferred = new Stack<(IDeserializationDriverInternal D, ITypeReadInfo T, object O)>( 100 );
+                    // There's no real need of the result object for the value type but since it's already there and boxed, we can use it.
+                    _deferred.Push( (d, info, result) );
+                }
+                else
+                {
+                    // Second pass on a struct: its value is known.
+                    Debug.Assert( _deferredValueQueue != null );
+                    result = _deferredValueQueue.Dequeue();
+                    // We track it. It's value will be set where it was referenced.
+                    Track( result );
+                    Debug.Assert( _deferred != null, "The deferred stack has already been allocated during the first pass (and emptied at the end)." );
+                    // No need of an actual object for the value type.
+                    _deferred.Push( (d, info, null!) );
+                }
             }
             else
             {
@@ -160,14 +203,34 @@ namespace CK.BinarySerialization
                 while( _deferred.TryPop( out var s ) )
                 {
                     ++_recurseCount;
-                    s.D.ReadInstance( this, s.T, s.O );
+                    var defer = s.D as IDeserializationDeferredDriver;
+                    if( defer != null )
+                    {
+                        // Regular class deferring. The unitialized tracked instance is initialized in place.
+                        defer.ReadInstance( this, s.T, s.O );
+                    }
+                    else
+                    {
+                        // The class is now a struct.
+                        // We must always read it, either to skip or store it.
+                        if( _secondPass )
+                        {
+                            // Skip.
+                            s.D.ReadObjectData( this, s.T );
+                        }
+                        else
+                        {
+                            if( _deferredValueQueue == null ) _deferredValueQueue = new Queue<object>();
+                            // Store for the second pass.
+                            _deferredValueQueue.Enqueue( s.D.ReadObjectData( this, s.T ) );
+                        }
+                    }
                     --_recurseCount;
                 }
             }
             Debug.Assert( result.GetType().IsClass == !(result is ValueType) );
             return result;
         }
-
 
         public ITypeReadInfo ReadTypeInfo()
         {
@@ -280,8 +343,16 @@ namespace CK.BinarySerialization
 
         T DoReadValue<T>( SerializationMarker b ) where T : struct
         {
-            if( b != SerializationMarker.Struct && b != SerializationMarker.Object )
+            // We must allow ObjectData, ObjectRef and DeferredObject for class to struct mutation.
+            // We can throw on Null and on EmptyObject or KnownObject since these are necessarily reference type.
+            if( b != SerializationMarker.ObjectData )
             {
+                if( b == SerializationMarker.ObjectRef ) return (T)ReadObjectRef();
+                if( b == SerializationMarker.DeferredObject )
+                {
+                    var deferredInfo = ReadTypeInfo();
+                    return (T)ReadObjectCore( b, deferredInfo, (IDeserializationDriverInternal)deferredInfo.GetConcreteDriver().ToNonNullable );
+                }
                 ThrowInvalidDataException( $"Unexpected '{b}' marker while reading non nullable '{typeof( T )}'." );
             }
             var info = ReadTypeInfo();

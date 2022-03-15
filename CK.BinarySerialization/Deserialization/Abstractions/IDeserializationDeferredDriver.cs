@@ -5,10 +5,9 @@ using System.Text;
 namespace CK.BinarySerialization
 {
     /// <summary>
-    /// Handles deserialization of object in two phases: the type is resolved first
-    /// and an unitialized instance must be created (typically by calling 
-    /// <see cref="System.Runtime.Serialization.FormatterServices.GetUninitializedObject"/>), then, in a second step,
-    /// the unitialized instance can be deserialized.
+    /// Handles deserialization of object in two phases: an unitialized instance of the 
+    /// type is created calling <see cref="System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(Type)"/>), 
+    /// then, in a second step, the unitialized instance can be deserialized.
     /// <para>
     /// This should be implemented for reference types that can support this kind of in-place initialization
     /// since this is used to break too deep recursion when a long linked list of objects is serialized.

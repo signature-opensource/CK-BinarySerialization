@@ -65,6 +65,8 @@ namespace CK.BinarySerialization
 
         public Type? TargetType => _nonNull.TargetType;
 
+        public bool IsDirtyInfo => _nonNull.IsDirtyInfo;
+
         public Type? TryResolveLocalType()
         {
             if( _localType == null )

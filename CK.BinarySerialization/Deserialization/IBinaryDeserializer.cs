@@ -11,9 +11,33 @@ namespace CK.BinarySerialization
     public interface IBinaryDeserializer
     {
         /// <summary>
-        /// Gets the version of the serializer used to serialize this data.
+        /// Exposes informations related to the way the stream to deserialize has been 
+        /// saved.
         /// </summary>
-        int SerializerVersion { get; }
+        public interface IStreamInfo
+        {
+            /// <summary>
+            /// Gets the version of the serializer used to serialize this data.
+            /// Current version is <see cref="BinarySerializer.SerializerVersion"/>.
+            /// </summary>
+            int SerializerVersion { get; }
+
+            /// <summary>
+            /// Gets whether the stream has been serialized on a <see cref="BitConverter.IsLittleEndian"/>
+            /// platform.
+            /// </summary>
+            bool IsLittleEndian { get; }
+
+            /// <summary>
+            /// Gets whether the stream has been serialized with a '\r\n' end-of-line default.
+            /// </summary>
+            bool IsCRLF { get; }
+        }
+
+        /// <summary>
+        /// Gets the stream information.
+        /// </summary>
+        IStreamInfo StreamInfo { get; }
 
         /// <summary>
         /// Gets the context of this deserializer.

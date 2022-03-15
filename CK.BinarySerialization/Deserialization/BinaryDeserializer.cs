@@ -1,9 +1,11 @@
 ﻿using CK.Core;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Text;
 
 namespace CK.BinarySerialization
@@ -22,88 +24,232 @@ namespace CK.BinarySerialization
         static BinaryDeserializer()
         {
             DefaultSharedContext = new SharedBinaryDeserializerContext();
-#if NETCOREAPP3_1
-            // Works around the lack of [ModuleInitializer] by an awful trick.
-            Type? tSliced = Type.GetType( "CK.BinarySerialization.SlicedDeserializerRegistry, CK.BinarySerialization.Sliced", throwOnError: false );
-            if( tSliced != null )
-            {
-                var sliced = (IDeserializerResolver)tSliced.GetField( "Instance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static )!.GetValue( null )!;
-                DefaultSharedContext.Register( sliced, false );
-            }
-#endif
         }
 
-        /// <summary>
-        /// Creates a new disposable deserializer bound to a <see cref="BinaryDeserializerContext"/>
-        /// that can be reused when the deserializer is disposed.
-        /// </summary>
-        /// <param name="s">The stream.</param>
-        /// <param name="leaveOpen">True to leave the stream opened, false to close it when the deserializer is disposed.</param>
-        /// <param name="context">The context to use.</param>
-        /// <returns>A disposable deserializer.</returns>
-        public static IDisposableBinaryDeserializer Create( Stream s,
-                                                            bool leaveOpen,
-                                                            BinaryDeserializerContext context )
+        public class Result
         {
-            return TryCreate( s, leaveOpen, context, true )!;
-        }
+            readonly RewindableStream _s;
+            internal BinaryDeserializerImpl? Deserializer;
 
-        /// <summary>
-        /// Tries to create a new disposable deserializer bound to a <see cref="BinaryDeserializerContext"/>
-        /// that can be reused when the deserializer is disposed.
-        /// <para>
-        /// The first byte must be a between 10 and <see cref="BinarySerializer.SerializerVersion"/> otherwise
-        /// null is returned AND one or more bytes have been consumed!
-        /// </para>
-        /// </summary>
-        /// <param name="s">The stream.</param>
-        /// <param name="leaveOpen">True to leave the stream opened, false to close it when the deserializer is disposed.</param>
-        /// <param name="context">The context to use.</param>
-        /// <param name="throwOnError">True to throw an error instead of returning null (behaves like <see cref="Create(Stream, bool, BinaryDeserializerContext)"/>).</param>
-        /// <returns>A disposable deserializer or null if the version byte is invalid.</returns>
-        public static IDisposableBinaryDeserializer? TryCreate( Stream s,
-                                                                bool leaveOpen,
-                                                                BinaryDeserializerContext context,
-                                                                bool throwOnError = false )
-        {
-            var reader = new CKBinaryReader( s, Encoding.UTF8, leaveOpen );
-            var v = reader.ReadSmallInt32();
-            if( v < 10 || v > BinarySerializer.SerializerVersion )
+            ExceptionDispatchInfo? _exception;
+            string? _error;
+
+            public IBinaryDeserializer.IStreamInfo StreamInfo => _s;
+                        
+            public bool IsValid => _error == null;
+
+            public bool SecondPassRequired { get; internal set; }
+
+            public string? Error => _error;
+
+            public void ThrowOnInvalidResult()
             {
-                if( throwOnError )
+                if( !IsValid )
                 {
-                    throw new InvalidDataException( $"Invalid deserializer version: {v}. Minimal is 10 and the current is {BinarySerializer.SerializerVersion}." );
+                    if( _exception != null ) _exception.Throw();
+                    throw new InvalidOperationException( _error );
                 }
-                return null;
             }
-            var sameEndianness = reader.ReadBoolean() == BitConverter.IsLittleEndian;
-            return new BinaryDeserializerImpl( v, reader, leaveOpen, context, sameEndianness );
+
+            /// <summary>
+            /// Gets the exception that made this result invalid.
+            /// </summary>
+            public Exception? Exception => _exception?.SourceException;
+
+            internal Result( RewindableStream s, BinaryDeserializerContext context )
+            {
+                _s = s;
+                if( !s.IsValid )
+                {
+                    if( s.SerializerVersion < 10 || s.SerializerVersion > BinarySerializer.SerializerVersion )
+                    {
+                        _error = $"Invalid deserializer version: {s.SerializerVersion}. Minimal is 10 and the current is {BinarySerializer.SerializerVersion}.";
+                    }
+                    else
+                    {
+                        _error = "The header of the stream cannot be read.";
+                    }
+                }
+                else
+                {
+                    Deserializer = new BinaryDeserializerImpl( s, context );
+                }
+            }
+
+            internal void SetException( ExceptionDispatchInfo ex )
+            {
+                _error = $"An exception occurred{(SecondPassRequired ? " during the second pass" : "")}: {ex.SourceException.Message}";
+                _exception = ex;
+            }
+
+            internal bool ShouldRetry()
+            {
+                Debug.Assert( Deserializer != null );
+                if( IsValid && !SecondPassRequired && Deserializer.ShouldStartSecondPass() )
+                {
+                    SecondPassRequired = true;
+                    return true;
+                }
+                return false;
+            }
+
+            internal virtual void Terminate()
+            {
+                Debug.Assert( Deserializer != null );
+                if( IsValid )
+                {
+                    try
+                    {
+                        Deserializer.PostActions.Execute();
+                    }
+                    catch( Exception ex )
+                    {
+                        _error = $"An exception occurred{(SecondPassRequired ? " during the second pass" : "")} while executing PostActions: {ex.Message}";
+                        _exception = ExceptionDispatchInfo.Capture( ex );
+                    }
+                }
+                Deserializer.Dispose();
+                Deserializer = null;
+            }
         }
 
-#if NET6
-Temporary for the transition: remove.
-#endif
-        /// <summary>
-        /// Temporary for the transition from legacy serializer.
-        /// </summary>
-        /// <param name="s"></param>
-        /// <param name="leaveOpen"></param>
-        /// <param name="context"></param>
-        /// <param name="version"></param>
-        /// <returns></returns>
-        public static IDisposableBinaryDeserializer? TryCreateFromPreviousVersion( Stream s,
-                                                                                   bool leaveOpen,
-                                                                                   BinaryDeserializerContext context,
-                                                                                   out int version )
+        public sealed class Result<T> : Result
         {
-            var reader = new CKBinaryReader( s, Encoding.UTF8, leaveOpen );
-            version = reader.ReadSmallInt32();
-            if( version < 10 || version > BinarySerializer.SerializerVersion )
+            T? _result;
+
+            internal Result( RewindableStream s, BinaryDeserializerContext context )
+                : base( s, context )
             {
-                return null;
             }
-            var sameEndianness = reader.ReadBoolean() == BitConverter.IsLittleEndian;
-            return new BinaryDeserializerImpl( version, reader, leaveOpen, context, sameEndianness );
+
+            public T GetResult()
+            {
+                ThrowOnInvalidResult();
+                return _result!;
+            }
+
+            public T? GetResult( bool throwOnInvalid )
+            {
+                if( throwOnInvalid )
+                {
+                    ThrowOnInvalidResult();
+                }
+                return _result;
+            }
+
+            public void SetResult( T result ) => _result = result;
+
+            internal override void Terminate()
+            {
+                base.Terminate();
+                if( !IsValid ) _result = default;
+            }
+
+        }
+
+
+        /// <summary>
+        /// Attempts to deserialize the content of a <see cref="RewindableStream"/> (that must be <see cref="RewindableStream.IsValid"/>) 
+        /// bound to a <see cref="BinaryDeserializerContext"/> that can be reused once done.
+        /// </summary>
+        /// <param name="s">The rewindable stream.</param>
+        /// <param name="context">The context to use.</param>
+        /// <param name="deserializer">The deserializer action.</param>
+        /// <returns>A result with a true <see cref="Result.IsValid"/> or that has captured errors.</returns>
+        public static Result Deserialize( RewindableStream s, BinaryDeserializerContext context, Action<IBinaryDeserializer> deserializer )
+        {
+            var r = new Result( s, context );
+            if( r.Deserializer != null )
+            {
+                retry:
+                try
+                {
+                    deserializer( r.Deserializer );
+                }
+                catch( Exception ex )
+                {
+                    r.SetException( ExceptionDispatchInfo.Capture( ex ) );
+                }
+                if( r.ShouldRetry() ) goto retry;
+                r.Terminate();
+            }
+            return r;
+        }
+
+        /// <summary>
+        /// Attempts to deserialize the content of a <see cref="RewindableStream"/> (that must be <see cref="RewindableStream.IsValid"/>) 
+        /// bound to a <see cref="BinaryDeserializerContext"/> that can be reused once done.
+        /// </summary>
+        /// <param name="s">The rewindable stream.</param>
+        /// <param name="context">The context to use.</param>
+        /// <param name="deserializer">The deserializer function.</param>
+        /// <returns>A result with a true <see cref="Result.IsValid"/> and a non default <see cref="Result{T}.GetResult"/> or that has captured errors.</returns>
+        public static Result<T> Deserialize<T>( RewindableStream s, BinaryDeserializerContext context, Func<IBinaryDeserializer, T> deserializer )
+        {
+            var r = new Result<T>( s, context );
+            if( r.Deserializer != null )
+            {
+                retry:
+                try
+                {
+                    r.SetResult( deserializer( r.Deserializer ) );
+                }
+                catch( Exception ex )
+                {
+                    r.SetException( System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture( ex ) );
+                }
+                if( r.ShouldRetry() ) goto retry;
+                r.Terminate();
+            }
+            return r;
+        }
+
+        /// <summary>
+        /// Helper that calls <see cref="RewindableStream.FromStream(Stream)"/> and <see cref="Deserialize(RewindableStream, BinaryDeserializerContext, Action{IBinaryDeserializer})"/>.
+        /// </summary>
+        /// <param name="s">Opened stream to use.</param>
+        /// <param name="context">The context to use.</param>
+        /// <param name="deserializer">The deserializer action.</param>
+        /// <returns>A result with a true <see cref="Result.IsValid"/> or that has captured errors.</returns>
+        public static Result Deserialize( Stream s, BinaryDeserializerContext context, Action<IBinaryDeserializer> deserializer )
+        {
+            return Deserialize( RewindableStream.FromStream( s ), context, deserializer );
+        }
+
+        /// <summary>
+        /// Helper that calls <see cref="RewindableStream.FromFactory(Func{Stream})"/> and <see cref="Deserialize(RewindableStream, BinaryDeserializerContext, Action{IBinaryDeserializer})"/>.
+        /// </summary>
+        /// <param name="opener">See <see cref="RewindableStream.FromFactory(Func{Stream})"/>.</param>
+        /// <param name="context">The context to use.</param>
+        /// <param name="deserializer">The deserializer action.</param>
+        /// <returns>A result with a true <see cref="Result.IsValid"/> or that has captured errors.</returns>
+        public static Result Deserialize( Func<Stream> opener, BinaryDeserializerContext context, Action<IBinaryDeserializer> deserializer )
+        {
+            return Deserialize( RewindableStream.FromFactory( opener ), context, deserializer );
+        }
+
+        /// <summary>
+        /// Helper that calls <see cref="RewindableStream.FromStream(Stream)"/> and <see cref="Deserialize{T}(RewindableStream, BinaryDeserializerContext, Func{IBinaryDeserializer, T})"/>.
+        /// </summary>
+        /// <param name="s">Opened stream to use.</param>
+        /// <param name="context">The context to use.</param>
+        /// <param name="deserializer">The deserializer function.</param>
+        /// <returns>A result with a true <see cref="Result.IsValid"/> or that has captured errors.</returns>
+        public static Result<T> Deserialize<T>( Stream s, BinaryDeserializerContext context, Func<IBinaryDeserializer, T> deserializer )
+        {
+            return Deserialize( RewindableStream.FromStream( s ), context, deserializer );
+        }
+
+        /// <summary>
+        /// Helper that calls <see cref="RewindableStream.FromFactory(Func{Stream})"/> and <see cref="Deserialize{T}(RewindableStream, BinaryDeserializerContext, Func{IBinaryDeserializer, T})"/>.
+        /// </summary>
+        /// <param name="opener">See <see cref="RewindableStream.FromFactory(Func{Stream})"/>.</param>
+        /// <param name="context">The context to use.</param>
+        /// <param name="deserializer">The deserializer function.</param>
+        /// <returns>A result with a true <see cref="Result.IsValid"/> and a non default <see cref="Result{T}.GetResult"/>or  that has captured errors.</returns>
+        public static Result<T> Deserialize<T>( Func<Stream> opener, BinaryDeserializerContext context, Func<IBinaryDeserializer, T> deserializer )
+        {
+            return Deserialize( RewindableStream.FromFactory( opener ), context, deserializer );
         }
 
         /// <summary>

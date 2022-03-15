@@ -41,6 +41,14 @@ namespace CK.BinarySerialization
         bool IsSealed { get; }
         
         /// <summary>
+        /// Gets whether this <see cref="TryResolveLocalType()"/> is null or
+        /// some of the fundamental type aspect has changed between the written type and the local 
+        /// one: when false, deserialization drivers should not be cached and reused across deserialization
+        /// sessions.
+        /// </summary>
+        bool IsDirtyInfo { get; }
+
+        /// <summary>
         /// Gets the rank of the array (the number of dimensions of a multidimensional array) 
         /// if this is an array.
         /// </summary>
@@ -54,7 +62,7 @@ namespace CK.BinarySerialization
 
         /// <summary>
         /// Gets the serialization's driver name that has been resolved and potentially 
-        /// used to write instance of this type.
+        /// used to write instances of this type or a redefined one by (<see cref="IMutableTypeReadInfo.SetDriverName(string)"/>.
         /// <para>
         /// Null if no serialization's driver was resolved for the type.
         /// This is totally possible since a type written by <see cref="IBinarySerializer.WriteTypeInfo(Type, bool?)"/> is not 

@@ -24,6 +24,12 @@ namespace CK.BinarySerialization
         Action<IMutableTypeReadInfo>[] _hooks;
 
         /// <summary>
+        /// See <see cref="SharedBinarySerializerContext._tSliced"/> for rationales.
+        /// </summary>
+        static readonly Type? _tSliced = Type.GetType( "CK.BinarySerialization.SlicedDeserializerRegistry, CK.BinarySerialization.Sliced", throwOnError: false );
+
+
+        /// <summary>
         /// Abstract drivers are statically cached once for all.
         /// Note that the local type here may itself be sealed: it's the way it has been written that matters.
         /// </summary>
@@ -54,14 +60,24 @@ namespace CK.BinarySerialization
             _knownObjects = knownObjects ?? SharedDeserializerKnownObject.Default;
             _typedDrivers = new ConcurrentDictionary<Type, IDeserializationDriver>();
             _hooks = Array.Empty<Action<IMutableTypeReadInfo>>();
-            _resolvers = useDefaultResolvers
-                            ? new IDeserializerResolver[]
-                                {
-                                    BasicTypeDeserializerRegistry.Instance,
-                                    SimpleBinaryDeserializableRegistry.Instance,
-                                    new StandardGenericDeserializerRegistry( this ),
-                                }
-                            : Array.Empty<IDeserializerResolver>();
+
+            if( useDefaultResolvers )
+            {
+                _resolvers = _tSliced != null
+                                ? new IDeserializerResolver[] { BasicTypeDeserializerRegistry.Instance,
+                                                                SimpleBinaryDeserializableRegistry.Instance,
+                                                                new StandardGenericDeserializerRegistry( this ),
+                                                                (IDeserializerResolver)_tSliced.GetField( "Instance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static )!.GetValue( null )!
+                                                              }
+                                : new IDeserializerResolver[] { BasicTypeDeserializerRegistry.Instance,
+                                                                SimpleBinaryDeserializableRegistry.Instance,
+                                                                new StandardGenericDeserializerRegistry( this )
+                                                              };
+            }
+            else
+            {
+                _resolvers = Array.Empty<IDeserializerResolver>();
+            }
         }
 
         internal IDeserializationDriver GetAbstractDriver( Type t )
