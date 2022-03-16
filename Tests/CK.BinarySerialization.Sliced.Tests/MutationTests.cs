@@ -44,14 +44,14 @@ namespace CK.BinarySerialization.Tests
         public void from_Sliced_to_Versioned_in_simple_graph()
         {
             var t = new Samples.Town( "Test" );
-            //var g = new Samples.Garage( t );
-            //var e = new Samples.Employee( g );
+            var g = new Samples.Garage( t );
+            var e = new Samples.Employee( g );
             var c = new Samples.Customer( t );
             var car = t.AddCar( "Model", DateTime.UtcNow );
             c.Car = car;
 
             var t2 = RunV1ToV2( t );
-            //t2.Persons.OfType<SamplesV2.Customer>().Single().Car.Should().BeEquivalentTo( t2.Cars[0] );
+            t2.Persons.OfType<SamplesV2.Customer>().Single().Car.Should().BeEquivalentTo( t2.Cars[0] );
         }
 
         [TestCase( 0 )]
