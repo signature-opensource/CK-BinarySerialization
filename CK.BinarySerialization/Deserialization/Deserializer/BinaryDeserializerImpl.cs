@@ -69,6 +69,7 @@ namespace CK.BinarySerialization
             // is rather rare, it's not an issue.
             _types.Clear();
             _objects.Clear();
+            PostActions.Clear();
             return _secondPass = true;
         }
 
