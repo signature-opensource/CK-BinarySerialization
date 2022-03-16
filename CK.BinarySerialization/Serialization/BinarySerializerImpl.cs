@@ -21,15 +21,11 @@ namespace CK.BinarySerialization
 
         int _debugModeCounter;
         int _debugSentinel;
-        bool _leaveOpen;
         
-        public BinarySerializerImpl( ICKBinaryWriter writer,
-                                     bool leaveOpen,
-                                     BinarySerializerContext context )
+        public BinarySerializerImpl( ICKBinaryWriter writer, BinarySerializerContext context )
         {
             (_context = context).Acquire();
             _writer = writer;
-            _leaveOpen = leaveOpen;
             _types = new Dictionary<NullableTypeRoot, (int, ISerializationDriver?)>();
             _seen = new Dictionary<object, int>( PureObjectRefEqualityComparer<object>.Default );
         }
@@ -37,11 +33,7 @@ namespace CK.BinarySerialization
         public void Dispose()
         {
             _context.Release();
-            if( !_leaveOpen && _writer is IDisposable d )
-            {
-                _leaveOpen = true;
-                d.Dispose();
-            }
+            if( _writer is IDisposable d ) d.Dispose();
         }
 
         public ICKBinaryWriter Writer => _writer;

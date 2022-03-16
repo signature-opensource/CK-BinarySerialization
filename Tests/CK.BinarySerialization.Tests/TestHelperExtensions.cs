@@ -68,7 +68,7 @@ namespace CK.Core
                                                                      BinaryDeserializerContext? deserializerContext = null )
         {
             using( var s = new MemoryStream() )
-            using( var writer = BinarySerializer.Create( s, true, serializerContext ?? new BinarySerializerContext() ) )
+            using( var writer = BinarySerializer.Create( s, serializerContext ?? new BinarySerializerContext() ) )
             {
                 writer.DebugWriteMode( true );
 
@@ -124,7 +124,7 @@ namespace CK.Core
                                                                      BinaryDeserializerContext? deserializerContext = null )
         {
             using( var s = new MemoryStream() )
-            using( var writer = BinarySerializer.Create( s, true, serializerContext ?? new BinarySerializerContext() ) )
+            using( var writer = BinarySerializer.Create( s, serializerContext ?? new BinarySerializerContext() ) )
             {
                 writer.DebugWriteSentinel();
                 w( writer );

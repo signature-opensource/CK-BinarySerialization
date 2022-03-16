@@ -28,7 +28,11 @@ Deserialization is less obvious:
 This library is totally schizophrenic: there are Serializers on one side and Deserializers on another and they 
 are quite different beasts. They, of course, work together and the high level API looks similar but _how they work_ differs. 
 
-## Nullable handling
+## High level API: Serializer, Deserializer, Context and SharedContext
+
+//TODO
+
+## Nullable handling is currently partial
 
 Nullable value types like `int?` (`Nullable<int>`) are serialized with a marker byte and then the value itself if it is not null. 
 Nullable value types are easy: the types are not the same. It's unfortunately much more subtle for reference types: A `User?` is 
@@ -36,17 +40,21 @@ exactly of the same type as `User`, the difference is in the way you use it in y
 
 The kernel is able to fully support Nullable Reference Type: a `List<User>` will actually be serialized the same way 
 as a `List<User?>`: a reference type instance always require an extra byte that can handle an already deserialized reference
-vs. a new (not seen yet) instance. This byte marker is also used for the `null` value for nullable reference type. 
+vs. a new (not seen yet) instance. Note that this byte marker is also used for the `null` value for nullable reference type
+(and we cannot avoid it). 
 
-However, as of today, CK.BinarySerialization considers all reference types as being potentially null (this is called the "oblivious nullable context",
+As of today, CK.BinarySerialization considers all reference types as being potentially null (this is called the "oblivious nullable context",
 with one exception: the key of a `Dictionary<TKey,TValue>` that is assumed to be not nullable.
+
+Since the binary layout of reference types always require a byte to handle potential references and that nullable value types are not the 
+same as their regular type, full support of NRT will have no real impact on the size or the performance... Its real objective
+is related to mutation support. Current partial NRT support makes today mutation from class to struct to actually be class to nullable
+struct mutation. This is discussed in more details below.
 
 The plan regarding full NRT support is to:
 - Extract the NullableTypeTree from CK.CodeGen.
 - Improves it with new features of .net 6 that helps discovering nullabilities of generic parameters.
-- Use it here to fully exploit the NRT:
-    - When writing a null non nullable reference type, the library will throw a NullReferenceException or an InvalidDataException.
-    - The serialized form will then be optimal for non nullable value types (no extra null byte required).
+- Use it here to fully exploit the NRT.
 
 ## IBinarySerializer and ICKBinaryWriter, IBinaryDeserializer and ICKBinaryReader
 
@@ -152,32 +160,7 @@ The `CK.BinarySerialization.ICKSlicedSerializable` interface is a pure marker in
 
 This interface implies that the type must support the SerializationVersion attribute, a deserialization constructor, a `public static Write`
 method (and, if the class is not sealed, a special empty deserialization constructor to be called by specialized types). 
-Below is a typical specialized and non sealed class implementation:
-```c#
-[SerializationVersion(0)]
-public class Employee : Person
-{
-    // ...
-
-    protected Employee( Sliced _ ) : base( _ ) { }
-
-    public Employee( IBinaryDeserializer d, ITypeReadInfo info )
-        : base( Sliced.Instance )
-    {
-        BestFriend = d.ReadNullableObject<Employee>();
-        EmployeeNumber = d.Reader.ReadInt32();
-        Garage = d.ReadObject<Garage>();
-    }
-
-    public static void Write( IBinarySerializer s, in Employee o )
-    {
-        s.WriteNullableObject( o.BestFriend );
-        s.Writer.Write( o.EmployeeNumber );
-        s.WriteObject( o.Garage );
-    }
-}
-```
-Where the base class **must** be marked with `ICKSlicedSerializable`:
+Below is a typical base class implementation (`IsDestroyed` property is discussed below):
 
 ```c#
 [SerializationVersion(0)]
@@ -207,6 +190,33 @@ public class Person : ICKSlicedSerializable, IDestroyable
             s.WriteObject( o.Friends );
             s.WriteObject( o.Town );
         }
+    }
+}
+```
+The base class **must** be marked with `ICKSlicedSerializable`:
+
+Below is a non sealed specialization of this base class:
+```c#
+[SerializationVersion(0)]
+public class Employee : Person
+{
+    // ...
+
+    protected Employee( Sliced _ ) : base( _ ) { }
+
+    public Employee( IBinaryDeserializer d, ITypeReadInfo info )
+        : base( Sliced.Instance )
+    {
+        BestFriend = d.ReadNullableObject<Employee>();
+        EmployeeNumber = d.Reader.ReadInt32();
+        Garage = d.ReadObject<Garage>();
+    }
+
+    public static void Write( IBinarySerializer s, in Employee o )
+    {
+        s.WriteNullableObject( o.BestFriend );
+        s.Writer.Write( o.EmployeeNumber );
+        s.WriteObject( o.Garage );
     }
 }
 ```
@@ -246,7 +256,12 @@ constructor is called, specialized ones are skipped (this is why `Employee` does
 Only a few mutations are currently supported, they are detailed below.
 
 However the objective is be able to transparently handle mutations:
-- From nullable to non nullable types and vice versa for value as well as reference types.
+- From non nullable to nullable types for value as well as reference types: this should be handled automatically 
+  and is always safe.
+- From nullable to non nullable types for value as well as reference types: this MAY be handled automatically 
+  but we are still thinking about it since this not "safe by design": some serialized data that __happens__ to have 
+no null values will work whereas another one will fail miserably or worst(?), for value types, default values will 
+"magically" appear in place of their previous null.
 - Between `List<T>`, `T[]`, `Queue<T>` (and may be others).
 - Between Tuple and ValueTuple.
 - etc.
@@ -275,23 +290,53 @@ The risk here is to downsize the underlying type, removing or changing the value
 that you did this and reloading an old serialized stream that contains these out of range values: an `OverflowException` will
 be raised.
 
-## General support of struct to class and class to struct mutations
+**Important:** 
+Underlying type mutation will work ONLY when using `IBinarySerializer.WriteValue<T>(in T)` and 
+`IBinaryDeserializer.ReadValue<T>()`.
+Using the `ICKBinaryWriter.WriteEnum<T>(T)` and `ICKBinaryReader.ReadEnum<T>` CANNOT handle such migrations, but they 
+can be done easily:
+```c#
+    /// Status was a long in version 1, we are now in version 2 and this is now a short.
+    if( info.Version < 2 )
+    {
+        MyStatus = (Status)(short)d.Reader.ReadInt64();
+    }
+    else
+    {
+        MyStatus = d.Reader.ReadEnum<Status>();
+    }
+```
+
+## General support of struct to class and class to (nullable!) struct mutations
 
 This simply works for struct to class: each serialized struct becomes a new object. The 2 possible 
-base classes for reference type ([`ReferenceTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/ReferenceTypeDeserializer.cs) 
-and [`SimpleReferenceTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/SimpleReferenceTypeDeserializer.cs)) directly 
+base classes for reference type ([`ReferenceTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/Deserializer/ReferenceTypeDeserializer.cs) 
+and [`SimpleReferenceTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/Deserializer/SimpleReferenceTypeDeserializer.cs)) directly 
 supports this mutation.
 
 Transforming a class into a struct is more complex because a serialized reference type is written 
 only once (subsequent references are written as simple numbers). The efficient value type deserializer 
-[`ValueTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/ValueTypeDeserializer.cs) is not able to handle
+[`ValueTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/Deserializer/ValueTypeDeserializer.cs) is not able to handle
 this mutation. When a serialized stream that has been written with classes must be read back, 
-the [`ValueTypeDeserializerWithRef<T>`](CK.BinarySerialization/Deserialization/ValueTypeDeserializerWithRef.cs)
+the [`ValueTypeDeserializerWithRef<T>`](CK.BinarySerialization/Deserialization/Deserializer/ValueTypeDeserializerWithRef.cs)
 must be used.
 
-The 3 type of serializations handle these mutations automatically.
+Another aspect to consider is, because of the current partial NRT support, that a class is nullable by default ("oblivious context"). So 
+we are stuck today to "class to nullable struct" mutation: a `List<Car>` (where `Car` is a class) must be a `List<Car?>` when `Car` 
+becomes a struct since we don't currently analyze the actual type "in depth".
 
+And the cherry on the cake of class to struct mutation complexity is when the serialized class has been chosen to break a 
+too deep recursion: 
+- its data has not been written at its first occurrence but later (when the stack is emptied)...
+- so we cannot read its value right now for its first need (and memorize it for its subsequent occurrences)...
+- so there's at least one value property that is "unitialized" in the graph...
+- so the whole graph is de facto invalid!
 
+This is the very reason of the potential second pass on the stream: if we have no luck and a class that is being transformed into a struct 
+has been chosen to break the serializer's recursion, we forget the whole graph at the end and read it again... except that during the first
+pass these problematic values have been enqueued in a special queue and the second pass dequeues these values at their first occurrences:
+the final second graph is valid.  
 
+The 3 types of serializations handle these mutations automatically: special deserialization drivers are synthesized when 
+such mutation are detected.
  
-

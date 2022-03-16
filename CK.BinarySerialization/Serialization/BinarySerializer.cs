@@ -29,21 +29,21 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Creates a new disposable serializer bound to a <see cref="BinarySerializerContext"/>
         /// that can be reused when the serializer is disposed.
+        /// <para>
+        /// Note that the stream must be opened and is left opened once done.
+        /// </para>
         /// </summary>
         /// <param name="s">The target stream.</param>
-        /// <param name="leaveOpen">True to leave the stream opened, false to close it when the serializer is disposed.</param>
         /// <param name="context">The context to use.</param>
         /// <returns>A disposable serializer.</returns>
-        public static IDisposableBinarySerializer Create( Stream s,
-                                                          bool leaveOpen,
-                                                          BinarySerializerContext context )
+        public static IDisposableBinarySerializer Create( Stream s, BinarySerializerContext context )
         {
-            var writer = new CKBinaryWriter( s, Encoding.UTF8, leaveOpen );
+            var writer = new CKBinaryWriter( s, Encoding.UTF8, true );
             writer.WriteSmallInt32( SerializerVersion );
             int b = BitConverter.IsLittleEndian ? 1 : 0;
             if( Text.StringAndStringBuilderExtension.IsCRLF ) b |= 2;
             writer.Write( (byte)b );
-            return new BinarySerializerImpl( writer, leaveOpen, context );
+            return new BinarySerializerImpl( writer, context );
         }
 
         /// <summary>
@@ -159,7 +159,7 @@ namespace CK.BinarySerialization
             if( o == null ) return o;
             if( serializerContext == null ) serializerContext = new BinarySerializerContext();
             using var s = new MemoryStream();
-            using var w = Create( s, true, serializerContext );
+            using var w = Create( s, serializerContext );
             w.WriteAny( o );
             s.Position = 0;
             return BinaryDeserializer.Deserialize( RewindableStream.FromStream( s ), 
@@ -179,9 +179,9 @@ namespace CK.BinarySerialization
         /// <param name="throwOnFailure">False to log silently fail and return false.</param>
         /// <returns>The result.</returns>
         public static IdempotenceCheckResult IdempotenceCheck( object o, 
-                                                            BinarySerializerContext? serializerContext = null,
-                                                            BinaryDeserializerContext? deserializerContext = null, 
-                                                            bool throwOnFailure = true )
+                                                               BinarySerializerContext? serializerContext = null,
+                                                               BinaryDeserializerContext? deserializerContext = null, 
+                                                               bool throwOnFailure = true )
         {
             Exception? error = null;
             List<IDestroyable> destroyed = new();
@@ -191,7 +191,7 @@ namespace CK.BinarySerialization
                 if( serializerContext == null ) serializerContext = new BinarySerializerContext();
                 using( var s = new MemoryStream() )
                 {
-                    using( var w = Create( s, true, serializerContext ) )
+                    using( var w = Create( s, serializerContext ) )
                     {
                         w.OnDestroyedObject += destroyed.Add;
                         w.DebugWriteMode( true );
@@ -205,7 +205,7 @@ namespace CK.BinarySerialization
                         d.DebugReadMode();
                         var o2 = d.ReadAny();
                         using( var checker = new CheckedWriteStream( originalBytes ) )
-                        using( var w2 = Create( s, true, serializerContext ) )
+                        using( var w2 = Create( s, serializerContext ) )
                         {
                             w2.DebugWriteMode( true );
                             w2.WriteObject( o2 );

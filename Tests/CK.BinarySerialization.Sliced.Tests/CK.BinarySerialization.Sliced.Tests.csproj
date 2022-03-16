@@ -20,4 +20,8 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\CK.BinarySerialization.Sliced\CK.BinarySerialization.Sliced.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="TestResults\" />
+	</ItemGroup>
 </Project>
