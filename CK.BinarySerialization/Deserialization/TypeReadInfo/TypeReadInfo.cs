@@ -27,6 +27,7 @@ namespace CK.BinarySerialization
 
         bool _hooked;
         bool _driverLookupDone;
+        bool _dirtyComputing;
 
         internal TypeReadInfo( BinaryDeserializerImpl deserializer, TypeReadInfoKind k )
         {
@@ -229,6 +230,9 @@ namespace CK.BinarySerialization
             {
                 if( !_isDirtyInfo.HasValue )
                 {
+                    // Prevents reentrancy when resolving BaseTypeReadInfo.IsDirtyInfo.
+                    if( _dirtyComputing ) return false;
+                    _dirtyComputing = true;
                     if( _overriddenDriverName == null )
                     {
                         // TryResolveLocalType may have updated _isDirtyInfo.
@@ -250,6 +254,7 @@ namespace CK.BinarySerialization
                     {
                         _isDirtyInfo = true;
                     }
+                    _dirtyComputing = false;
                 }
                 return _isDirtyInfo.Value;
             }
