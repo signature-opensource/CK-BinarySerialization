@@ -235,35 +235,6 @@ namespace CK.BinarySerialization
             }
         }
 
-        sealed class FactoryBased : RewindableStream
-        {
-            Func<Stream> _opener;
-            Stream? _second;
-
-            public FactoryBased( Func<Stream> opener )
-                : base( opener() )
-            {
-                if( !IsValid )
-                {
-                    Reader.BaseStream.Dispose();
-                }
-                _opener = opener;
-            }
-
-            protected override Stream GetSecondStream( out bool shouldSkipHeader )
-            {
-                Debug.Assert( !SecondPass );
-                Reader.BaseStream.Dispose();
-                shouldSkipHeader = true;
-                return _second = _opener();
-            }
-
-            public override void Dispose()
-            {
-                _second?.Dispose();
-            }
-        }
-
         /// <summary>
         /// Creates a rewindable stream from an initial stream.
         /// <list type="bullet">
@@ -283,16 +254,48 @@ namespace CK.BinarySerialization
             return new ResetableWithFileStream( new HookFileStream( s ) );
         }
 
+        sealed class FactoryBased : RewindableStream
+        {
+            Func<bool,Stream> _opener;
+            Stream? _second;
+
+            public FactoryBased( Func<bool,Stream> opener )
+                : base( opener( false ) )
+            {
+                if( !IsValid )
+                {
+                    Reader.BaseStream.Dispose();
+                }
+                _opener = opener;
+            }
+
+            protected override Stream GetSecondStream( out bool shouldSkipHeader )
+            {
+                Debug.Assert( !SecondPass );
+                Reader.BaseStream.Dispose();
+                shouldSkipHeader = true;
+                return _second = _opener( true );
+            }
+
+            public override void Dispose()
+            {
+                _second?.Dispose();
+            }
+        }
+
         /// <summary>
         /// Creates a rewindable stream from a factory of streams.
         /// <para>
-        /// The factory must be able to return at most two opened identical streams (that will be 
-        /// disposed).
+        /// The factory that is called with the <see cref="RewindableStream.SecondPass"/> value must be able to return 
+        /// at most two opened identical streams (that will be automatically disposed).
         /// </para>
         /// </summary>
-        /// <param name="opener">The factory for the stream that may be called twice.</param>
+        /// <param name="opener">
+        /// The factory for the stream that may be called twice.
+        /// The boolean parameter is false for the initial stream and true for the second pass.
+        /// </param>
         /// <returns>A rewindable stream.</returns>
-        public static RewindableStream FromFactory( Func<Stream> opener )
+        public static RewindableStream FromFactory( Func<bool,Stream> opener )
         {
             if( opener == null ) throw new ArgumentNullException( nameof( opener ) );
             return new FactoryBased( opener );

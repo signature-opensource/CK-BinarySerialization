@@ -69,6 +69,14 @@ namespace CK.BinarySerialization
             _types.Clear();
             _objects.Clear();
             PostActions.Clear();
+
+            // And the debug state.
+            _debugModeCounter = 0;
+            _debugSentinel = 0;
+            _lastWriteSentinel = null;
+            _lastReadSentinel = null;
+            _debugContext?.Clear();
+
             Debug.Assert( _rewindableStream.SecondPass );
             return true;
         }
@@ -212,18 +220,19 @@ namespace CK.BinarySerialization
                     }
                     else
                     {
+                        var vD = (IValueTypeDeserializerWithRefInternal)s.D;
                         // The class is now a struct.
                         // We must always read it, either to skip or store it.
                         if( _rewindableStream.SecondPass )
                         {
                             // Skip.
-                            s.D.ReadObjectData( this, s.T );
+                            vD.ReadRawObjectData( this, s.T );
                         }
                         else
                         {
                             if( _deferredValueQueue == null ) _deferredValueQueue = new Queue<object>();
                             // Store for the second pass.
-                            _deferredValueQueue.Enqueue( s.D.ReadObjectData( this, s.T ) );
+                            _deferredValueQueue.Enqueue( vD.ReadRawObjectData( this, s.T ) );
                         }
                     }
                     --_recurseCount;

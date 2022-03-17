@@ -17,6 +17,7 @@ namespace CK.BinarySerialization
         readonly Dictionary<Type, ISerializationDriver?> _cache;
         readonly Dictionary<object, string> _knownObjects;
         readonly SharedBinarySerializerContext _shared;
+        int _maxRecurse;
         bool _inUse;
 
         /// <summary>
@@ -28,6 +29,7 @@ namespace CK.BinarySerialization
             _cache = new Dictionary<Type, ISerializationDriver?>();
             _knownObjects = new Dictionary<object, string>();
             _shared = shared;
+            _maxRecurse = 100;
         }
 
         /// <summary>
@@ -63,6 +65,30 @@ namespace CK.BinarySerialization
         /// <param name="t">The type.</param>
         /// <returns>True if a driver is available, false otherwise.</returns>
         public bool IsSerializable( Type t ) => TryFindDriver( t ) != null;
+
+        /// <summary>
+        /// Gets or sets the maximal recursion depth before deferring the write of a reference type.
+        /// (see <see cref="ISerializationDriverAllowDeferredRead"/> and <see cref="IDeserializationDeferredDriver"/>).
+        /// Defaults to 100 and must be greater than or equal to 0.
+        /// <para>
+        /// There is no real reason to change this parameter but this can be done freely as long as it remains not too big
+        /// otherwise a stack overflow may occur.
+        /// </para>
+        /// <para>
+        /// A small value mean slightly more bigger serialized data and more chance to require a second pass of deserialization
+        /// (second pass is required when a class has been mutated to a struct and its write has been deferred).
+        /// </para>
+        /// </summary>
+        public int MaxRecursionDepth
+        {
+            get => _maxRecurse;
+            set
+            {
+                if( _maxRecurse < 0 ) throw new ArgumentOutOfRangeException( nameof( _maxRecurse ) );
+                _maxRecurse = value;
+            }
+        }
+
 
         /// <inheritdoc />
         public ISerializationDriver? TryFindDriver( Type t )

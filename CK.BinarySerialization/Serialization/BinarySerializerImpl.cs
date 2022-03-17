@@ -15,7 +15,6 @@ namespace CK.BinarySerialization
         readonly Dictionary<object, int> _seen;
         readonly BinarySerializerContext _context;
 
-        public const int MaxRecurse = 50;
         int _recurseCount;
         Stack<(ISerializationDriverInternal D, object O)>? _deferred;
 
@@ -306,7 +305,7 @@ namespace CK.BinarySerialization
                 }
             }
             var driver = (ISerializationDriverInternal)_context.FindDriver( t ).ToNonNullable;
-            if( _recurseCount > MaxRecurse 
+            if( _recurseCount > _context.MaxRecursionDepth 
                 && isClass
                 && driver is ISerializationDriverAllowDeferredRead )
             {

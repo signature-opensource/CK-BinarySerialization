@@ -120,14 +120,10 @@ namespace CK.BinarySerialization
 
         IDeserializationDriver IDeserializationDriver.ToNonNullable => this;
 
-        Type IDeserializationDriver.ResolvedType => throw new NotImplementedException();
-
-        Delegate IDeserializationDriver.TypedReader => throw new NotImplementedException();
-
-        bool IDeserializationDriver.IsCached => throw new NotImplementedException();
-
         T IValueTypeNonNullableDeserializationDriver<T>.ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstanceAndTrack( d, readInfo );
 
         object IDeserializationDriverInternal.ReadObjectData( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstanceAndTrack( d, readInfo );
+
+        object IValueTypeDeserializerWithRefInternal.ReadRawObjectData( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
     }
 }

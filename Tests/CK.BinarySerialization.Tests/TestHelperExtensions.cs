@@ -100,7 +100,6 @@ namespace CK.Core
                         {
                             r1 = d.ReadAny();
                         }
-
                         d.DebugCheckSentinel();
                         T result = r( d );
                         d.DebugCheckSentinel();

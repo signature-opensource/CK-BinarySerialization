@@ -50,19 +50,21 @@ namespace CK.BinarySerialization.Tests
             var car = t.AddCar( "Model", DateTime.UtcNow );
             c.Car = car;
 
-            var t2 = RunV1ToV2( t );
+            var t2 = RunV1ToV2( t, 0 );
             t2.Persons.OfType<SamplesV2.Customer>().Single().Car.Should().BeEquivalentTo( t2.Cars[0] );
         }
 
         [TestCase( 0 )]
         [TestCase( 1 )]
+        [TestCase( 2 )]
         public void from_Sliced_to_Versioned_in_graph( int seed )
         {
             var t = Samples.Town.CreateTown( seed );
-            RunV1ToV2( t );
+            // Always defer reference types that can be deferred.
+            RunV1ToV2( t, 0 );
         }
 
-        static SamplesV2.Town RunV1ToV2( Samples.Town t )
+        static SamplesV2.Town RunV1ToV2( Samples.Town t, int maxRecursionDepth )
         {
             // The Car that was a Sliced sealed class is now a Versioned readonly struct.
             static void SwitchToV2( IMutableTypeReadInfo i )
@@ -75,7 +77,7 @@ namespace CK.BinarySerialization.Tests
             var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
             dC.Shared.AddDeserializationHook( SwitchToV2 );
 
-            var v2Town = (SamplesV2.Town)TestHelper.SaveAndLoadAny( t, deserializerContext: dC );
+            var v2Town = (SamplesV2.Town)TestHelper.SaveAndLoadAny( t, new BinarySerializerContext() { MaxRecursionDepth = maxRecursionDepth }, deserializerContext: dC );
             v2Town.Cars.Should().AllBeOfType<SamplesV2.Car>();
             v2Town.Stats.Should().Be( t.Stats );
             return v2Town;
