@@ -32,6 +32,12 @@ namespace CK.BinarySerialization
             /// Gets whether the stream has been serialized with a '\r\n' end-of-line default.
             /// </summary>
             bool IsCRLF { get; }
+
+            /// <summary>
+            /// Gets whether we are currently in the second pass that handles a class to struct mutation
+            /// (happens if and only if one instance of the written class has been used to cut the recursion).
+            /// </summary>
+            bool SecondPass { get; }
         }
 
         /// <summary>
