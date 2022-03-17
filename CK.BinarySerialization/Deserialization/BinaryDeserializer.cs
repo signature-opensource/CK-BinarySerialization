@@ -26,6 +26,9 @@ namespace CK.BinarySerialization
             DefaultSharedContext = new SharedBinaryDeserializerContext();
         }
 
+        /// <summary>
+        /// Captures the result of the deserialization.
+        /// </summary>
         public class Result
         {
             readonly RewindableStream _s;
@@ -34,14 +37,26 @@ namespace CK.BinarySerialization
             ExceptionDispatchInfo? _exception;
             string? _error;
 
+            /// <summary>
+            /// Gets the information related to the stream (and whether a second pass was needed).
+            /// </summary>
             public IBinaryDeserializer.IStreamInfo StreamInfo => _s;
                         
+            /// <summary>
+            /// Gets whether the deserialization is successful.
+            /// </summary>
             public bool IsValid => _error == null;
 
-            public bool SecondPassRequired { get; internal set; }
-
+            /// <summary>
+            /// Gets a non null error message when <see cref="IsValid"/> is false.
+            /// </summary>
             public string? Error => _error;
 
+            /// <summary>
+            /// Throws the error that have been caught during the deserialization
+            /// or an <see cref="InvalidOperationException"/> with the <see cref="Error"/> message
+            /// if the error was not due to an exception.
+            /// </summary>
             public void ThrowOnInvalidResult()
             {
                 if( !IsValid )
@@ -78,16 +93,15 @@ namespace CK.BinarySerialization
 
             internal void SetException( ExceptionDispatchInfo ex )
             {
-                _error = $"An exception occurred{(SecondPassRequired ? " during the second pass" : "")}: {ex.SourceException.Message}";
+                _error = $"An exception occurred{(_s.SecondPass ? " during the second pass" : "")}: {ex.SourceException.Message}";
                 _exception = ex;
             }
 
             internal bool ShouldRetry()
             {
                 Debug.Assert( Deserializer != null );
-                if( IsValid && !SecondPassRequired && Deserializer.ShouldStartSecondPass() )
+                if( IsValid && !_s.SecondPass && Deserializer.ShouldStartSecondPass() )
                 {
-                    SecondPassRequired = true;
                     return true;
                 }
                 return false;
@@ -104,7 +118,7 @@ namespace CK.BinarySerialization
                     }
                     catch( Exception ex )
                     {
-                        _error = $"An exception occurred{(SecondPassRequired ? " during the second pass" : "")} while executing PostActions: {ex.Message}";
+                        _error = $"An exception occurred{(_s.SecondPass ? " during the second pass" : "")} while executing PostActions: {ex.Message}";
                         _exception = ExceptionDispatchInfo.Capture( ex );
                     }
                 }
@@ -113,6 +127,10 @@ namespace CK.BinarySerialization
             }
         }
 
+        /// <summary>
+        /// Specializes the <see cref="Result"/> with a returned value from the deserialization function.
+        /// </summary>
+        /// <typeparam name="T">The return type of the deserialization function.</typeparam>
         public sealed class Result<T> : Result
         {
             T? _result;
@@ -122,12 +140,23 @@ namespace CK.BinarySerialization
             {
             }
 
+            /// <summary>
+            /// Gets the result if <see cref="Result.IsValid"/> is true otherwise throw an exception
+            /// (see <see cref="Result.ThrowOnInvalidResult"/>).
+            /// </summary>
+            /// <returns></returns>
             public T GetResult()
             {
                 ThrowOnInvalidResult();
                 return _result!;
             }
 
+            /// <summary>
+            /// Gets the deserialization function result that is possibly the default value of <typeparamref name="T"/> 
+            /// instead of throwing an exception like <see cref="GetResult"/>.
+            /// </summary>
+            /// <param name="throwOnInvalid">True to thrown, false to return a default value if <see cref="Result.IsValid"/> is false.</param>
+            /// <returns></returns>
             public T? GetResult( bool throwOnInvalid )
             {
                 if( throwOnInvalid )
@@ -137,7 +166,7 @@ namespace CK.BinarySerialization
                 return _result;
             }
 
-            public void SetResult( T result ) => _result = result;
+            internal void SetResult( T result ) => _result = result;
 
             internal override void Terminate()
             {

@@ -41,9 +41,10 @@ namespace CK.BinarySerialization
         /// </summary>
         public bool IsValid { get; }
 
-        /// <summary>
-        /// Gets whether <see cref="GetSecondStream(out bool)"/> has been called.
-        /// </summary>
+        /// <inheritdoc />
+        /// <remarks>
+        /// This is set to true when <see cref="GetSecondStream(out bool)"/> is called.
+        /// </remarks>
         public bool SecondPass { get; private set; }
 
         /// <summary>

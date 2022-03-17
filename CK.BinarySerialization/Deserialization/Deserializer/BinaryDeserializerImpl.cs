@@ -26,9 +26,8 @@ namespace CK.BinarySerialization
         string? _lastReadSentinel;
         Stack<string>? _debugContext;
         
-        // Special class to struct mutation fields.
+        // Special class to struct mutation queue.
         Queue<object>? _deferredValueQueue;
-        bool _secondPass;
         
         public const string ExceptionPrefixContext = "[WithContext]";
 
@@ -58,7 +57,7 @@ namespace CK.BinarySerialization
 
         internal bool ShouldStartSecondPass()
         {
-            Debug.Assert( !_secondPass );
+            Debug.Assert( !_rewindableStream.SecondPass );
             if( _deferredValueQueue == null ) return false;
 
             _rewindableStream.Reset();
@@ -70,7 +69,8 @@ namespace CK.BinarySerialization
             _types.Clear();
             _objects.Clear();
             PostActions.Clear();
-            return _secondPass = true;
+            Debug.Assert( _rewindableStream.SecondPass );
+            return true;
         }
 
         public object ReadAny()
@@ -170,7 +170,7 @@ namespace CK.BinarySerialization
                     }
                 }
                 Debug.Assert( defer != null || (d.ResolvedType.IsValueType && d is IValueTypeDeserializerWithRefInternal), "Just to be clear: regular class or struct with a ValueTypeDeserializerWithRef driver." );
-                if( defer != null || !_secondPass )
+                if( defer != null || !_rewindableStream.SecondPass )
                 {
                     // For class, it's always the same code path.
                     // For struct, the first pass is the same: we return and track a fake unitialized instance, except that
@@ -214,7 +214,7 @@ namespace CK.BinarySerialization
                     {
                         // The class is now a struct.
                         // We must always read it, either to skip or store it.
-                        if( _secondPass )
+                        if( _rewindableStream.SecondPass )
                         {
                             // Skip.
                             s.D.ReadObjectData( this, s.T );
