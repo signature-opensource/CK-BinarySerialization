@@ -21,9 +21,12 @@ namespace CK.BinarySerialization.Tests.Samples
             _persons = new List<Person>();
             _garages = new List<Garage>();
             _cars = new List<Car>();
+            CityCar = new Car( "The city car!", DateTime.UtcNow );
         }
 
         public string Name { get; }
+
+        public Car CityCar { get; set; }
 
         public IReadOnlyList<Person> Persons => _persons;
 
@@ -113,6 +116,7 @@ namespace CK.BinarySerialization.Tests.Samples
         {
             d.DebugCheckSentinel();
             Name = d.Reader.ReadString();
+            CityCar = d.ReadObject<Car>();
             _garages = d.ReadObject<List<Garage>>();
             _persons = d.ReadObject<List<Person>>();
             _cars = d.ReadObject<List<Car>>();
@@ -122,6 +126,7 @@ namespace CK.BinarySerialization.Tests.Samples
         {
             s.DebugWriteSentinel();
             s.Writer.Write( o.Name );
+            s.WriteObject( o.CityCar );
             s.WriteObject( o._garages );
             s.WriteObject( o._persons );
             s.WriteObject( o._cars );

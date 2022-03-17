@@ -246,13 +246,13 @@ namespace CK.BinarySerialization
         }
 
         /// <summary>
-        /// Helper that calls <see cref="RewindableStream.FromFactory(Func{Stream})"/> and <see cref="Deserialize(RewindableStream, BinaryDeserializerContext, Action{IBinaryDeserializer})"/>.
+        /// Helper that calls <see cref="RewindableStream.FromFactory(Func{bool,Stream})"/> and <see cref="Deserialize(RewindableStream, BinaryDeserializerContext, Action{IBinaryDeserializer})"/>.
         /// </summary>
-        /// <param name="opener">See <see cref="RewindableStream.FromFactory(Func{Stream})"/>.</param>
+        /// <param name="opener">See <see cref="RewindableStream.FromFactory(Func{bool,Stream})"/>.</param>
         /// <param name="context">The context to use.</param>
         /// <param name="deserializer">The deserializer action.</param>
         /// <returns>A result with a true <see cref="Result.IsValid"/> or that has captured errors.</returns>
-        public static Result Deserialize( Func<Stream> opener, BinaryDeserializerContext context, Action<IBinaryDeserializer> deserializer )
+        public static Result Deserialize( Func<bool,Stream> opener, BinaryDeserializerContext context, Action<IBinaryDeserializer> deserializer )
         {
             return Deserialize( RewindableStream.FromFactory( opener ), context, deserializer );
         }
@@ -270,13 +270,13 @@ namespace CK.BinarySerialization
         }
 
         /// <summary>
-        /// Helper that calls <see cref="RewindableStream.FromFactory(Func{Stream})"/> and <see cref="Deserialize{T}(RewindableStream, BinaryDeserializerContext, Func{IBinaryDeserializer, T})"/>.
+        /// Helper that calls <see cref="RewindableStream.FromFactory(Func{bool,Stream})"/> and <see cref="Deserialize{T}(RewindableStream, BinaryDeserializerContext, Func{IBinaryDeserializer, T})"/>.
         /// </summary>
-        /// <param name="opener">See <see cref="RewindableStream.FromFactory(Func{Stream})"/>.</param>
+        /// <param name="opener">See <see cref="RewindableStream.FromFactory(Func{bool,Stream})"/>.</param>
         /// <param name="context">The context to use.</param>
         /// <param name="deserializer">The deserializer function.</param>
         /// <returns>A result with a true <see cref="Result.IsValid"/> and a non default <see cref="Result{T}.GetResult"/>or  that has captured errors.</returns>
-        public static Result<T> Deserialize<T>( Func<Stream> opener, BinaryDeserializerContext context, Func<IBinaryDeserializer, T> deserializer )
+        public static Result<T> Deserialize<T>( Func<bool,Stream> opener, BinaryDeserializerContext context, Func<IBinaryDeserializer, T> deserializer )
         {
             return Deserialize( RewindableStream.FromFactory( opener ), context, deserializer );
         }

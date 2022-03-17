@@ -19,6 +19,8 @@ namespace CK.BinarySerialization.Tests.SamplesV2
 
         public Town Town { get; }
 
+        public GarageQuality Quality { get; set; }
+
         public IReadOnlyList<Employee> Employees => _employees;
 
         internal void OnNewEmployee( Employee e )
@@ -32,6 +34,7 @@ namespace CK.BinarySerialization.Tests.SamplesV2
             d.DebugCheckSentinel();
             _employees = d.ReadObject<List<Employee>>();
             Town = d.ReadObject<Town>();
+            Quality = d.ReadValue<GarageQuality>();
         }
 
         public static void Write( IBinarySerializer s, in Garage o )
@@ -39,6 +42,7 @@ namespace CK.BinarySerialization.Tests.SamplesV2
             s.DebugWriteSentinel();
             s.WriteObject( o._employees );
             s.WriteObject( o.Town );
+            s.WriteValue( o.Quality );
         }
 
         #endregion
