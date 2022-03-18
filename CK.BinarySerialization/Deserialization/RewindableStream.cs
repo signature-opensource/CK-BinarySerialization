@@ -43,7 +43,7 @@ namespace CK.BinarySerialization
         public bool SecondPass { get; private set; }
 
         /// <inheritdoc />
-        public RewindableStreamKind Kind { get; }
+        public abstract RewindableStreamKind Kind { get; }
 
         /// <summary>
         /// Gets the initial or second reader.
@@ -138,6 +138,8 @@ namespace CK.BinarySerialization
                 return _s;
             }
 
+            public override RewindableStreamKind Kind => RewindableStreamKind.SeekableStream;
+
             /// <summary>
             /// Nothing to do since the initial stream must be left opened.
             /// </summary>
@@ -210,6 +212,8 @@ namespace CK.BinarySerialization
                 _s = s;
             }
 
+            public override RewindableStreamKind Kind => RewindableStreamKind.TemporaryFileCopy;
+
             public override void Dispose()
             {
                 if( SecondPass )
@@ -247,6 +251,8 @@ namespace CK.BinarySerialization
                 _s = s;
                 _start = intialBasePosition;
             }
+
+            public override RewindableStreamKind Kind => _start == 0 ? RewindableStreamKind.GZipStream : RewindableStreamKind.EmbeddedGZipStream;
 
             protected override Stream GetSecondStream( out bool shouldSkipHeader )
             {
@@ -328,7 +334,7 @@ namespace CK.BinarySerialization
 
         sealed class FactoryBased : RewindableStream
         {
-            Func<bool,Stream> _opener;
+            readonly Func<bool,Stream> _opener;
             Stream? _second;
 
             public FactoryBased( Func<bool,Stream> opener )
@@ -340,6 +346,8 @@ namespace CK.BinarySerialization
                 }
                 _opener = opener;
             }
+            
+            public override RewindableStreamKind Kind => RewindableStreamKind.Factory;
 
             protected override Stream GetSecondStream( out bool shouldSkipHeader )
             {
