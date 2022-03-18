@@ -52,7 +52,7 @@ namespace CK.BinarySerialization
                                 ? new ISerializerResolver[] { BasicTypeSerializerRegistry.Instance,
                                                               SimpleBinarySerializableFactory.Instance,
                                                               new StandardGenericSerializerFactory( this ),
-                                                              (ISerializerResolver)Activator.CreateInstance( _tSliced, this )!
+                                                              (ISerializerResolver)Activator.CreateInstance( _tSliced )!
                                                             }
                                 : new ISerializerResolver[] { BasicTypeSerializerRegistry.Instance,
                                                               SimpleBinarySerializableFactory.Instance,
