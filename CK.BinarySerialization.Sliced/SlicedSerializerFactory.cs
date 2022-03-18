@@ -27,6 +27,7 @@ namespace CK.BinarySerialization
         /// </summary>
         static readonly SlicedSerializerFactory Default = new SlicedSerializerFactory( BinarySerializer.DefaultSharedContext );
 
+        /// <summary>
         /// Initializes a new factory.
         /// </summary>
         /// <param name="resolver">The root resolver to use.</param>

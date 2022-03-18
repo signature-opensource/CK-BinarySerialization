@@ -13,19 +13,14 @@ namespace CK.BinarySerialization
     /// Probability that <see cref="GetSecondStream(out bool)"/> is called is very small
     /// but unfortunately not 0.
     /// <para>
-    /// By default 3 kind of implementations are available through the two factory 
-    /// methods: <see cref="FromFactory(Func{Stream})"/> and <see cref="FromStream(Stream)"/>.
+    /// This library offers 3 factories
+    /// methods: <see cref="FromFactory(Func{bool,Stream})"/>, <see cref="FromStream(Stream)"/> and <see cref="FromGZipStream(GZipStream)"/>.
     /// </para>
     /// <para>
-    /// This base class is public to enable alternate implementations. For instance GZipStream or other deflate stream
-    /// bound to an inner seek-able stream may be cleverly handled by recreating
-    /// a deflater onto the repositioned inner stream. The initial stream may even be left bound to its inner stream
-    /// so that it will be able to continue the reading after the second pass. But since this requires the 
-    /// compression level to be known, this cannot be implemented here and should be done outside with more knowledge of 
-    /// the context.
+    /// This base class is public to enable alternate implementations.
     /// </para>
     /// </summary>
-    public abstract class RewindableStream : IBinaryDeserializer.IStreamInfo, IDisposable
+    public abstract partial class RewindableStream : IBinaryDeserializer.IStreamInfo, IDisposable
     {
         /// <inheritdoc />
         public int SerializerVersion { get; protected set; }
@@ -47,6 +42,9 @@ namespace CK.BinarySerialization
         /// </remarks>
         public bool SecondPass { get; private set; }
 
+        /// <inheritdoc />
+        public RewindableStreamKind Kind { get; }
+
         /// <summary>
         /// Gets the initial or second reader.
         /// When <see cref="IsValid"/> is false, this reader has been disposed and must not be used.
@@ -58,12 +56,12 @@ namespace CK.BinarySerialization
         /// and reads the header.
         /// <para>
         /// The first byte must be a between 10 and <see cref="BinarySerializer.SerializerVersion"/> otherwise
-        /// <see cref="IsValid"/> is false but <paramref name="SerializerVersion"/> is updated so
+        /// <see cref="IsValid"/> is false. <see cref="SerializerVersion"/> is always updated so
         /// that alternate way of reading may be tried, BUT <see cref="ICKBinaryReader.ReadSmallInt32(int)"/> has
         /// been called: one or more bytes of the stream have been consumed.
         /// </para>
         /// <para>
-        /// If <see cref="IsValid"/> is false but the version is, its because an <see cref="EndOfStreamException"/>
+        /// If <see cref="IsValid"/> is false but the version is itself a valid one, its because an <see cref="EndOfStreamException"/>
         /// occurred during the read of the header.
         /// </para>
         /// </summary>
@@ -201,12 +199,12 @@ namespace CK.BinarySerialization
 
         // Uses a HookStream and its temporary file to read the second pass content if 
         // needed.
-        sealed class ResetableWithFileStream : RewindableStream
+        sealed class RewindableWithFileStream : RewindableStream
         {
             readonly HookFileStream _s;
             Stream? _second;
 
-            public ResetableWithFileStream( HookFileStream s )
+            public RewindableWithFileStream( HookFileStream s )
                 : base( s )
             {
                 _s = s;
@@ -235,11 +233,51 @@ namespace CK.BinarySerialization
             }
         }
 
+        // When a GZipStream is bound to the stream that CanSeek.
+        sealed class GZipOnSeekable : RewindableStream
+        {
+            readonly GZipStream _s;
+            readonly long _start;
+            GZipStream? _second;
+
+            public GZipOnSeekable( GZipStream s, long intialBasePosition )
+                : base( s )
+            {
+                // Initialize even if IsValid is false.
+                _s = s;
+                _start = intialBasePosition;
+            }
+
+            protected override Stream GetSecondStream( out bool shouldSkipHeader )
+            {
+                shouldSkipHeader = true;
+                _s.BaseStream.Position = _start;
+                return _second = new GZipStream( _s.BaseStream, CompressionMode.Decompress, leaveOpen: true );
+            }
+
+            /// <summary>
+            /// The initial stream is left opened, only closing the 
+            /// second one if it has been created.
+            /// </summary>
+            public override void Dispose() 
+            {
+                _second?.Dispose();
+            }
+        }
+
         /// <summary>
         /// Creates a rewindable stream from an initial stream.
         /// <list type="bullet">
-        /// <item>If <see cref="Stream.CanSeek"/> is true, this is the most efficient: the initial stream will be read twice if a second pass is required.</item>
-        /// <item>Otherwise, a temporary file will be created that will be written during the first read, and read again if a second pass is required.</item>
+        /// <item>
+        /// If <see cref="Stream.CanSeek"/> is true, this is the most efficient: the initial stream will be read twice if a second pass is required.
+        /// </item>
+        /// <item>
+        /// If the stream is a GzipStream that wraps a seekable base stream, AND the base stream is at its start (Position is 0) then a new GZipStream is
+        /// created on the repositioned base stream and read if a second pass is required.
+        /// </item>
+        /// <item>
+        /// Otherwise, a temporary file will be created that will be written during the first read, and read again if a second pass is required.
+        /// </item>
         /// </list>
         /// </summary>
         /// <param name="s">The initial stream.</param>
@@ -247,11 +285,45 @@ namespace CK.BinarySerialization
         public static RewindableStream FromStream( Stream s )
         {
             if( s == null ) throw new ArgumentNullException( nameof( s ) );
+            if( !s.CanRead ) throw new ArgumentException( "Stream must be readable." );
             if( s.CanSeek )
             {
                 return new Seekable( s );
             }
-            return new ResetableWithFileStream( new HookFileStream( s ) );
+            // Take no risk here: if the inner stream is not at its start, we don't consider
+            // that the GzipStream could be rewind.
+            if( s is GZipStream g 
+                && g.BaseStream.CanSeek
+                && g.BaseStream.Position == 0 )
+            {
+                return new GZipOnSeekable( g, 0 );
+            }
+            // Fallback to safest mode.
+            return new RewindableWithFileStream( new HookFileStream( s ) );
+        }
+
+        /// <summary>
+        /// Creates a <see cref="RewindableStream"/> on a GZipStream that MUST BE at its start,
+        /// regardless of the position of the <see cref="GZipStream.BaseStream"/>.
+        /// <para>
+        /// We have no way to enforce or check this constraint: if any data has been read from the GZipStream 
+        /// prior to call this, it will fail.
+        /// </para>
+        /// </summary>
+        /// <param name="s">The GZipStream that must be at its start.</param>
+        /// <returns>A rewindable stream.</returns>
+        public static RewindableStream FromGZipStream( GZipStream s )
+        {
+            if( s == null ) throw new ArgumentNullException( nameof( s ) );
+            if( !s.CanRead ) throw new ArgumentException( "Stream must be readable." );
+            if( s.BaseStream.CanSeek )
+            {
+                return new GZipOnSeekable( s, s.BaseStream.Position );
+            }
+            else 
+            {
+                return new RewindableWithFileStream( new HookFileStream( s ) );
+            }
         }
 
         sealed class FactoryBased : RewindableStream
