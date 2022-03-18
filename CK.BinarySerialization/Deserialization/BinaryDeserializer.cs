@@ -32,7 +32,7 @@ namespace CK.BinarySerialization
         public class Result
         {
             readonly RewindableStream _s;
-            internal BinaryDeserializerImpl? Deserializer;
+            internal BinaryDeserializerImpl? _deserializer;
 
             ExceptionDispatchInfo? _exception;
             string? _error;
@@ -87,7 +87,7 @@ namespace CK.BinarySerialization
                 }
                 else
                 {
-                    Deserializer = new BinaryDeserializerImpl( s, context );
+                    _deserializer = new BinaryDeserializerImpl( s, context );
                 }
             }
 
@@ -99,8 +99,8 @@ namespace CK.BinarySerialization
 
             internal bool ShouldRetry()
             {
-                Debug.Assert( Deserializer != null );
-                if( IsValid && !_s.SecondPass && Deserializer.ShouldStartSecondPass() )
+                Debug.Assert( _deserializer != null );
+                if( IsValid && !_s.SecondPass && _deserializer.ShouldStartSecondPass() )
                 {
                     return true;
                 }
@@ -109,12 +109,12 @@ namespace CK.BinarySerialization
 
             internal virtual void Terminate()
             {
-                Debug.Assert( Deserializer != null );
+                Debug.Assert( _deserializer != null );
                 if( IsValid )
                 {
                     try
                     {
-                        Deserializer.PostActions.Execute();
+                        _deserializer.PostActions.Execute();
                     }
                     catch( Exception ex )
                     {
@@ -122,8 +122,8 @@ namespace CK.BinarySerialization
                         _exception = ExceptionDispatchInfo.Capture( ex );
                     }
                 }
-                Deserializer.Dispose();
-                Deserializer = null;
+                _deserializer.Dispose();
+                _deserializer = null;
             }
         }
 
@@ -188,12 +188,12 @@ namespace CK.BinarySerialization
         public static Result Deserialize( RewindableStream s, BinaryDeserializerContext context, Action<IBinaryDeserializer> deserializer )
         {
             var r = new Result( s, context );
-            if( r.Deserializer != null )
+            if( r._deserializer != null )
             {
                 retry:
                 try
                 {
-                    deserializer( r.Deserializer );
+                    deserializer( r._deserializer );
                 }
                 catch( Exception ex )
                 {
@@ -216,12 +216,12 @@ namespace CK.BinarySerialization
         public static Result<T> Deserialize<T>( RewindableStream s, BinaryDeserializerContext context, Func<IBinaryDeserializer, T> deserializer )
         {
             var r = new Result<T>( s, context );
-            if( r.Deserializer != null )
+            if( r._deserializer != null )
             {
                 retry:
                 try
                 {
-                    r.SetResult( deserializer( r.Deserializer ) );
+                    r.SetResult( deserializer( r._deserializer ) );
                 }
                 catch( Exception ex )
                 {

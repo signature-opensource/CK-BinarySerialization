@@ -20,16 +20,22 @@ namespace CK.BinarySerialization
     /// </summary>
     public class SlicedSerializerFactory : ISerializerResolver
     {
+        readonly SharedBinarySerializerContext _resolver;
+
         /// <summary>
+<<<<<<< HEAD
         /// Gets the default factory that is automatically registered in the <see cref="BinarySerializer.DefaultSharedContext"/>.
         /// </summary>
         static readonly SlicedSerializerFactory Default = new SlicedSerializerFactory( BinarySerializer.DefaultSharedContext );
 
-        /// <summary>
+=======
+>>>>>>> 763400c (Better RewindableStream.)
         /// Initializes a new factory.
         /// </summary>
-        public SlicedSerializerFactory()
+        /// <param name="resolver">The root resolver to use.</param>
+        public SlicedSerializerFactory( SharedBinarySerializerContext resolver )
         {
+            _resolver = resolver;
         }
 
         /// <inheritdoc />
