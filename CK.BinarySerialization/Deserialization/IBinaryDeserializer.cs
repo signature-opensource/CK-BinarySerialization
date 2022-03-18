@@ -34,6 +34,11 @@ namespace CK.BinarySerialization
             bool IsCRLF { get; }
 
             /// <summary>
+            /// Gets the kind of rewindable stream being used.
+            /// </summary>
+            RewindableStreamKind Kind { get; }
+
+            /// <summary>
             /// Gets whether we are currently in the second pass that handles a class to struct mutation
             /// (happens if and only if one instance of the written class has been used to cut the recursion).
             /// </summary>

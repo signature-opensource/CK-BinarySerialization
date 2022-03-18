@@ -10,11 +10,13 @@ using System;
 
 namespace CK.BinarySerialization.Tests
 {
+
     [TestFixture]
     public class GZipSerializationTests
     {
         [TestCase( "FromFactory" )]
-        [TestCase( "FromGZipedFile" )]
+        [TestCase( "FromStream" )]
+        [TestCase( "FromGZipStream" )]
         public void using_gzip_compression( string rewindableKind )
         {
             var t = Samples.Town.CreateTown( 2 );
@@ -28,6 +30,35 @@ namespace CK.BinarySerialization.Tests
             }
             memory.Position = 0;
 
+            GZipStream? toDispose = null;
+
+            RewindableStream rewindable;
+            if( rewindableKind == "FromFactory" )
+            {
+                rewindable = RewindableStream.FromFactory( secondPass =>
+                {
+                    if( secondPass ) memory.Position = 0;
+                    return new GZipStream( memory, CompressionMode.Decompress, leaveOpen: true );
+                } );
+            }
+            else
+            {
+                var g = toDispose = new GZipStream( memory, CompressionMode.Decompress );
+                if( rewindableKind == "FromStream" )
+                {
+                    rewindable = RewindableStream.FromStream( g );
+                }
+                else if( rewindableKind == "FromGZipStream" )
+                {
+                    rewindable = RewindableStream.FromGZipStream( g );
+                }
+                else
+                {
+                    throw new ArgumentException();
+                }
+            }
+
+            BinaryDeserializer.Result<SamplesV2.Town>? result;
             // SamplesV2: class Car (ICKSlicedSerializable) becomes a struct (ICKVersionedBinarySerializable).
             static void SwitchToV2( IMutableTypeReadInfo i )
             {
@@ -38,25 +69,11 @@ namespace CK.BinarySerialization.Tests
             }
             var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
             dC.Shared.AddDeserializationHook( SwitchToV2 );
-
-            BinaryDeserializer.Result<SamplesV2.Town>? result;
-            if( rewindableKind == "FromFactory" )
-            {
-                result = BinaryDeserializer.Deserialize( secondPass =>
-                                                         {
-                                                             if( secondPass ) memory.Position = 0;
-                                                             return new GZipStream( memory, CompressionMode.Decompress, leaveOpen: true );
-                                                         },
-                                                         dC,
-                                                         d => d.ReadObject<SamplesV2.Town>() );
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
+            result = BinaryDeserializer.Deserialize( rewindable, dC, d => d.ReadObject<SamplesV2.Town>() );
             result.IsValid.Should().BeTrue();
             result.StreamInfo.SecondPass.Should().BeTrue();
             result.GetResult().Stats.Should().Be( t.Stats );
         }
+
     }
 }

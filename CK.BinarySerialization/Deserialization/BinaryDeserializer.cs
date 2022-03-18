@@ -153,7 +153,7 @@ namespace CK.BinarySerialization
 
             /// <summary>
             /// Gets the deserialization function result that is possibly the default value of <typeparamref name="T"/> 
-            /// instead of throwing an exception like <see cref="GetResult"/>.
+            /// instead of throwing an exception like <see cref="GetResult()"/>.
             /// </summary>
             /// <param name="throwOnInvalid">True to thrown, false to return a default value if <see cref="Result.IsValid"/> is false.</param>
             /// <returns></returns>
@@ -212,7 +212,7 @@ namespace CK.BinarySerialization
         /// <param name="s">The rewindable stream.</param>
         /// <param name="context">The context to use.</param>
         /// <param name="deserializer">The deserializer function.</param>
-        /// <returns>A result with a true <see cref="Result.IsValid"/> and a non default <see cref="Result{T}.GetResult"/> or that has captured errors.</returns>
+        /// <returns>A result with a true <see cref="Result.IsValid"/> and a non default <see cref="Result{T}.GetResult()"/> or that has captured errors.</returns>
         public static Result<T> Deserialize<T>( RewindableStream s, BinaryDeserializerContext context, Func<IBinaryDeserializer, T> deserializer )
         {
             var r = new Result<T>( s, context );
@@ -275,7 +275,7 @@ namespace CK.BinarySerialization
         /// <param name="opener">See <see cref="RewindableStream.FromFactory(Func{bool,Stream})"/>.</param>
         /// <param name="context">The context to use.</param>
         /// <param name="deserializer">The deserializer function.</param>
-        /// <returns>A result with a true <see cref="Result.IsValid"/> and a non default <see cref="Result{T}.GetResult"/>or  that has captured errors.</returns>
+        /// <returns>A result with a true <see cref="Result.IsValid"/> and a non default <see cref="Result{T}.GetResult()"/>or  that has captured errors.</returns>
         public static Result<T> Deserialize<T>( Func<bool,Stream> opener, BinaryDeserializerContext context, Func<IBinaryDeserializer, T> deserializer )
         {
             return Deserialize( RewindableStream.FromFactory( opener ), context, deserializer );

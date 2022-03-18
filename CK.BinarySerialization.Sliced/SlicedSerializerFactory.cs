@@ -16,6 +16,7 @@ namespace CK.BinarySerialization
     {
         readonly SharedBinarySerializerContext _resolver;
 
+        /// <summary>
         /// Initializes a new factory.
         /// </summary>
         /// <param name="resolver">The root resolver to use.</param>

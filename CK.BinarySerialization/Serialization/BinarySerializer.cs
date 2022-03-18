@@ -15,7 +15,7 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Gets the current serializer version.
         /// This version is always written and is available for information while 
-        /// deserializing on <see cref="IBinaryDeserializer.SerializerVersion"/> instances.
+        /// deserializing on <see cref="IBinaryDeserializer.IStreamInfo.SerializerVersion"/> instances.
         /// </summary>
         public const int SerializerVersion = 10;
 
