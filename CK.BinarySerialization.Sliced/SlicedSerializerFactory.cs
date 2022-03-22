@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,22 +8,17 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-#pragma warning disable CA2255 // The 'ModuleInitializer' attribute should not be used in libraries
-                               // This seems a perfectly valid scenario for me here: it's a library 
-                               // that registers itself to another library. The final application
-                               // doesn't have to interfere here.
-
 namespace CK.BinarySerialization
 {
     /// <summary>
     /// Factory for "Sliced" serialization drivers.
     /// </summary>
-    public class SlicedSerializerFactory : ISerializerResolver
+    public sealed class SlicedSerializerFactory : ISerializerResolver
     {
         /// <summary>
         /// Gets the default factory that is automatically registered in the <see cref="BinarySerializer.DefaultSharedContext"/>.
         /// </summary>
-        static readonly SlicedSerializerFactory Default = new SlicedSerializerFactory( BinarySerializer.DefaultSharedContext );
+        public static readonly SlicedSerializerFactory Default = new SlicedSerializerFactory();
 
         /// <summary>
         /// Initializes a new factory.

@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -41,7 +41,7 @@ namespace CK.BinarySerialization
             var writer = new CKBinaryWriter( s, Encoding.UTF8, true );
             writer.WriteSmallInt32( SerializerVersion );
             int b = BitConverter.IsLittleEndian ? 1 : 0;
-            if( Text.StringAndStringBuilderExtension.IsCRLF ) b |= 2;
+            if( StringAndStringBuilderExtension.IsCRLF ) b |= 2;
             writer.Write( (byte)b );
             return new BinarySerializerImpl( writer, context );
         }
