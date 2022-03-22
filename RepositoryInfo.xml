@@ -1,8 +1,8 @@
-﻿<RepositoryInfo>
+<RepositoryInfo>
 
-  <SimpleGitVersion SingleMajor="0">
+  <SimpleGitVersion StartingVersion="v1.0.0-alpha">
     <Branches>
-      <Branch Name="develop-NetCore3" CIVersionMode="LastReleaseBased" VersionName="develop" />
+      <Branch Name="develop" CIVersionMode="LastReleaseBased" VersionName="develop" />
     </Branches>
   </SimpleGitVersion>
 </RepositoryInfo>
