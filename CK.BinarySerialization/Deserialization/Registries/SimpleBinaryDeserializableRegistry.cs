@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Reflection;
 
@@ -70,7 +70,7 @@ namespace CK.BinarySerialization
                 if( internalCall && info.IsPossibleNominalDeserialization )
                 {
                     // We cache the driver only if the TargetType is the LocalType ("nominal" deserializers) since if they differ,
-                    // an adaptation via VersionedBinaryDeserializableDriverVFromRef may be required (for the moment, struct from/to class is
+                    // an adaptation via SimpleBinaryDeserializableDriverVFromRef may be required (for the moment, struct from/to class is
                     // the only existing adaptation).
                     // We may have duplicate calls to Create here (that should barely happen but who knows), but GetOrAdd
                     // will return the winner.

@@ -38,7 +38,7 @@ namespace CK.BinarySerialization.Tests
                 }
             }
 
-            public void Write( ICKBinaryWriter w )
+            public void WriteData( ICKBinaryWriter w )
             {
                 w.Write( Power );
                 w.Write( Name ?? "" );
@@ -68,7 +68,7 @@ namespace CK.BinarySerialization.Tests
                 Power = r.ReadInt32();
             }
 
-            public void Write( ICKBinaryWriter w )
+            public void WriteData( ICKBinaryWriter w )
             {
                 w.Write( Power );
             }
@@ -84,14 +84,14 @@ namespace CK.BinarySerialization.Tests
 
         struct MissingVersionValueType : ICKVersionedBinarySerializable
         {
-            public void Write( ICKBinaryWriter w )
+            public void WriteData( ICKBinaryWriter w )
             {
             }
         }
 
         sealed class MissingVersionReferenceType : ICKVersionedBinarySerializable
         {
-            public void Write( ICKBinaryWriter w )
+            public void WriteData( ICKBinaryWriter w )
             {
             }
         }
@@ -112,7 +112,7 @@ namespace CK.BinarySerialization.Tests
 
         class MissingSealedReferenceType : ICKVersionedBinarySerializable
         {
-            public void Write( ICKBinaryWriter w )
+            public void WriteData( ICKBinaryWriter w )
             {
             }
         }
@@ -130,7 +130,7 @@ namespace CK.BinarySerialization.Tests
         [SerializationVersion(0)]
         struct MissingCtorValueType : ICKVersionedBinarySerializable
         {
-            public void Write( ICKBinaryWriter w )
+            public void WriteData( ICKBinaryWriter w )
             {
             }
         }
@@ -138,7 +138,7 @@ namespace CK.BinarySerialization.Tests
         [SerializationVersion( 0 )]
         sealed class MissingCtorReferenceType : ICKVersionedBinarySerializable
         {
-            public void Write( ICKBinaryWriter w )
+            public void WriteData( ICKBinaryWriter w )
             {
             }
         }

@@ -1,10 +1,11 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using CK.Core;
 using static CK.Testing.MonitorTestHelper;
 using FluentAssertions;
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 
 namespace CK.BinarySerialization.Tests
 {
@@ -82,6 +83,7 @@ namespace CK.BinarySerialization.Tests
 
             public Sample( int power, string name, short? age )
             {
+                Throw.CheckNotNullOrEmptyArgument( name );
                 Power = power;
                 Name = name;
                 Age = age;
@@ -99,7 +101,7 @@ namespace CK.BinarySerialization.Tests
             {
                 w.Write( (byte)0 ); // Version
                 w.Write( Power );
-                w.Write( Name ?? "" );
+                w.Write( Name );
                 w.WriteNullableInt16( Age );
             }
         }
@@ -226,6 +228,80 @@ namespace CK.BinarySerialization.Tests
             backC.Should().BeEquivalentTo( c );
         }
 
+        /// <summary>
+        /// Supporting both interfaces enables simple scenario to use the embedded version
+        /// (to be used when not too many instances must be serialized) or use the shared version
+        /// (when many instances must be serialized).
+        /// </summary>
+        [SerializationVersion( 3712 )]
+        sealed class CanSupportBothSimpleSerialization : ICKSimpleBinarySerializable, ICKVersionedBinarySerializable
+        {
+            public bool SimpleWriteCalled;
+            public bool SimpleDeserializationConstructorCalled;
+            public bool VersionedWriteCalled;
+            public bool VersionedDeserializationConstructorCalled;
+
+            public string? Data { get; set; }
+
+            public CanSupportBothSimpleSerialization( string? data )
+            {
+                Data = data;
+            }
+
+            /// <summary>
+            /// Simple deserialization constructor.
+            /// </summary>
+            /// <param name="r">The reader.</param>
+            public CanSupportBothSimpleSerialization( ICKBinaryReader r )
+                : this( r, r.ReadSmallInt32() )
+            {
+                SimpleDeserializationConstructorCalled = true;
+            }
+
+            /// <summary>
+            /// Versioned deserialization constructor.
+            /// </summary>
+            /// <param name="r">The reader.</param>
+            /// <param name="version">The saved version number.</param>
+            public CanSupportBothSimpleSerialization( ICKBinaryReader r, int version )
+            {
+                version.Should().Be( 3712 );
+                // Use the version as usual.
+                Data = r.ReadNullableString();
+                VersionedDeserializationConstructorCalled = true;
+            }
+
+            public void Write( ICKBinaryWriter w )
+            {
+                // Using a Debug.Assert here avoids the cost of the reflexion.
+                Debug.Assert( SerializationVersionAttribute.GetRequiredVersion( GetType() ) == 3712 );
+                w.WriteSmallInt32( 3712 );
+                WriteData( w );
+                SimpleWriteCalled = true;
+            }
+
+            public void WriteData( ICKBinaryWriter w )
+            {
+                // The version is externally managed.
+                w.WriteNullableString( Data );
+
+                VersionedWriteCalled = true;
+            }
+        }
+
+        [Test]
+        public void simple_AND_versioned_serialization_easily_coexist_and_the_BinarySerializer_use_the_Versioned_one()
+        {
+            var c = new CanSupportBothSimpleSerialization( "yep" );
+            var backC = TestHelper.SaveAndLoadObject( c );
+            backC.Data.Should().Be( c.Data );
+
+            c.SimpleWriteCalled.Should().BeFalse();
+            c.VersionedWriteCalled.Should().BeTrue();
+
+            backC.SimpleDeserializationConstructorCalled.Should().BeFalse();
+            backC.VersionedDeserializationConstructorCalled.Should().BeTrue();
+        }
 
     }
 }

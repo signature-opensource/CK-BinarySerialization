@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -28,7 +28,12 @@ namespace CK.Core
         /// This binary layout will be read by a deserialization constructor that takes a <see cref="ICKBinaryReader"/> 
         /// and a int version.
         /// </summary>
+        /// <remarks>
+        /// This method is named WriteData so that an object can implement both <see cref="ICKSimpleBinarySerializable"/>
+        /// (with its <see cref="ICKSimpleBinarySerializable.Write(ICKBinaryWriter)"/> that must write its version) and
+        /// this <see cref="ICKVersionedBinarySerializable"/> where the version number must be externally managed.
+        /// </remarks>
         /// <param name="w">The writer.</param>
-        void Write( ICKBinaryWriter w );
+        void WriteData( ICKBinaryWriter w );
     }
 }

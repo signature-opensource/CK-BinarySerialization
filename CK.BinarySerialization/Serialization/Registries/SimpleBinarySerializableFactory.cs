@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Diagnostics;
 
@@ -32,10 +32,6 @@ namespace CK.BinarySerialization
         {
             try
             {
-                if( typeof( ICKSimpleBinarySerializable ).IsAssignableFrom( t ) )
-                {
-                    return CreateSimple( t );
-                }
                 if( typeof( ICKVersionedBinarySerializable ).IsAssignableFrom( t ) )
                 {
                     if( !t.IsValueType && !t.IsSealed )
@@ -43,6 +39,10 @@ namespace CK.BinarySerialization
                         throw new InvalidOperationException( $"Type '{t}' cannot implement {nameof(ICKVersionedBinarySerializable)} interface. It must be a sealed class or a value type." );
                     }
                     return CreateSealed( t );
+                }
+                if( typeof( ICKSimpleBinarySerializable ).IsAssignableFrom( t ) )
+                {
+                    return CreateSimple( t );
                 }
             }
             catch( System.Reflection.TargetInvocationException ex )
@@ -90,7 +90,7 @@ namespace CK.BinarySerialization
 
             public override int SerializationVersion { get; }
 
-            protected internal override void Write( IBinarySerializer s, in T o ) => o.Write( s.Writer );
+            protected internal override void Write( IBinarySerializer s, in T o ) => o.WriteData( s.Writer );
         }
 
         sealed class SealedBinarySerializableDriverV<T> : StaticValueTypeSerializer<T> where T : struct, ICKVersionedBinarySerializable
@@ -101,7 +101,7 @@ namespace CK.BinarySerialization
 
             public override int SerializationVersion { get; }
 
-            public static void Write( IBinarySerializer s, in T o ) => o.Write( s.Writer );
+            public static void Write( IBinarySerializer s, in T o ) => o.WriteData( s.Writer );
         }
 
         static ISerializationDriver CreateSealed( Type t )

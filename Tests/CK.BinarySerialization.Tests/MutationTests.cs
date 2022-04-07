@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using FluentAssertions;
 using NUnit.Framework;
 using System;
@@ -14,20 +14,29 @@ namespace CK.BinarySerialization.Tests
         [SerializationVersion( 42 )]
         struct ThingStruct : ICKVersionedBinarySerializable
         {
+            // Name was nullable before v42.
+            // Now it is necessarily not null, empty or white space.
             public readonly string Name;
 
             public ThingStruct( string name )
             {
+                Throw.CheckNotNullOrWhiteSpaceArgument( name );
                 Name = name;
             }
 
             public ThingStruct( ICKBinaryReader r, int version )
             {
-                version.Should().Be( 42 );
-                Name = r.ReadString();
+                if( version < 42 )
+                {
+                    Name = r.ReadNullableString() ?? "(no name)";
+                }
+                else
+                {
+                    Name = r.ReadString();
+                }
             }
 
-            public void Write( ICKBinaryWriter w )
+            public void WriteData( ICKBinaryWriter w )
             {
                 w.Write( Name );
             }
@@ -49,7 +58,7 @@ namespace CK.BinarySerialization.Tests
                 Name = r.ReadString();
             }
 
-            public void Write( ICKBinaryWriter w )
+            public void WriteData( ICKBinaryWriter w )
             {
                 w.Write( Name );
             }
@@ -175,9 +184,9 @@ namespace CK.BinarySerialization.Tests
                 Name = r.ReadString();
             }
 
-            public void Write( ICKBinaryWriter w )
+            public void WriteData( ICKBinaryWriter w )
             {
-                // No more version to write.
+                // WriteData: No more version to write.
                 w.Write( V5HasANewProp );
                 w.Write( Name );
             }
@@ -243,14 +252,14 @@ namespace CK.BinarySerialization.Tests
                     {
                         // Coming from the AnotherThingButClassAndVersioned, the one before deciding that Simple will be better.
                         // No future byte version to read.
-                        actualVersion= version;
+                        actualVersion = version;
                     }
                     else
                     {
                         // The current version, the one ready to be muted into Simple: it has its version byte.
                         version.Should().Be( 6 );
                         // We can read (or simply skip) the future simple version byte (that is 6).
-                        actualVersion = r.ReadByte();
+                        actualVersion = r.ReadByte(); // Or r.ReadByte(); only to skip it.
                     }
                 }
                 // (Handle the different versions as needed.)
@@ -263,9 +272,10 @@ namespace CK.BinarySerialization.Tests
                 Name = r.ReadString();
             }
 
-            public void Write( ICKBinaryWriter w )
+            public void WriteData( ICKBinaryWriter w )
             {
                 // Prepare the future by writing the version byte.
+                // (This is not what WriteData must do but it's required for the version 6.
                 w.Write( (byte)6 );
                 w.Write( Name );
             }
@@ -273,7 +283,7 @@ namespace CK.BinarySerialization.Tests
 
         // This can be used ONLY once the version 6 is everywhere!
         // You should not reset the version to 0 for this one unless you remember that 
-        // 6 was the "special back to Simple" version (and skip it one you reach 6 again).
+        // 6 was the "special back to Simple" version (and skip it once you reach 6 again).
         readonly struct AnotherThingBackToSimple : ICKSimpleBinarySerializable
         {
             public readonly string Name;

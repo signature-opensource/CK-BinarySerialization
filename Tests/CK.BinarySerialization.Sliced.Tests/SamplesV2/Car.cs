@@ -29,7 +29,7 @@ namespace CK.BinarySerialization.Tests.SamplesV2
             BuildDate = r.ReadDateTime();
         }
 
-        public void Write( ICKBinaryWriter w )
+        public void WriteData( ICKBinaryWriter w )
         {
             w.Write( Model );
             w.Write( BuildDate );
