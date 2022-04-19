@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Reflection;
 
 namespace CK.BinarySerialization
 {
@@ -17,6 +17,7 @@ namespace CK.BinarySerialization
         readonly Dictionary<Type, ISerializationDriver?> _cache;
         readonly Dictionary<object, string> _knownObjects;
         readonly SharedBinarySerializerContext _shared;
+        readonly NullabilityInfoContext _nullabilityCtx;
         int _maxRecurse;
         bool _inUse;
 
@@ -30,6 +31,7 @@ namespace CK.BinarySerialization
             _knownObjects = new Dictionary<object, string>();
             _shared = shared;
             _maxRecurse = 100;
+            _nullabilityCtx = new NullabilityInfoContext();
         }
 
         /// <summary>
