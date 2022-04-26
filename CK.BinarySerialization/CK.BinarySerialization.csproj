@@ -1,28 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <Import Project="..\Common\Shared.props" />
-	
   <PropertyGroup>
     <TargetFramework>net6</TargetFramework>
-	<Nullable>enable</Nullable>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
-
   <ItemGroup>
-	  <PackageReference Include="CK.Core" Version="15.0.0-r04-02-0023-develop" />
-	  <PackageReference Include="CSemVer" Version="10.1.0" />
+    <PackageReference Include="CK.Core" Version="15.0.0-r05" />
+    <PackageReference Include="CSemVer" Version="10.1.0" />
   </ItemGroup>
-
   <ItemGroup>
     <None Update="Deserialization\Drivers\DDTuple.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>DDTuple.cs</LastGenOutput>
     </None>
   </ItemGroup>
-
   <ItemGroup>
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
-
   <ItemGroup>
     <Compile Update="Deserialization\Drivers\DDTuple.cs">
       <DesignTime>True</DesignTime>
@@ -30,5 +24,4 @@
       <DependentUpon>DDTuple.tt</DependentUpon>
     </Compile>
   </ItemGroup>
-
 </Project>
