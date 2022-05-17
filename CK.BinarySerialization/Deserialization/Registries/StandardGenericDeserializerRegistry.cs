@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -128,6 +128,7 @@ namespace CK.BinarySerialization
                     }
                 case "Dictionary": return TryGetDoubleGenericParameter( info.ReadInfo, typeof( Deserialization.DDictionary<,> ) );
                 case "List": return TryGetSingleGenericParameter( info.ReadInfo, typeof( Deserialization.DList<> ) );
+                case "Set": return TryGetSingleGenericParameter( info.ReadInfo, typeof( Deserialization.DHashSet<> ) );
                 case "Stack": return TryGetSingleGenericParameter( info.ReadInfo, typeof( Deserialization.DStack<> ) );
                 case "Queue": return TryGetSingleGenericParameter( info.ReadInfo, typeof( Deserialization.DQueue<> ) );
             }

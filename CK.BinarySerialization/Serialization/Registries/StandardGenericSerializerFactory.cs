@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -58,6 +58,10 @@ namespace CK.BinarySerialization
                 if( tGen == typeof( List<> ) )
                 {
                     return TryCreateSingleGenericParam( t, typeof( Serialization.DList<> ) );
+                }
+                if( tGen == typeof( HashSet<> ) )
+                {
+                    return TryCreateSingleGenericParam( t, typeof( Serialization.DHashSet<> ) );
                 }
                 if( tGen == typeof( Dictionary<,> ) )
                 {

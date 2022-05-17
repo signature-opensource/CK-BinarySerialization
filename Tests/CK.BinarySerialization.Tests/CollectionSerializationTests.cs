@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using CK.Core;
@@ -83,6 +83,20 @@ namespace CK.BinarySerialization.Tests
 
             a.Clear();
             ((Queue<uint>)TestHelper.SaveAndLoadObject( a )).Should().BeEmpty();
+        }
+
+        [Test]
+        public void HashSet_serialization()
+        {
+            var a = new HashSet<uint>();
+            a.Add( 3712 );
+            a.Add( 42 );
+            a.Add( 57161671 );
+            a.Add( 5468 );
+            object? backA = TestHelper.SaveAndLoadObject( a );
+            backA.Should().BeEquivalentTo( a );
+            a.Clear();
+            ((HashSet<uint>)TestHelper.SaveAndLoadObject( a )).Should().BeEmpty();
         }
 
         [Test]
