@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reflection;
 
 namespace CK.BinarySerialization
@@ -66,7 +66,7 @@ namespace CK.BinarySerialization
         /// Initializes a <see cref="StaticValueTypeSerializer{T}"/> where the public static Write method must be 
         /// declared in the specialized type.
         /// </summary>
-        public StaticValueTypeSerializer()
+        protected StaticValueTypeSerializer()
         {
             _tWriter = GetTypedWriter( GetType() );
             _uWriter = WriteUntyped;

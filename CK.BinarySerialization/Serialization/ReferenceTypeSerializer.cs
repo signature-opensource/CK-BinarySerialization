@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace CK.BinarySerialization
@@ -51,7 +51,7 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Initializes a new <see cref="ReferenceTypeSerializer{T}"/>.
         /// </summary>
-        public ReferenceTypeSerializer()
+        protected ReferenceTypeSerializer()
         {
             _tWriter = WriteRefOrInstance;
             _nullable = new ReferenceTypeNullable( this );
