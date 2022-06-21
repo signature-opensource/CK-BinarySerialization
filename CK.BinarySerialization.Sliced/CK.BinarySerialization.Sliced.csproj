@@ -1,14 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-	<Import Project="..\Common\Shared.props" />
-
-	<PropertyGroup>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
     <TargetFramework>net6</TargetFramework>
-	<Nullable>enable</Nullable>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\CK.BinarySerialization\CK.BinarySerialization.csproj" />
   </ItemGroup>
-
 </Project>
