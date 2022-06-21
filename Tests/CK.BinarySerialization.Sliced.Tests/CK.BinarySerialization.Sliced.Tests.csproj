@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6</TargetFramework>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>CK.BinarySerialization.Tests</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\CK.BinarySerialization.Tests\TestHelperExtensions.cs" Link="TestHelperExtensions.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CK.Testing.Monitoring" Version="3.0.0" />
+    <PackageReference Include="NUnit" Version="3.13.3" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\CK.BinarySerialization.Sliced\CK.BinarySerialization.Sliced.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="TestResults\" />
+  </ItemGroup>
+</Project>

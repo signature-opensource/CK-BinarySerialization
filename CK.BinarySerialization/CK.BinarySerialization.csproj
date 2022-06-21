@@ -1,18 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <Import Project="..\Common\Shared.props" />
-	
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-	  <Nullable>enable</Nullable>
+    <TargetFramework>net6</TargetFramework>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="CK.Core" Version="14.2.2" />
+    <PackageReference Include="CK.Core" Version="15.0.0" />
+    <PackageReference Include="CSemVer" Version="11.0.0" />
   </ItemGroup>
-
   <ItemGroup>
-    <Folder Include="UnifiedTypes\" />
+    <None Update="Deserialization\Drivers\DDTuple.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>DDTuple.cs</LastGenOutput>
+    </None>
   </ItemGroup>
-
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Deserialization\Drivers\DDTuple.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>DDTuple.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
 </Project>

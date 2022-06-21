@@ -4,14 +4,14 @@ using System.Text;
 
 namespace CK.BinarySerialization
 {
-    public enum SerializationMarker : byte
+    enum SerializationMarker : byte
     {
         Null,
-        Object,
-        Struct,
+        ObjectData,
         ObjectRef,
         Type,
         DeferredObject,
-        EmptyObject
+        EmptyObject,
+        KnownObject,
     }
 }

@@ -1,41 +1,119 @@
 ﻿using CK.Core;
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace CK.BinarySerialization
 {
-    public interface IBinaryDeserializer : IDisposable
+    /// <summary>
+    /// Main interface that handles object graph deserialization.
+    /// </summary>
+    public interface IBinaryDeserializer
     {
+        /// <summary>
+        /// Exposes informations related to the way the stream to deserialize has been 
+        /// saved.
+        /// </summary>
+        public interface IStreamInfo
+        {
+            /// <summary>
+            /// Gets the version of the serializer used to serialize this data.
+            /// Current version is <see cref="BinarySerializer.SerializerVersion"/>.
+            /// </summary>
+            int SerializerVersion { get; }
+
+            /// <summary>
+            /// Gets whether the stream has been serialized on a <see cref="BitConverter.IsLittleEndian"/>
+            /// platform.
+            /// </summary>
+            bool IsLittleEndian { get; }
+
+            /// <summary>
+            /// Gets whether the stream has been serialized with a '\r\n' end-of-line default.
+            /// </summary>
+            bool IsCRLF { get; }
+
+            /// <summary>
+            /// Gets the kind of rewindable stream being used.
+            /// </summary>
+            RewindableStreamKind Kind { get; }
+
+            /// <summary>
+            /// Gets whether we are currently in the second pass that handles a class to struct mutation
+            /// (happens if and only if one instance of the written class has been used to cut the recursion).
+            /// </summary>
+            bool SecondPass { get; }
+        }
+
+        /// <summary>
+        /// Gets the stream information.
+        /// </summary>
+        IStreamInfo StreamInfo { get; }
+
+        /// <summary>
+        /// Gets the context of this deserializer.
+        /// </summary>
+        BinaryDeserializerContext Context { get; }
+
         /// <summary>
         /// Gets the basic binary reader.
         /// </summary>
         ICKBinaryReader Reader { get; }
 
         /// <summary>
-        /// Reads a <see cref="TypeReadInfo"/> from a <see cref="IBinarySerializer.WriteTypeInfo(Type)"/>.
+        /// Reads a <see cref="ITypeReadInfo"/> written by <see cref="IBinarySerializer.WriteTypeInfo(Type, bool?)"/>.
         /// </summary>
         /// <returns>The type information.</returns>
-        TypeReadInfo ReadTypeInfo();
+        ITypeReadInfo ReadTypeInfo();
 
         /// <summary>
-        /// Gets a configurable container of services available for constructor
-        /// injection in the deserialized instances.
+        /// Reads a non null object or value type previously written by <see cref="IBinarySerializer.WriteAnyNullable(object?)"/>
+        /// or <see cref="IBinarySerializer.WriteAny(object)"/>.
         /// </summary>
-        IServiceProvider Services { get; }
+        /// <returns>The object or value type (possibly in an intermediate state) or null.</returns>
+        object? ReadAnyNullable();
 
         /// <summary>
-        /// Reads an object previously written by <see cref="IBinarySerializer.WriteObject(object)"/>.
+        /// Reads a non null object or value type previously written by <see cref="IBinarySerializer.WriteAny(object)"/>.
         /// </summary>
         /// <returns>The object read, possibly in an intermediate state.</returns>
-        object ReadObject();
+        object ReadAny();
 
         /// <summary>
-        /// Reads an object previously written by <see cref="IBinarySerializer.WriteNullableObject(object?)"/>.
+        /// Reads a non null object reference written by <see cref="IBinarySerializer.WriteObject{T}(T)"/> 
+        /// or <see cref="IBinarySerializer.WriteAny(object)"/>.
         /// </summary>
-        /// <returns>The object read (possibly in an intermediate state) or null.</returns>
-        object? ReadNullableObject();
+        /// <typeparam name="T">The object's expected type.</typeparam>
+        /// <returns>The object read, possibly in an intermediate state.</returns>
+        T ReadObject<T>() where T : class;
+
+        /// <summary>
+        /// Reads a nullable object reference.
+        /// </summary>
+        /// <typeparam name="T">The object's expected type.</typeparam>
+        /// <returns>The object or value type (possibly in an intermediate state) or null.</returns>
+        T? ReadNullableObject<T>() where T : class;
+
+        /// <summary>
+        /// Reads a non null value type written by <see cref="IBinarySerializer.WriteValue{T}(in T)"/>.
+        /// </summary>
+        /// <typeparam name="T">The value's expected type.</typeparam>
+        /// <returns>The value read. If this value has references to objects, these objects may be in an intermediate state.</returns>
+        T ReadValue<T>() where T : struct;
+
+        /// <summary>
+        /// Reads a nullable value type.
+        /// </summary>
+        /// <typeparam name="T">The value's expected type.</typeparam>
+        /// <returns>The value read or null. If this value has references to objects, these objects may be in an intermediate state.</returns>
+        T? ReadNullableValue<T>() where T : struct;
+
+        /// <summary>
+        /// Gets a simple deferred container of <see cref="Action"/> that 
+        /// enables deserialization constructors to execute any code once the 
+        /// whole object graph is deserialized and all the objects are properly restored.
+        /// </summary>
+        Deserialization.PostActions PostActions { get; }
 
         /// <summary>
         /// Gets whether this deserializer is currently in debug mode.
@@ -62,7 +140,7 @@ namespace CK.BinarySerialization
         /// When <see cref="IsDebugMode"/> is false, returns null.
         /// </summary>
         /// <param name="ctx">The stacked message.</param>
-        /// <returns>A disposable that will pop the message or null is not in debug mode.</returns>
+        /// <returns>A disposable that will pop the message or null if not in debug mode.</returns>
         IDisposable? OpenDebugPushContext( string ctx );
     }
 }

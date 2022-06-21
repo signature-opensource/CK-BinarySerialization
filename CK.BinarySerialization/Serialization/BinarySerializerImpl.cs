@@ -5,126 +5,248 @@ using System.Collections.Generic;
 
 namespace CK.BinarySerialization
 {
-    class BinarySerializerImpl : IBinarySerializer
+
+    class BinarySerializerImpl : IDisposableBinarySerializer
     {
         readonly ICKBinaryWriter _writer;
-        readonly ISerializerResolver _resolver;
-        readonly Dictionary<Type, (int Idx, ITypeSerializationDriver? D)> _types;
-        readonly Action<IDestroyable>? _destroyedTracker;
+        // Waiting for NullableTypeTree: the bool is for notNullable reference type which is 
+        // currently only true for reference types that appear as a dictionary key.
+        readonly Dictionary<NullableTypeRoot, (int Idx, ISerializationDriver? D)> _types;
         readonly Dictionary<object, int> _seen;
+        readonly BinarySerializerContext _context;
 
-        public const int MaxRecurse = 50;
         int _recurseCount;
-        Stack<(ITypeSerializationDriver D, object O)>? _deferred;
+        Stack<(ISerializationDriverInternal D, object O)>? _deferred;
 
         int _debugModeCounter;
         int _debugSentinel;
-        bool _leaveOpen;
-
-        public BinarySerializerImpl( ICKBinaryWriter writer, bool leaveOpen, ISerializerResolver resolver, Action<IDestroyable>? destroyedTracker )
+        
+        public BinarySerializerImpl( ICKBinaryWriter writer, BinarySerializerContext context )
         {
+            (_context = context).Acquire();
             _writer = writer;
-            _leaveOpen = leaveOpen;
-            _resolver = resolver;
-            _destroyedTracker = destroyedTracker;
-            _types = new Dictionary<Type, (int, ITypeSerializationDriver?)>();
+            _types = new Dictionary<NullableTypeRoot, (int, ISerializationDriver?)>();
             _seen = new Dictionary<object, int>( PureObjectRefEqualityComparer<object>.Default );
         }
 
         public void Dispose()
         {
-            if( !_leaveOpen && _writer is IDisposable d )
-            {
-                _leaveOpen = true;
-                d.Dispose();
-            }
+            _context.Release();
+            if( _writer is IDisposable d ) d.Dispose();
         }
 
         public ICKBinaryWriter Writer => _writer;
 
-        public bool WriteTypeInfo( Type t )
+        public BinarySerializerContext Context => _context;
+
+        public event Action<IDestroyable>? OnDestroyedObject;
+
+        public bool WriteTypeInfo( Type t, bool? nullable = null )
         {
-            if( t == null ) throw new ArgumentNullException( nameof( t ) );
-            return WriteTypeInfo( t, null );
+            return WriteTypeInfo( new NullableTypeRoot( t, nullable ), null, false );
         }
 
-        bool WriteTypeInfo( Type t, ITypeSerializationDriver? knownDriver )
+        bool WriteTypeInfo( NullableTypeRoot nT, ISerializationDriver? driver, bool driverLookupDone )
         {
-            if( _types.TryGetValue( t, out var info ) )
+            if( _types.TryGetValue( nT, out var info ) )
             {
                 _writer.WriteNonNegativeSmallInt32( info.Idx );
                 return false;
             }
-            var d = knownDriver ?? _resolver.TryFindDriver( t );
-            info = (_types.Count, d);
-            _types.Add( t, info );
-            _writer.WriteNonNegativeSmallInt32( info.Idx );
-            if( d != null )
+
+            void RegisterAndWriteIndex( NullableTypeRoot nT, ISerializationDriver? d )
             {
-                _writer.WriteSharedString( d.DriverName );
-                _writer.WriteSmallInt32( d.SerializationVersion );
+                var i = (_types.Count, d);
+                _types.Add( nT, i );
+                _writer.WriteNonNegativeSmallInt32( i.Item1 );
+            }
+
+            bool WriteElementTypeInfo( Type t )
+            {
+                Type? e = t.GetElementType();
+                if( e == null || e.IsGenericParameter )
+                {
+                    throw new ArgumentException( $"Type '{t}' is not supported. Its ElementType must be not null and must not be IsGenericParameter." );
+                }
+                WriteTypeInfo( e );
+                return true;
+            }
+
+            static string GetNotSoSimpleName( Type t )
+            {
+                var decl = t.DeclaringType;
+                return decl != null ? GetNotSoSimpleName( decl ) + '+' + t.Name : t.Name;
+            }
+
+            // Here t is the non nullable value type or the reference type (or a byref/pointer but these will be handled right below).
+            var t = nT.Type;
+            // Handles special types that have no drivers nor base types.
+            if( t.IsPointer )
+            {
+                RegisterAndWriteIndex( nT, null );
+                _writer.Write( (byte)'P' );
+                WriteElementTypeInfo( t );
+                return true;
+            }
+            if( t.IsByRef )
+            {
+                RegisterAndWriteIndex( nT, null );
+                _writer.Write( (byte)'R' );
+                WriteElementTypeInfo( t );
+                return true;
+            }
+            // Now we may have a driver names.
+            if( driver == null && !driverLookupDone )
+            {
+                driver = _context.TryFindDriver( t );
+                if( driver != null ) driver = nT.IsNullable ? driver.ToNullable : driver.ToNonNullable;
+            }
+            RegisterAndWriteIndex( nT, driver );
+            // We don't write nullable types, we just emit a '?' and then the 
+            // non nullable type info.
+            if( nT.IsNullable )
+            {
+                _writer.Write( (byte)'?' );
+                WriteTypeInfo( nT.ToNonNullable(), driver?.ToNonNullable, true );
+                return true;
+            }
+            // Now we only write the non nullable info after a byte
+            // that qualifies the type.
+            if( t.IsArray )
+            {
+                if( t.ContainsGenericParameters )
+                {
+                    _writer.Write( (byte)'A' );
+                    _writer.WriteSmallInt32( t.GetArrayRank(), 1 );
+                }
+                else
+                {
+                    _writer.Write( (byte)'a' );
+                    _writer.WriteSmallInt32( t.GetArrayRank(), 1 );
+                    WriteElementTypeInfo( t );
+                    _writer.WriteSharedString( driver?.DriverName );
+                }
+                return true;
+            }
+            if( t.IsGenericType )
+            {
+                // For Generics we consider only Opened vs. Closed ones.
+                if( t.ContainsGenericParameters )
+                {
+                    _writer.Write( (byte)'O' );
+                }
+                else
+                {
+                    // Use uppercase for generic types.
+                    if( t.IsClass )
+                    {
+                        if( t.IsSealed )
+                        {
+                            _writer.Write( (byte)'S' );
+                        }
+                        else
+                        {
+                            _writer.Write( (byte)'C' );
+                        }
+                    }
+                    else
+                    {
+                        _writer.Write( (byte)'V' );
+                    }
+                    var args = t.GetGenericArguments();
+                    // Currently we work in oblivious nullable mode: all reference types are de facto nullable,
+                    // except one: the dictionary key.
+                    if( args.Length == 2 && t.GetGenericTypeDefinition() == typeof( Dictionary<,> ) )
+                    {
+                        _writer.WriteNonNegativeSmallInt32( 2 );
+                        WriteTypeInfo( args[0], false );
+                        WriteTypeInfo( args[1] );
+                    }
+                    else
+                    {
+                        _writer.WriteNonNegativeSmallInt32( args.Length );
+                        foreach( var p in args )
+                        {
+                            WriteTypeInfo( p );
+                        }
+                    }
+                }
+            }
+            else if( t.IsEnum )
+            {
+                _writer.Write( (byte)'E' );
+                WriteTypeInfo( t.GetEnumUnderlyingType() );
+            }
+            else
+            {
+                // Uses lowercase for non generic types.
+                if( t.IsClass )
+                {
+                    if( t.IsSealed )
+                    {
+                        _writer.Write( (byte)'s' );
+                    }
+                    else
+                    {
+                        _writer.Write( (byte)'c' );
+                    }
+                }
+                else
+                {
+                    _writer.Write( (byte)'v' );
+                }
+            }
+            // Write Names.
+            if( driver != null )
+            {
+                _writer.WriteSharedString( driver.DriverName );
+                _writer.WriteSmallInt32( driver.SerializationVersion );
             }
             else
             {
                 _writer.WriteSharedString( null );
-                _writer.WriteSmallInt32( -1 );
             }
-            _writer.WriteSharedString( t.FullName );
-            _writer.WriteSharedString( t.Name );
-            _writer.WriteSharedString( t.Assembly.FullName );
-            // Write base types recursively.
-            var b = t.BaseType;
-            if( b != null && b != typeof( object ) && b != typeof( ValueType ) )
+            _writer.WriteSharedString( t.Namespace );
+            _writer.Write( GetNotSoSimpleName( t ) );
+            _writer.WriteSharedString( t.Assembly.GetName().Name );
+            if( !t.IsValueType )
             {
-                _writer.Write( true );
-                WriteTypeInfo( b );
-            }
-            else _writer.Write( false );
-            // Writes generic parameter types if any and if the type is a closed generic.
-            if( t.IsConstructedGenericType )
-            {
-                var args = t.GetGenericArguments();
-                _writer.WriteNonNegativeSmallInt32( args.Length );
-                foreach( var p in t.GetGenericArguments() )
+                var b = t.BaseType;
+                if( b != null && b != typeof( object ) && b != typeof( ValueType ) )
                 {
-                    WriteTypeInfo( p );
+                    _writer.Write( true );
+                    WriteTypeInfo( b );
                 }
+                else _writer.Write( false );
             }
-            else _writer.WriteNonNegativeSmallInt32( 0 );
             return true;
         }
 
-        bool WriteNullableObject<T>( T? o ) where T : class;
-        
-        public bool WriteObject<T>( T o ) where T : class
-        {
-            if( o == null ) throw new ArgumentNullException( "o" );
-            if( !TrackObject( o ) ) return false;
-            var d = _resolver.FindDriver<T>();
-            WriteTypeInfo( typeof( T ) );
-            d.WriteData( this, value );
+        public bool WriteObject<T>( T o ) where T : class => WriteAny( o );
 
-        }
+        public bool WriteNullableObject<T>( T? o ) where T : class => WriteAnyNullable( o );
 
-
-        public void WriteNullableValue<T>( T? value ) where T : struct
+        public void WriteNullableValue<T>( in T? value ) where T : struct
         {
             if( value.HasValue )
             {
-                _writer.Write( true );
-                WriteValue(value.Value);
+                WriteValue( value.Value );
             }
-            else _writer.Write( false );
+            else
+            {
+                _writer.Write( (byte)SerializationMarker.Null );
+            }
         }
 
-        public void WriteValue<T>( T value ) where T : struct
+        public void WriteValue<T>( in T value ) where T : struct
         {
-            var d = _resolver.FindDriver<T>();
-            WriteTypeInfo( typeof( T ) );
-            d.WriteData( this, value );
+            var d = _context.FindDriver( typeof( T ) );
+            _writer.Write( (byte)SerializationMarker.ObjectData );
+            WriteTypeInfo( new NullableTypeRoot( typeof( T ), false ), d, true );
+            ((TypedWriter<T>)d.TypedWriter)( this, value );
         }
 
-        public bool WriteNullableObject( object? o )
+        public bool WriteAnyNullable( object? o )
         {
             if( o == null )
             {
@@ -134,13 +256,13 @@ namespace CK.BinarySerialization
             return DoWriteObject( o );
         }
 
-        public bool WriteObject( object o )
+        public bool WriteAny( object o )
         {
             if( o == null ) throw new ArgumentNullException( nameof(o) );
             return DoWriteObject( o );
         }
 
-        bool TrackObject<T>( T o ) where T : class
+        internal bool TrackObject<T>( T o ) where T : class
         {
             if( _seen.TryGetValue( o, out var num ) )
             {
@@ -149,19 +271,24 @@ namespace CK.BinarySerialization
                 return false;
             }
             _seen.Add( o, _seen.Count );
+            if( OnDestroyedObject != null && o is IDestroyable d && d.IsDestroyed )
+            {
+                OnDestroyedObject( d );
+            }
             return true;
         }
 
-        bool DoWriteObject( object o )
+        internal bool DoWriteObject( object o )
         {
             if( o is Type oT )
             {
                 _writer.Write( (byte)SerializationMarker.Type );
                 return WriteTypeInfo( oT );
             }
-            SerializationMarker marker;
+            SerializationMarker marker = SerializationMarker.ObjectData;
             var t = o.GetType();
-            if( t.IsClass )
+            bool isClass = t.IsClass;
+            if( isClass )
             {
                 if( !TrackObject( o ) ) return false;
                 if( t == typeof( object ) )
@@ -169,28 +296,30 @@ namespace CK.BinarySerialization
                     _writer.Write( (byte)SerializationMarker.EmptyObject );
                     return true;
                 }
-                marker = SerializationMarker.Object;
+                string? knownObject = _context.GetKnownObjectKey( o );
+                if( knownObject != null )
+                {
+                    _writer.Write( (byte)SerializationMarker.KnownObject );
+                    _writer.Write( knownObject );
+                    return true;
+                }
             }
-            else
+            var driver = (ISerializationDriverInternal)_context.FindDriver( t ).ToNonNullable;
+            if( _recurseCount > _context.MaxRecursionDepth 
+                && isClass
+                && driver is ISerializationDriverAllowDeferredRead )
             {
-                marker = SerializationMarker.Struct;
-            }
-            ITypeSerializationDriver driver = _resolver.FindDriver( t );
-            if( _recurseCount > MaxRecurse 
-                && marker == SerializationMarker.Object
-                && driver is ITypeSerializationDriverAllowDeferredRead )
-            {
-                if( _deferred == null ) _deferred = new Stack<(ITypeSerializationDriver D, object O)>( 200 );
+                if( _deferred == null ) _deferred = new Stack<(ISerializationDriverInternal D, object O)>( 200 );
                 _deferred.Push( (driver, o) );
                 _writer.Write( (byte)SerializationMarker.DeferredObject );
-                WriteTypeInfo( t, driver );
+                WriteTypeInfo( new NullableTypeRoot( t, false ), driver, true );
             }
             else
             {
                 ++_recurseCount;
                 _writer.Write( (byte)marker );
-                WriteTypeInfo( t, driver );
-                driver.WriteData( this, o );
+                WriteTypeInfo( new NullableTypeRoot( t, false ), driver, true );
+                driver.WriteObjectData( this, o );
                 --_recurseCount;
             }
             if( _recurseCount == 0 && _deferred != null )
@@ -198,7 +327,7 @@ namespace CK.BinarySerialization
                 while( _deferred.TryPop( out var d ) )
                 {
                     ++_recurseCount;
-                    d.D.WriteData( this, d.O );
+                    d.D.WriteObjectData( this, d.O );
                     --_recurseCount;
                 }
             }
@@ -236,7 +365,18 @@ namespace CK.BinarySerialization
             }
         }
 
-        #endregion 
+        #endregion
+
+        internal static bool NextInArray( int[] coords, int[] lengths )
+        {
+            int i = coords.Length - 1;
+            while( ++coords[i] >= lengths[i] )
+            {
+                if( i == 0 ) return false;
+                coords[i--] = 0;
+            }
+            return true;
+        }
 
 
     }

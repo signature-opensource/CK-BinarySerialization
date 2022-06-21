@@ -1,0 +1,65 @@
+﻿<#@ template language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+
+<#
+    string GParams( int i ) => String.Join( ", ", Enumerable.Range( 1, i + 1 ).Select( x => $"T{x}" ) );
+    
+    string TypeReaderDecl( int i ) => String.Join( ";"+Environment.NewLine, Enumerable.Range( 1, i + 1 ).Select( x => $"readonly TypedReader<T{x}> _item{x}" ) );
+    
+    string AssignCtorParams( int i ) => String.Join( ";"+Environment.NewLine, Enumerable.Range( 1, i + 1 ).Select( x => $"_item{x} = Unsafe.As<TypedReader<T{x}>>( d[{x-1}] )" ) );
+
+    string CallReaders( int i, string readInfo ) => String.Join( ","+Environment.NewLine, Enumerable.Range( 1, i + 1 ).Select( x => $"_item{x}( d, {readInfo}.SubTypes[{x-1}] )" ) );
+#>
+
+using CK.BinarySerialization;
+using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+
+namespace CK.BinarySerialization.Deserialization
+{ 
+<# for( int i = 0; i < 7; ++i ) {
+#>
+    sealed class DTuple<<#=GParams(i)#>> : ReferenceTypeDeserializer<Tuple<<#=GParams(i)#>>>
+    {
+        <#=TypeReaderDecl( i )#>;
+
+        public DTuple( Delegate[] d, bool isCached )
+            : base( isCached )
+        {
+            <#=AssignCtorParams( i )#>;
+        }
+
+        protected override void ReadInstance( ref RefReader r )
+        {
+            Debug.Assert( r.ReadInfo.SubTypes.Count == <#=i+1#> );
+            var a = (Tuple<<#=GParams(i)#>>)RuntimeHelpers.GetUninitializedObject( typeof( Tuple<<#=GParams(i)#>> ) );
+            var d = r.SetInstance( a );
+            var parameters = new object?[]
+            {
+               <#=CallReaders( i, "r.ReadInfo" )#>
+            };
+            typeof( Tuple<<#=GParams(i)#>> ).GetConstructors()[0].Invoke( a, parameters );
+        }
+    }
+
+    sealed class DValueTuple<<#=GParams(i)#>> : ValueTypeDeserializer<ValueTuple<<#=GParams(i)#>>>
+    {
+        <#=TypeReaderDecl( i )#>;
+
+        public DValueTuple( Delegate[] d, bool isCached )
+            : base( isCached )
+        {
+            <#=AssignCtorParams( i )#>;
+        }
+
+        protected override ValueTuple<<#=GParams(i)#>> ReadInstance( IBinaryDeserializer d, ITypeReadInfo info )
+        {
+            return new ValueTuple<<#=GParams(i)#>>( <#=CallReaders( i, "info" )#> );
+        }
+    }
+<# } #>
+}
