@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using CK.Core;
@@ -18,7 +18,7 @@ namespace CK.BinarySerialization.Tests
             public Node? Parent { get; set; }
         }
 
-        class NodeSerializer : ReferenceTypeSerializer<Node>
+        sealed class NodeSerializer : ReferenceTypeSerializer<Node>
         {
             public override string DriverName => "Node needs Node!";
 
@@ -42,7 +42,7 @@ namespace CK.BinarySerialization.Tests
         // RemoveLocalTypeDeserializer that will accept only to update/remove non cached drivers: this will be perfectly
         // coherent (ignoring concurrent issues of updating the share cache when there are deserialization sessions running...)
         // since absolutely no driver that rely on it are cached. 
-        class NodeDeserializer : ReferenceTypeDeserializer<Node>
+        sealed class NodeDeserializer : ReferenceTypeDeserializer<Node>
         {
             protected override void ReadInstance( ref RefReader r )
             {

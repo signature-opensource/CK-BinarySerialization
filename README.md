@@ -30,7 +30,163 @@ are quite different beasts. They, of course, work together and the high level AP
 
 ## High level API: Serializer, Deserializer, Context and SharedContext
 
-//TODO
+### The [IBinarySerializer](CK.BinarySerialization/Serialization/IBinarySerializer.cs)
+
+To serialize a graph of objects, a `IDisposableBinarySerializer` must first be obtained thanks to `BinarySerializer.Create`
+factory method that takes a Stream and a Context.
+
+> [BinarySerializer](CK.BinarySerialization/Serialization/BinarySerializer.cs) and [BinaryDeserializer](CK.BinarySerialization/Deserialization/BinaryDeserializer.cs)
+> are purely static classes.
+
+This serializes 2 lists. (Note that a User may reference one or more Books here, any references among these objects
+will be preserved and restored.)
+```c#
+var stream = new MemoryStream();
+List<User> users = GetAllUsers();
+IReadOnlyList<Book> books = GetAllBooks();
+using( var s = BinarySerializer.Create( stream, new BinarySerializerContext() ) )
+{
+  s.WriteObject( users );
+  s.WriteObject( books );
+}
+```
+This serializer must be disposed once done with it: this ends the serialization session and release the Context.
+This Context is a cache that can be reused for another (non concurrent) serialization session: the association
+between a Type to serialize and its serializer is cached in a simple dictionary and subsequent runs are definitely faster.
+
+### The [IBinaryDeserializer](CK.BinarySerialization/Deserialization/IBinaryDeserializer.cs)
+
+Deserialization uses another pattern: a function must do the job. Here, since we must read back the 2 lists, we return
+a value tuple with the 2 lists.
+```c#
+// The stream must be correctly positioned.
+stream.Position = 0;
+var result = BinaryDeserializer.Deserialize( stream, new BinaryDeserializerContext(), d =>
+{
+  return (d.ReadObject<List<User>>(), d.ReadObject<IReadOnlyList<Book>>());
+} );
+Debug.Assert( result.IsValid );
+Debug.Assert( result.Error == null );
+
+var (users,books) = result.GetResult();
+```
+> We could also have used a closure on local variables and an `Action<IBinaryDeserializer>`
+instead of the `Func<IBinaryDeserializer, T>` deserializer function but using a value tuple here is
+cleaner.
+
+Here also the `new BinaryDeserializerContext()` can be kept and reused to significantly boost subsequent
+deserialization sessions.
+
+### The Contexts and SharedContexts
+[BinarySerializerContext](CK.BinarySerialization/Serialization/BinarySerializerContext.cs)
+and [BinaryDeserializerContext](CK.BinarySerialization/Deserialization/BinaryDeserializerContext.cs) are simple
+non concurrent caches that can be reused to avoid recomputing Type to [ISerializationDriver](CK.BinarySerialization/Serialization/Abstractions/ISerializationDriver.cs)
+and [ITypeReadInfo](CK.BinarySerialization/Deserialization/TypeReadInfo/ITypeReadInfo.cs) to [IDeserializationDriver](CK.BinarySerialization/Deserialization/Abstractions/IDeserializationDriver.cs)
+mappings.
+
+The `BinaryDeserializerContext` can also capture a `IServiceProvider` that can be used by deserializers to "rebind" the
+deserialized objects to any external services (or other contextual objects) if needed.
+
+These are only caches: mappings definition are managed by the thread safe [SharedBinarySerializerContext](CK.BinarySerialization/Serialization/Registries/SharedBinarySerializerContext.cs)
+and [SharedBinaryDeserializerContext](CK.BinarySerialization/Deserialization/Registries/SharedBinaryDeserializerContext.cs).
+
+The shared contexts choose the appropriate drivers (they respectively implement [ISerializerResolver](CK.BinarySerialization/Serialization/Abstractions/ISerializerResolver.cs)
+and [IDeserializerResolver](CK.BinarySerialization/Deserialization/Abstractions/IDeserializerResolver.cs)) and can be
+configured to handle singletons, new types and type mutations.
+
+The default shared contexts are exposed by static properties of `BinarySerializer` and `BinaryDeserializer`:
+
+```c#
+public static class BinarySerializer
+{
+    /// <summary>
+    /// Gets the default thread safe static context initialized with the <see cref="BasicTypeSerializerRegistry.Instance"/>,
+    /// <see cref="SimpleBinarySerializableFactory.Instance"/> and a <see cref="StandardGenericSerializerFactory"/>
+    /// deserializer resolvers and <see cref="SharedSerializerKnownObject.Default"/>.
+    /// </summary>
+    public static readonly SharedBinarySerializerContext DefaultSharedContext = new SharedBinarySerializerContext();
+
+    ...
+}
+
+public static class BinaryDeserializer
+{
+    /// <summary>
+    /// Gets the default thread safe static registry of <see cref="IDeserializerResolver"/>.
+    /// </summary>
+    public static readonly SharedBinaryDeserializerContext DefaultSharedContext;
+
+    ...
+}
+```
+
+### Handling "true" singletons
+
+How do you serialize [DBNull.Value](https://docs.microsoft.com/en-us/dotnet/api/system.dbnull)?
+Or [StringComparer.OrdinalIgnoreCase](https://docs.microsoft.com/en-us/dotnet/api/system.stringcomparer.ordinalignorecase)?
+
+This is a more complex issue than it may appear. CK.BinarySerialization implements a basic answer by allowing to give a
+name to these objects.
+
+[SharedSerializerKnownObject](CK.BinarySerialization/Serialization/Registries/SharedSerializerKnownObject.cs) and
+[SharedDeserializerKnownObject](CK.BinarySerialization/Deserialization/Registries/SharedDeserializerKnownObject.cs)
+both expose a static `Default` property that can be used to register these "known objects".
+
+By default, the following singletons are registered: `DBNull.Value`, `Type.Missing`, `StringComparer.Ordinal`,
+`StringComparer.OrdinalIgnoreCase`, `StringComparer.InvariantCulture`, `StringComparer.InvariantCultureIgnoreCase`,
+`StringComparer.CurrentCulture`,`StringComparer.CurrentCultureIgnoreCase`.
+
+This is not perfect but it works.
+
+### Supporting new types
+Any type can be serialized thanks to dedicated Serializers and Deserializers that can be registered in the shared contexts.
+
+For a simple (but potentially recursive) class like this one:
+```c#
+  class Node
+  {
+      public string? Name { get; set; }
+
+      public Node? Parent { get; set; }
+  }
+```
+Its serializer is a `ReferenceTypeSerializer<Node>`. The `DriverName` must be unique (but can be any string),
+the `SerializationVersion` typically starts at 0 and must be incremented whenever the binary layout changes:
+```c#
+  sealed class NodeSerializer : ReferenceTypeSerializer<Node>
+  {
+      public override string DriverName => "Node needs Node!";
+
+      public override int SerializationVersion => 0;
+
+      protected override void Write( IBinarySerializer s, in Node o )
+      {
+          s.Writer.WriteNullableString( o.Name );
+          s.WriteNullableObject( o.Parent );
+      }
+  }
+```
+The `ReferenceTypeDeserializer<Node>` is even simpler:
+```c#
+  sealed class NodeDeserializer : ReferenceTypeDeserializer<Node>
+  {
+      protected override void ReadInstance( ref RefReader r )
+      {
+          Debug.Assert( r.ReadInfo.Version == 0 );
+          var n = new Node();
+          var d = r.SetInstance( n );
+          n.Name = r.Reader.ReadNullableString();
+          n.Parent = d.ReadNullableObject<Node>();
+      }
+  }
+```
+Registering these deserializer and serializer in the default shared contexts must be obviously done
+before any de/serialization, typically in a type initializer (a Type's static constructor):
+```c#
+BinarySerializer.DefaultSharedContext.AddSerializationDriver( typeof( Node ), new NodeSerializer() );
+BinaryDeserializer.DefaultSharedContext.AddLocalTypeDeserializer( new NodeDeserializer() );
+``` 
+
 
 ## Nullable handling is currently partial
 
@@ -98,8 +254,8 @@ The `CK.BinarySerialization.ICKSlicedSerializable` interface is a pure marker in
     }
 ```
 
-This interface implies that the type must support the SerializationVersion attribute, a deserialization constructor, a `public static Write`
-method (and, if the class is not sealed, a special empty deserialization constructor to be called by specialized types). 
+This interface implies that the type must be decorated with the SerializationVersion attribute, exposes a deserialization constructor,
+a `public static Write` method (and, if the class is not sealed, a special empty deserialization constructor to be called by specialized types). 
 Below is a typical base class implementation (`IsDestroyed` property is discussed below):
 
 ```c#
@@ -246,6 +402,9 @@ can be done easily:
         MyStatus = d.Reader.ReadEnum<Status>();
     }
 ```
+> `ICKBinaryWriter.WriteEnum<T>(T)` and `ICKBinaryReader.ReadEnum<T>` will be deprecated soon. They are not efficient
+> and should be replaced by writing and reading the base type of the enum and simply casting it just as in the example above.
+
 
 ## General support of struct to class and class to (nullable!) struct mutations
 

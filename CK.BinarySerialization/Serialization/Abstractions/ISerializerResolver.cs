@@ -10,7 +10,7 @@ namespace CK.BinarySerialization
     /// <para>
     /// Not all the resolvers are the same: <see cref="BasicTypeSerializerRegistry.Instance"/> relies on 
     /// immutable mappings and is exposed as a singleton, <see cref="SimpleBinarySerializableFactory"/> is 
-    /// a pure factory (doesn't cache its result).
+    /// a pure factory (it doesn't cache its result).
     /// </para>
     /// </summary>
     public interface ISerializerResolver

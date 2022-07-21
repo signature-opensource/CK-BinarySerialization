@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -40,6 +40,8 @@ namespace CK.BinarySerialization
         {
             _knownKeys = new (string K, object O)[]
             {
+                ("DBNull.Value", DBNull.Value),
+                ("Type.Missing", Type.Missing),
                 ("StringComparer.Ordinal", StringComparer.Ordinal ),
                 ("StringComparer.OrdinalIgnoreCase", StringComparer.OrdinalIgnoreCase ),
                 ("StringComparer.InvariantCulture", StringComparer.InvariantCulture ),
