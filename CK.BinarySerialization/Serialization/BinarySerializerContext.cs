@@ -1,3 +1,4 @@
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -46,7 +47,7 @@ namespace CK.BinarySerialization
         {
             if( _inUse )
             {
-                throw new InvalidOperationException( "This BinarySerializerContext is already used by an existing BinarySerializer. The existing BinarySerializer must be disposed first." );
+                Throw.InvalidOperationException( "This BinarySerializerContext is already used by an existing BinarySerializer. The existing BinarySerializer must be disposed first." );
             }
             _inUse = true;
         }
@@ -86,7 +87,7 @@ namespace CK.BinarySerialization
             get => _maxRecurse;
             set
             {
-                if( _maxRecurse < 0 ) throw new ArgumentOutOfRangeException( nameof( _maxRecurse ) );
+                Throw.CheckOutOfRangeArgument( _maxRecurse >= 0 );
                 _maxRecurse = value;
             }
         }

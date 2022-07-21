@@ -1,3 +1,4 @@
+using CK.Core;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -79,7 +80,7 @@ namespace CK.BinarySerialization
         /// <returns>The driver or null.</returns>
         public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
-            if( _context != info.Context ) throw new ArgumentException( "Deserialization context mismatch." );
+            Throw.CheckArgument( "Deserialization context mismatch.", _context == info.Context );
             switch( info.DriverName )
             {
                 case "Enum":

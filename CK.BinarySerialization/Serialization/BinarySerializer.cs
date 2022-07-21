@@ -98,12 +98,12 @@ namespace CK.BinarySerialization
                 {
                     if( _position == _already.Length )
                     {
-                        throw new CKException( $"Rewrite is longer than first write: length = {_position}." );
+                        Throw.Exception( $"Rewrite is longer than first write: length = {_position}." );
                     }
                     var actual = _already[_position++];
                     if( buffer[i] != actual )
                     {
-                        throw new CKException( $"Write stream differ @{_position - 1}. Expected byte '{actual}', got '{buffer[i]}'." );
+                        Throw.Exception( $"Write stream differ @{_position - 1}. Expected byte '{actual}', got '{buffer[i]}'." );
                     }
                 }
             }

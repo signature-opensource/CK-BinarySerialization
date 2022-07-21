@@ -1,4 +1,5 @@
-﻿using System;
+using CK.Core;
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -39,7 +40,7 @@ namespace CK.BinarySerialization.Serialization
 
         static void WriteNonNullable( IBinarySerializer s, in object? o )
         {
-            if( o == null ) throw new ArgumentNullException( nameof( o ) );
+            Throw.CheckNotNullArgument( o );
             Unsafe.As<BinarySerializerImpl>( s ).DoWriteObject( o );
         }
 

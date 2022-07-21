@@ -1,4 +1,5 @@
-﻿using System;
+using CK.Core;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -62,7 +63,7 @@ namespace CK.BinarySerialization
             var d = r.TryFindDriver( t );
             if( d == null )
             {
-                throw new InvalidOperationException( $"Unable to find a serialization driver for type '{t}'." );
+                Throw.InvalidOperationException( $"Unable to find a serialization driver for type '{t}'." );
             }
             if( nullable.HasValue )
             {

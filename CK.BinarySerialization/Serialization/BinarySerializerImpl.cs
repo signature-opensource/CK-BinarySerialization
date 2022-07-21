@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using CK.Core;
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
@@ -66,7 +66,7 @@ namespace CK.BinarySerialization
                 Type? e = t.GetElementType();
                 if( e == null || e.IsGenericParameter )
                 {
-                    throw new ArgumentException( $"Type '{t}' is not supported. Its ElementType must be not null and must not be IsGenericParameter." );
+                    Throw.ArgumentException( nameof( t ), $"Type '{t}' is not supported. Its ElementType must be not null and must not be IsGenericParameter." );
                 }
                 WriteTypeInfo( e );
                 return true;
@@ -258,7 +258,7 @@ namespace CK.BinarySerialization
 
         public bool WriteAny( object o )
         {
-            if( o == null ) throw new ArgumentNullException( nameof(o) );
+            Throw.CheckNotNullArgument( o );
             return DoWriteObject( o );
         }
 

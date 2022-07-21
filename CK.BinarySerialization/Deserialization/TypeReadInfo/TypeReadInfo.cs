@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -119,22 +119,22 @@ namespace CK.BinarySerialization
 
             public void SetDriver( IDeserializationDriver driver )
             {
-                if( driver == null ) throw new ArgumentNullException( nameof( driver ) );
-                if( _closed ) throw new InvalidOperationException();
+                Throw.CheckNotNullArgument( driver );
+                Throw.CheckState( !_closed );
                 _info._driver = driver;
             }
 
             public void SetDriverName( string driverName )
             {
-                if( driverName == null ) throw new ArgumentNullException( nameof( driverName ) );
-                if( _closed ) throw new InvalidOperationException();
+                Throw.CheckNotNullArgument( driverName );
+                Throw.CheckState( !_closed );
                 _info._overriddenDriverName = driverName != _info.OriginalDriverName ? driverName : null;
             }
 
             public void SetTargetType( Type t )
             {
-                if( t == null ) throw new ArgumentNullException( nameof( t ) );
-                if( _closed ) throw new InvalidOperationException();
+                Throw.CheckNotNullArgument( t );
+                Throw.CheckState( !_closed );
                 _info._targetType = t;
             }
 
@@ -147,22 +147,22 @@ namespace CK.BinarySerialization
 
             public void SetLocalTypeNamespace( string typeNamespace )
             {
-                if( typeNamespace == null ) throw new ArgumentNullException( nameof( typeNamespace ) );
-                if( _closed ) throw new InvalidOperationException();
+                Throw.CheckNotNullArgument( typeNamespace );
+                Throw.CheckState( !_closed );
                 _info.TypeNamespace = typeNamespace;
             }
 
             public void SetLocalTypeAssemblyName( string assemblyName )
             {
-                if( assemblyName == null ) throw new ArgumentNullException( nameof( assemblyName ) );
-                if( _closed ) throw new InvalidOperationException();
+                Throw.CheckNotNullArgument( assemblyName );
+                Throw.CheckState( !_closed );
                 _info.AssemblyName = assemblyName;
             }
 
             public void SetLocalTypeName( string typeName )
             {
-                if( typeName == null ) throw new ArgumentNullException( nameof( typeName ) );
-                if( _closed ) throw new InvalidOperationException();
+                Throw.CheckNotNullArgument( typeName );
+                Throw.CheckState( !_closed );
                 _info.AssemblyName = typeName;
             }
         }

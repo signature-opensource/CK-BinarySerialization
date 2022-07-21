@@ -1,4 +1,5 @@
-﻿using System;
+using CK.Core;
+using System;
 using System.Diagnostics.CodeAnalysis;
 
 namespace CK.BinarySerialization
@@ -7,7 +8,7 @@ namespace CK.BinarySerialization
     {
         public NullableTypeRoot( Type t, bool? nullable )
         {
-            if( t == null ) throw new ArgumentNullException( "t" );
+            Throw.CheckNotNullArgument( t );
             if( t.IsByRef || t.IsPointer )
             {
                 // ByRef, pointer or ref struct.

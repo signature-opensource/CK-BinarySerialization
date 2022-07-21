@@ -114,7 +114,7 @@ namespace CK.BinarySerialization
                 bool isDestroyable = typeof( IDestroyable ).IsAssignableFrom( b );
                 if( mustBeDestroyable && !isDestroyable )
                 {
-                    throw new InvalidOperationException( $"Type '{b}' must be a IDestroyableObject: IDestroyableObject must be implemented by the root of the ICKSlicedSerializable type hierarchy." );
+                    Throw.InvalidOperationException( $"Type '{b}' must be a IDestroyableObject: IDestroyableObject must be implemented by the root of the ICKSlicedSerializable type hierarchy." );
                 }
                 GetWritersTopDown( b, w, mustBeDestroyable | isDestroyable );
             }

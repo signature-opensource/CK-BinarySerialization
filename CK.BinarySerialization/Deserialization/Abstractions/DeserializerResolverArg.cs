@@ -1,4 +1,5 @@
-﻿using System;
+using CK.Core;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -51,19 +52,19 @@ namespace CK.BinarySerialization
         /// <param name="targetType">Optional target local type. When not null, overrides <see cref="ITypeReadInfo.TargetType"/>.</param>
         public DeserializerResolverArg( ITypeReadInfo info, SharedBinaryDeserializerContext context, Type? targetType = null )
         {
-            if( info == null ) throw new ArgumentNullException( nameof( info ) );
-            if( info.IsNullable ) throw new ArgumentException( "Type must not be nullable.", nameof( info ) );
-            if( info.DriverName == null ) throw new ArgumentException( "Must have a driver name.", nameof( info ) );
-            if( context == null ) throw new ArgumentNullException( nameof(context) );
+            Throw.CheckNotNullArgument( info );
+            Throw.CheckArgument( "Type must not be nullable.", !info.IsNullable );
+            Throw.CheckArgument( "Must have a driver name.", info.DriverName != null );
+            Throw.CheckNotNullArgument( context );
             ReadInfo = info;
             TargetType = targetType ?? info.TargetType ?? info.ResolveLocalType();
             if( TargetType.IsAbstract )
             {
-                throw new ArgumentException( $"Cannot deserialize an abstract type '{TargetType}'.", nameof( info ) );
+                Throw.ArgumentException( nameof( info ), $"Cannot deserialize an abstract type '{TargetType}'." );
             }
             if( TargetType == info.TargetType && info.HasResolvedConcreteDriver )
             {
-                throw new ArgumentException( "Deserialization driver must not be already resolved.", nameof( info ) );
+                Throw.ArgumentException( nameof( info ), "Deserialization driver must not be already resolved." );
             }
             IsPossibleNominalDeserialization = TargetType == info.TryResolveLocalType() && !info.IsDirtyInfo;
             Context = context;

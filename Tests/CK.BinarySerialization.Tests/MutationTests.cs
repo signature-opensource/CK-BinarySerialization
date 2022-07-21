@@ -153,7 +153,7 @@ namespace CK.BinarySerialization.Tests
 
             public AnotherThingButClassAndVersioned( string name, string newProp )
             {
-                if( newProp == null ) throw new ArgumentNullException( nameof( newProp ) );
+                Throw.CheckNotNullArgument( newProp );
                 Name = name;
                 V5HasANewProp = newProp;
             }

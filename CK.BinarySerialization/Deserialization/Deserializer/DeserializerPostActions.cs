@@ -1,4 +1,5 @@
-﻿using System;
+using CK.Core;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -22,7 +23,7 @@ namespace CK.BinarySerialization.Deserialization
         /// <param name="a">An action to be registered. Must not be null.</param>
         public void Add( Action a )
         {
-            if( a == null ) throw new ArgumentNullException();
+            Throw.CheckNotNullArgument( a );
             _postDeserializationActions.Add( a );
         }
 
