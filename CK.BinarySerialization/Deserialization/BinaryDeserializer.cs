@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -62,7 +62,7 @@ namespace CK.BinarySerialization
                 if( !IsValid )
                 {
                     if( _exception != null ) _exception.Throw();
-                    throw new InvalidOperationException( _error );
+                    Throw.InvalidOperationException( _error );
                 }
             }
 

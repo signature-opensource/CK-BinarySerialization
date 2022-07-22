@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -162,7 +162,7 @@ namespace CK.BinarySerialization
                     n = nn;
                 }
             }
-            if( !done ) throw new InvalidOperationException( $"A deserialization driver for type '{n}' is already registered." );
+            if( !done ) Throw.InvalidOperationException( $"A deserialization driver for type '{n}' is already registered." );
         }
 
         /// <summary>
@@ -176,7 +176,7 @@ namespace CK.BinarySerialization
         /// <param name="hook">The hook to register.</param>
         public void AddDeserializationHook( Action<IMutableTypeReadInfo> hook )
         {
-            if( hook == null ) throw new ArgumentNullException( nameof( hook ) );
+            Throw.CheckNotNullArgument( hook );
             Util.InterlockedAdd( ref _hooks, hook );
         }
 

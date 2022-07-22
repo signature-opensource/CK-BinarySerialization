@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -133,8 +133,8 @@ namespace CK.BinarySerialization
         /// <param name="driver">The driver that will handle the type's serialization.</param>
         public void AddSerializationDriver( Type t, ISerializationDriver driver )
         {
-            if( t == null ) throw new ArgumentNullException( nameof( t ) );
-            if( driver == null ) throw new ArgumentNullException( nameof( driver ) );
+            Throw.CheckNotNullArgument( t );
+            Throw.CheckNotNullArgument( driver );
             driver = driver.ToNonNullable;
             bool done = false;
             if( _typedDrivers.TryAdd( t, driver ) )
@@ -142,12 +142,12 @@ namespace CK.BinarySerialization
                 done = true;
                 if( t.IsValueType )
                 {
-                    if( Nullable.GetUnderlyingType( t ) != null ) throw new ArgumentException( "Type must not be a nullable value type.", nameof( t ) );
+                    if( Nullable.GetUnderlyingType( t ) != null ) Throw.ArgumentException( nameof( t ), $"Type '{t}' must not be a nullable value type." );
                     t = typeof( Nullable<> ).MakeGenericType( t );
                     done = _typedDrivers.TryAdd( t, driver.ToNullable );
                 }
             }
-            if( !done ) throw new InvalidOperationException( $"A serialization driver for type '{t}' is already registered." );
+            if( !done ) Throw.InvalidOperationException( $"A serialization driver for type '{t}' is already registered." );
         }
 
         /// <summary>
@@ -160,19 +160,19 @@ namespace CK.BinarySerialization
         /// <param name="t">The type that must not be serializable.</param>
         public void SetNotSerializable( Type t )
         {
-            if( t == null ) throw new ArgumentNullException( nameof( t ) );
+            Throw.CheckNotNullArgument( t );
             bool done = false;
             if( _typedDrivers.AddOrUpdate( t, (ISerializationDriver?)null, (t, existing) => existing ) == null )
             {
                 done = true;
                 if( t.IsValueType )
                 {
-                    if( Nullable.GetUnderlyingType( t ) != null ) throw new ArgumentException( "Type must not be a nullable value type.", nameof( t ) );
+                    if( Nullable.GetUnderlyingType( t ) != null ) Throw.ArgumentException( nameof( t ), $"Type '{t}' must not be a nullable value type." );
                     t = typeof( Nullable<> ).MakeGenericType( t );
                     done = _typedDrivers.AddOrUpdate( t, (ISerializationDriver?)null, ( t, existing ) => existing ) == null;
                 }
             }
-            if( !done ) throw new InvalidOperationException( $"A serialization driver for type '{t}' is already registered." );
+            if( !done ) Throw.InvalidOperationException( $"A serialization driver for type '{t}' is already registered." );
         }
 
 
@@ -188,7 +188,7 @@ namespace CK.BinarySerialization
             var writer = writerHost.GetMethod( "Write", BindingFlags.Static | BindingFlags.DeclaredOnly | BindingFlags.Public, null, new[] { typeof( IBinarySerializer ), instanceType.MakeByRefType() }, null );
             if( writer == null )
             {
-                throw new InvalidOperationException( $"Type '{writerHost}' must have a 'public static void Write( IBinarySerializer s, in {instanceType.Name} o )' static writer. Beware of the 'in' modifier!" );
+                Throw.InvalidOperationException( $"Type '{writerHost}' must have a 'public static void Write( IBinarySerializer s, in {instanceType.Name} o )' static writer. Beware of the 'in' modifier!" );
             }
             return writer;
         }

@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -170,11 +170,11 @@ namespace CK.BinarySerialization
                 {
                     if( !d.ResolvedType.IsValueType )
                     {
-                        throw new CKException( $"Class '{info.TypeNamespace}.{info.TypeName}' has been serialized as a deferred object but its deserialization driver ({d.GetType().FullName}) is not a {nameof( IDeserializationDeferredDriver )} and the deserialized type '{d.ResolvedType.FullName}' is not a value type." );
+                        Throw.Exception( $"Class '{info.TypeNamespace}.{info.TypeName}' has been serialized as a deferred object but its deserialization driver ({d.GetType().FullName}) is not a {nameof( IDeserializationDeferredDriver )} and the deserialized type '{d.ResolvedType.FullName}' is not a value type." );
                     }
                     if( d is not IValueTypeDeserializerWithRefInternal )
                     {
-                        throw new CKException( $"Class '{info.TypeNamespace}.{info.TypeName}' is now the struct '{d.ResolvedType.FullName}'. Its deserialization driver ({d.GetType().FullName}) must be a ValueTypeDeserializerWithRef<T>." );
+                        Throw.Exception( $"Class '{info.TypeNamespace}.{info.TypeName}' is now the struct '{d.ResolvedType.FullName}'. Its deserialization driver ({d.GetType().FullName}) must be a ValueTypeDeserializerWithRef<T>." );
                     }
                 }
                 Debug.Assert( defer != null || (d.ResolvedType.IsValueType && d is IValueTypeDeserializerWithRefInternal), "Just to be clear: regular class or struct with a ValueTypeDeserializerWithRef driver." );
@@ -434,7 +434,7 @@ namespace CK.BinarySerialization
                     b.Append( " > " ).Append( m );
                 }
             }
-            throw new InvalidDataException( b.ToString(), inner );
+            Throw.InvalidDataException( b.ToString(), inner );
         }
 
         #endregion

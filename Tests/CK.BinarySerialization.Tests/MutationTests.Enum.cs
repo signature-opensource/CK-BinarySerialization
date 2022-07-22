@@ -23,7 +23,7 @@ namespace CK.BinarySerialization.Tests
 
             static void SetNewLocalType( IMutableTypeReadInfo i )
             {
-                if( i.ReadInfo.AssemblyName == "CK.Core" && i.ReadInfo.TypeName == "GrantLevel" )
+                if( i.WrittenInfo.AssemblyName == "CK.Core" && i.WrittenInfo.TypeName == "GrantLevel" )
                 {
                     i.SetTargetType( typeof( NewGranteLevel ) );
                 }
@@ -49,7 +49,7 @@ namespace CK.BinarySerialization.Tests
 
             static void SetNewLocalType( IMutableTypeReadInfo i )
             {
-                if( i.ReadInfo.AssemblyName == "CK.Core" && i.ReadInfo.TypeName == "GrantLevel" )
+                if( i.WrittenInfo.AssemblyName == "CK.Core" && i.WrittenInfo.TypeName == "GrantLevel" )
                 {
                     i.SetTargetType( typeof( NewGranteLevelIsNowAnInt ) );
                 }
@@ -80,7 +80,7 @@ namespace CK.BinarySerialization.Tests
         {
             static void SetNewLocalType( IMutableTypeReadInfo i )
             {
-                if( i.ReadInfo.TypeName == "MutationTests+BeforeItWasALong" )
+                if( i.WrittenInfo.TypeName == "MutationTests+BeforeItWasALong" )
                 {
                     i.SetTargetType( typeof( NowItsAInt ) );
                 }

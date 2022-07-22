@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace CK.BinarySerialization
@@ -49,13 +49,13 @@ namespace CK.BinarySerialization
         bool IsDirtyInfo { get; }
 
         /// <summary>
-        /// Gets the rank of the array (the number of dimensions of a multidimensional array) 
-        /// if this is an array.
+        /// Gets the rank of the array (the number of dimensions of a multidimensional array).
+        /// This is 0 if this type is not an array.
         /// </summary>
         int ArrayRank { get; }
 
         /// <summary>
-        /// Gets the base type information if any (root object and ValueType are skipped).
+        /// Gets the base type information if any (roots Object and ValueType are skipped).
         /// This base type is non nullable.
         /// </summary>
         ITypeReadInfo? BaseTypeReadInfo { get; }
@@ -134,7 +134,7 @@ namespace CK.BinarySerialization
         Type ResolveLocalType();
 
         /// <summary>
-        /// Gets the type's path from the first base (skipping Object and ValueType) up to and 
+        /// Gets the type's path from the first base (skipping Object and ValueType root types) up to and 
         /// including this one.
         /// <para>
         /// Base types are non nullable.

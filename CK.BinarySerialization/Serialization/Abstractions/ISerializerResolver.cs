@@ -1,4 +1,5 @@
-﻿using System;
+using CK.Core;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -9,7 +10,7 @@ namespace CK.BinarySerialization
     /// <para>
     /// Not all the resolvers are the same: <see cref="BasicTypeSerializerRegistry.Instance"/> relies on 
     /// immutable mappings and is exposed as a singleton, <see cref="SimpleBinarySerializableFactory"/> is 
-    /// a pure factory (doesn't cache its result).
+    /// a pure factory (it doesn't cache its result).
     /// </para>
     /// </summary>
     public interface ISerializerResolver
@@ -62,7 +63,7 @@ namespace CK.BinarySerialization
             var d = r.TryFindDriver( t );
             if( d == null )
             {
-                throw new InvalidOperationException( $"Unable to find a serialization driver for type '{t}'." );
+                Throw.InvalidOperationException( $"Unable to find a serialization driver for type '{t}'." );
             }
             if( nullable.HasValue )
             {

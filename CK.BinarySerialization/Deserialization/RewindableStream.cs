@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -290,8 +290,8 @@ namespace CK.BinarySerialization
         /// <returns>A rewindable stream.</returns>
         public static RewindableStream FromStream( Stream s )
         {
-            if( s == null ) throw new ArgumentNullException( nameof( s ) );
-            if( !s.CanRead ) throw new ArgumentException( "Stream must be readable." );
+            Throw.CheckNotNullArgument( s );
+            Throw.CheckArgument( "Stream must be readable.", s.CanRead );
             if( s.CanSeek )
             {
                 return new Seekable( s );
@@ -320,8 +320,8 @@ namespace CK.BinarySerialization
         /// <returns>A rewindable stream.</returns>
         public static RewindableStream FromGZipStream( GZipStream s )
         {
-            if( s == null ) throw new ArgumentNullException( nameof( s ) );
-            if( !s.CanRead ) throw new ArgumentException( "Stream must be readable." );
+            Throw.CheckNotNullArgument( s );
+            Throw.CheckArgument( "Stream must be readable.", s.CanRead );
             if( s.BaseStream.CanSeek )
             {
                 return new GZipOnSeekable( s, s.BaseStream.Position );
@@ -377,7 +377,7 @@ namespace CK.BinarySerialization
         /// <returns>A rewindable stream.</returns>
         public static RewindableStream FromFactory( Func<bool,Stream> opener )
         {
-            if( opener == null ) throw new ArgumentNullException( nameof( opener ) );
+            Throw.CheckNotNullArgument( opener );
             return new FactoryBased( opener );
         }
 

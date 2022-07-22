@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,7 +12,7 @@ namespace CK.BinarySerialization
     /// <summary>
     /// Immutable neutral description of a Type that has been written.
     /// </summary>
-    class TypeReadInfo : ITypeReadInfo
+    sealed class TypeReadInfo : ITypeReadInfo
     {
         readonly BinaryDeserializerImpl _deserializer;
         IDeserializationDriver? _driver;
@@ -104,38 +104,99 @@ namespace CK.BinarySerialization
         }
         #endregion
 
-        class Mutable : IMutableTypeReadInfo
+        sealed class Mutable : IMutableTypeReadInfo, IMutableTypeReadInfo.IWrittenInfo
         {
             readonly TypeReadInfo _info;
+            readonly string _assemblyName;
+            readonly string _typeName;
+            readonly string _typeNamespace;
             bool _closed;
 
             public Mutable( TypeReadInfo info )
             {
                 Debug.Assert( info._mutating == null );
                 _info = info;
+                _assemblyName = _info.AssemblyName;
+                _typeName = _info.TypeName;
+                _typeNamespace = _info.TypeNamespace;
             }
 
-            public ITypeReadInfo ReadInfo => _info;
+            public IMutableTypeReadInfo.IWrittenInfo WrittenInfo => this;
+
+            TypeReadInfoKind IMutableTypeReadInfo.IWrittenInfo.Kind => _info.Kind;
+
+            bool IMutableTypeReadInfo.IWrittenInfo.IsValueType => _info.IsValueType;
+
+            bool IMutableTypeReadInfo.IWrittenInfo.IsSealed => _info.IsSealed;
+
+            int IMutableTypeReadInfo.IWrittenInfo.ArrayRank => _info.ArrayRank;
+
+            ITypeReadInfo? IMutableTypeReadInfo.IWrittenInfo.BaseTypeReadInfo => _info.BaseTypeReadInfo;
+
+            string? IMutableTypeReadInfo.IWrittenInfo.DriverName => _info.OriginalDriverName;
+
+            int IMutableTypeReadInfo.IWrittenInfo.Version => _info.Version;
+
+            IReadOnlyList<ITypeReadInfo> IMutableTypeReadInfo.IWrittenInfo.SubTypes => _info.SubTypes;
+
+            string IMutableTypeReadInfo.IWrittenInfo.AssemblyName => _assemblyName;
+
+            string IMutableTypeReadInfo.IWrittenInfo.TypeName => _typeName;
+
+            string IMutableTypeReadInfo.IWrittenInfo.TypeNamespace => _typeNamespace;
+
+            public IDeserializationDriver? CurentDriver => _info._driver;
 
             public void SetDriver( IDeserializationDriver driver )
             {
-                if( driver == null ) throw new ArgumentNullException( nameof( driver ) );
-                if( _closed ) throw new InvalidOperationException();
+                Throw.CheckNotNullArgument( driver );
+                Throw.CheckState( !_closed );
                 _info._driver = driver;
             }
 
+            public string? CurentDriverName => _info._overriddenDriverName ?? _info.OriginalDriverName;
+
             public void SetDriverName( string driverName )
             {
-                if( driverName == null ) throw new ArgumentNullException( nameof( driverName ) );
-                if( _closed ) throw new InvalidOperationException();
+                Throw.CheckNotNullArgument( driverName );
+                Throw.CheckState( !_closed );
                 _info._overriddenDriverName = driverName != _info.OriginalDriverName ? driverName : null;
             }
 
+            public Type? CurentTargetType => _info._targetType;
+
             public void SetTargetType( Type t )
             {
-                if( t == null ) throw new ArgumentNullException( nameof( t ) );
-                if( _closed ) throw new InvalidOperationException();
+                Throw.CheckNotNullArgument( t );
+                Throw.CheckState( !_closed );
                 _info._targetType = t;
+            }
+
+            public string CurentTypeNamespace => _info.TypeNamespace;
+
+            public void SetLocalTypeNamespace( string typeNamespace )
+            {
+                Throw.CheckNotNullArgument( typeNamespace );
+                Throw.CheckState( !_closed );
+                _info.TypeNamespace = typeNamespace;
+            }
+
+            public string CurentAssemblyName => _info.AssemblyName;
+
+            public void SetLocalTypeAssemblyName( string assemblyName )
+            {
+                Throw.CheckNotNullArgument( assemblyName );
+                Throw.CheckState( !_closed );
+                _info.AssemblyName = assemblyName;
+            }
+
+            public string CurentTypeName => _info.TypeName;
+
+            public void SetLocalTypeName( string typeName )
+            {
+                Throw.CheckNotNullArgument( typeName );
+                Throw.CheckState( !_closed );
+                _info.TypeName = typeName;
             }
 
             public void Close()
@@ -145,26 +206,6 @@ namespace CK.BinarySerialization
                 _info._mutating = null;
             }
 
-            public void SetLocalTypeNamespace( string typeNamespace )
-            {
-                if( typeNamespace == null ) throw new ArgumentNullException( nameof( typeNamespace ) );
-                if( _closed ) throw new InvalidOperationException();
-                _info.TypeNamespace = typeNamespace;
-            }
-
-            public void SetLocalTypeAssemblyName( string assemblyName )
-            {
-                if( assemblyName == null ) throw new ArgumentNullException( nameof( assemblyName ) );
-                if( _closed ) throw new InvalidOperationException();
-                _info.AssemblyName = assemblyName;
-            }
-
-            public void SetLocalTypeName( string typeName )
-            {
-                if( typeName == null ) throw new ArgumentNullException( nameof( typeName ) );
-                if( _closed ) throw new InvalidOperationException();
-                _info.AssemblyName = typeName;
-            }
         }
 
         public TypeReadInfoKind Kind { get; }
@@ -376,9 +417,14 @@ namespace CK.BinarySerialization
             Debug.Assert( !_hooked );
             _hooked = true;
             _mutating = new Mutable( this );
-            _deserializer.Context.Shared.CallHooks( _mutating );
-            _mutating = null;
-            if( _driver != null ) _driverLookupDone = true;
+            try
+            {
+                _deserializer.Context.Shared.CallHooks( _mutating );
+            }
+            finally
+            {
+                _mutating.Close();
+            }
         }
 
         public bool HasResolvedConcreteDriver => _driver != null;

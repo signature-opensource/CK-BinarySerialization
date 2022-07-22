@@ -1,4 +1,5 @@
-﻿using System;
+using CK.Core;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -265,7 +266,7 @@ namespace CK.BinarySerialization
         static ConstructorInfo GetDeserializationCtor( Type t )
         {
             var c = BinaryDeserializer.Helper.GetTypedReaderConstructor( t );
-            if( c == null ) throw new InvalidOperationException( $"Type '{t}' requires a constructor with (IBinaryDeserializer d, ITypeReadInfo info) parameters." );
+            if( c == null ) Throw.InvalidOperationException( $"Type '{t}' requires a constructor with (IBinaryDeserializer d, ITypeReadInfo info) parameters." );
             return c;
         }
     }

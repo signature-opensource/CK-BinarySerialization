@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Runtime.CompilerServices;
 
@@ -64,8 +64,8 @@ namespace CK.BinarySerialization
             /// <returns>The deserializer to use.</returns>
             public IBinaryDeserializer SetInstance( T o )
             {
-                if( o == null ) throw new ArgumentNullException( "o" );
-                if( Instance != null ) throw new InvalidOperationException( "Result already set." );
+                Throw.CheckNotNullArgument( o );
+                Throw.CheckState( "Result already set.", Instance == null );
                 Instance = o;
                 return ReadInfo.IsValueType ? _d : _d.Track( o );
             }
@@ -87,8 +87,8 @@ namespace CK.BinarySerialization
             /// <returns>The deserializer to use to read the object's content and the instantiated object.</returns>
             public (IBinaryDeserializer d, T o) SetInstance( Func<IBinaryDeserializer,T> headerReader )
             {
-                if( headerReader == null ) throw new ArgumentNullException( "o" );
-                if( Instance != null ) throw new InvalidOperationException( "Result already set." );
+                Throw.CheckNotNullArgument( headerReader );
+                Throw.CheckState( "Result already set.", Instance == null );
                 if( ReadInfo.IsValueType )
                 {
                     Instance = headerReader( _d );
@@ -120,7 +120,7 @@ namespace CK.BinarySerialization
         {
             var c = new RefReader( Unsafe.As<BinaryDeserializerImpl>( d ), readInfo );
             ReadInstance( ref c );
-            if( c.Instance == null ) throw new InvalidOperationException( "ReadInstance must set a non null instance." );
+            Throw.CheckState( "ReadInstance must set a non null instance.", c.Instance != null );
             return c.Instance;
         }
 

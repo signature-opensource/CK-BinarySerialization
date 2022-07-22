@@ -36,7 +36,7 @@ namespace CK.BinarySerialization
                 {
                     if( !t.IsValueType && !t.IsSealed )
                     {
-                        throw new InvalidOperationException( $"Type '{t}' cannot implement {nameof(ICKVersionedBinarySerializable)} interface. It must be a sealed class or a value type." );
+                        Throw.InvalidOperationException( $"Type '{t}' cannot implement {nameof(ICKVersionedBinarySerializable)} interface. It must be a sealed class or a value type." );
                     }
                     return CreateSealed( t );
                 }
