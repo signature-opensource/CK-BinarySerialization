@@ -70,7 +70,7 @@ namespace CK.BinarySerialization.Tests
         {
             static void SetNewLocalType( IMutableTypeReadInfo i )
             {
-                if( i.ReadInfo.TypeName == "MutationTests+ThingStruct" )
+                if( i.WrittenInfo.TypeName == "MutationTests+ThingStruct" )
                 {
                     i.SetTargetType( typeof( ThingSealedClass ) );
                 }
@@ -96,7 +96,7 @@ namespace CK.BinarySerialization.Tests
         {
             static void SetNewLocalType( IMutableTypeReadInfo i )
             {
-                if( i.ReadInfo.TypeName == "MutationTests+ThingSealedClass" )
+                if( i.WrittenInfo.TypeName == "MutationTests+ThingSealedClass" )
                 {
                     i.SetTargetType( typeof( ThingStruct ) );
                 }
@@ -197,7 +197,7 @@ namespace CK.BinarySerialization.Tests
         {
             static void SetNewLocalType( IMutableTypeReadInfo i )
             {
-                if( i.ReadInfo.TypeName == "MutationTests+AnotherThingStructSimple" )
+                if( i.WrittenInfo.TypeName == "MutationTests+AnotherThingStructSimple" )
                 {
                     i.SetTargetType( typeof( AnotherThingButClassAndVersioned ) );
                 }
@@ -323,8 +323,8 @@ namespace CK.BinarySerialization.Tests
             // The hook maps to the last version.
             static void SetNewLocalType( IMutableTypeReadInfo i )
             {
-                if( i.ReadInfo.TypeName == "MutationTests+AnotherThingStructSimple"
-                    || i.ReadInfo.TypeName == "MutationTests+AnotherThingButClassAndVersioned" )
+                if( i.WrittenInfo.TypeName == "MutationTests+AnotherThingStructSimple"
+                    || i.WrittenInfo.TypeName == "MutationTests+AnotherThingButClassAndVersioned" )
                 {
                     i.SetTargetType( typeof( AnotherThingVersionedThatWantsToGoBackToSimple ) );
                 }
@@ -343,7 +343,7 @@ namespace CK.BinarySerialization.Tests
             // We can reuse the same context: the previous hook will do nothing. 
             static void SetLastSimple( IMutableTypeReadInfo i )
             {
-                if( i.ReadInfo.TypeName == "MutationTests+AnotherThingVersionedThatWantsToGoBackToSimple" )
+                if( i.WrittenInfo.TypeName == "MutationTests+AnotherThingVersionedThatWantsToGoBackToSimple" )
                 {
                     i.SetTargetType( typeof( AnotherThingBackToSimple ) );
                 }

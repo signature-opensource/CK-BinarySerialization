@@ -22,7 +22,7 @@ namespace CK.BinarySerialization.Tests
             // The Car that was a Sliced sealed class is now a Versioned readonly struct.
             static void SetNewLocalType( IMutableTypeReadInfo i )
             {
-                if( i.ReadInfo.TypeName== "Car" )
+                if( i.WrittenInfo.TypeName== "Car" )
                 {
                     i.SetTargetType( typeof( SamplesV2.Car ) );
                 }
@@ -69,7 +69,7 @@ namespace CK.BinarySerialization.Tests
             // The Car that was a Sliced sealed class is now a Versioned readonly struct.
             static void SwitchToV2( IMutableTypeReadInfo i )
             {
-                if( i.ReadInfo.TypeNamespace == "CK.BinarySerialization.Tests.Samples" )
+                if( i.WrittenInfo.TypeNamespace == "CK.BinarySerialization.Tests.Samples" )
                 {
                     i.SetLocalTypeNamespace( "CK.BinarySerialization.Tests.SamplesV2" );
                 }

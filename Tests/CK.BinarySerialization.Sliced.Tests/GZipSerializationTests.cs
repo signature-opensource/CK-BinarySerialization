@@ -62,7 +62,7 @@ namespace CK.BinarySerialization.Tests
             // SamplesV2: class Car (ICKSlicedSerializable) becomes a struct (ICKVersionedBinarySerializable).
             static void SwitchToV2( IMutableTypeReadInfo i )
             {
-                if( i.ReadInfo.TypeNamespace == "CK.BinarySerialization.Tests.Samples" )
+                if( i.WrittenInfo.TypeNamespace == "CK.BinarySerialization.Tests.Samples" )
                 {
                     i.SetLocalTypeNamespace( "CK.BinarySerialization.Tests.SamplesV2" );
                 }

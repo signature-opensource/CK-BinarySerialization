@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -7,7 +7,7 @@ using System.Text;
 
 namespace CK.BinarySerialization
 {
-    class NullableTypeReadInfo : ITypeReadInfo
+    sealed class NullableTypeReadInfo : ITypeReadInfo
     {
         ITypeReadInfo _nonNull;
         Type? _localType;
