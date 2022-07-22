@@ -187,6 +187,39 @@ BinarySerializer.DefaultSharedContext.AddSerializationDriver( typeof( Node ), ne
 BinaryDeserializer.DefaultSharedContext.AddLocalTypeDeserializer( new NodeDeserializer() );
 ``` 
 
+### Simple mutations: renaming Types
+
+The capability to rename types is crucial, may be even more important than handling struct/class mutations.
+Bad naming happens often and serialization should not block the process of choosing a better name for things.
+
+The code below handles a `Domain` to `ODomain` and `Coordinator` to `OCoordinatorRoot` renaming.
+
+```c#
+  static CoordinatorClient()
+  {
+      BinaryDeserializer.DefaultSharedContext.AddDeserializationHook( t =>
+      {
+          if( t.WrittenInfo.TypeNamespace == "CK.Observable.League" )
+          {
+              if( t.WrittenInfo.TypeName == "Domain" )
+              {
+                  t.SetTargetType( typeof( ODomain ) );
+              }
+              else if( t.WrittenInfo.TypeName == "Coordinator" )
+              {
+                  t.SetTargetType( typeof( OCoordinatorRoot ) );
+              }
+          }
+      } );
+  }
+```
+
+The shared deserialization context must register such deserialization hooks before any serialization occur:
+here we've used the type initializer of the Type that is in charge of serializing and deserializing these
+objects.
+
+> Note that once you're assured that any files or serialized streams that may exist with the old naming have 
+> been rewritten at least once, the hook can (and should) be removed.
 
 ## Nullable handling is currently partial
 
