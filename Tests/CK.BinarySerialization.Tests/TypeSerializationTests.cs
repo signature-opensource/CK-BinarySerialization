@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using FluentAssertions;
 using NUnit.Framework;
 using System;
@@ -20,6 +20,10 @@ namespace CK.BinarySerialization.Tests
         {
             public T[] A = Array.Empty<T>();
         }
+
+        interface II { }
+
+        interface II<T> { }
 
         // For an unknown reason, TestCase sucks here. Using TestCaseSource instead.
         static Type[] SerializationTypes = new[]
@@ -48,6 +52,8 @@ namespace CK.BinarySerialization.Tests
             typeof( OpenArrayHolder<> ),
             typeof( GrantLevel ),
             typeof( GrantLevel? ),
+            typeof( II ),
+            typeof( II<> ),
         };
 
         [TestCaseSource(nameof(SerializationTypes))]
@@ -143,6 +149,20 @@ namespace CK.BinarySerialization.Tests
             Type backT = TestHelper.SaveAndLoad( type, ( type, w ) => w.WriteTypeInfo( type ), r => r.ReadTypeInfo().ResolveLocalType() );
             backT.Should().BeSameAs( type );
         }
+
+        class A { }
+
+        class B<T1,T2> : A { }
+
+        class CS : B<string,II> { }
+
+        [Test]
+        public void generic_base_with_interface()
+        {
+            Type backT = TestHelper.SaveAndLoad( typeof( CS ), ( type, w ) => w.WriteTypeInfo( type ), r => r.ReadTypeInfo().ResolveLocalType() );
+            backT.Should().BeSameAs( typeof( CS ) );
+        }
+
     }
 }
 

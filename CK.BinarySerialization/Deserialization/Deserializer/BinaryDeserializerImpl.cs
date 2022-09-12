@@ -283,12 +283,14 @@ namespace CK.BinarySerialization
                 case (byte)'v':
                 case (byte)'c':
                 case (byte)'s':
+                case (byte)'i':
                     {
                         var k = nMark switch
                         {
                             (byte)'v' => TypeReadInfoKind.ValueType,
                             (byte)'c' => TypeReadInfoKind.Class,
                             (byte)'s' => TypeReadInfoKind.SealedClass,
+                            (byte)'i' => TypeReadInfoKind.Interface,
                             _ => throw new NotSupportedException()
                         };
                         var t = new TypeReadInfo( this, k );
@@ -300,12 +302,14 @@ namespace CK.BinarySerialization
                 case (byte)'V':
                 case (byte)'C':
                 case (byte)'S':
+                case (byte)'I':
                     {
                         var k = nMark switch
                         {
                             (byte)'V' => TypeReadInfoKind.GenericValueType,
                             (byte)'C' => TypeReadInfoKind.GenericClass,
                             (byte)'S' => TypeReadInfoKind.GenericSealedClass,
+                            (byte)'I' => TypeReadInfoKind.GenericInterface,
                             _ => throw new NotSupportedException()
                         };
                         TypeReadInfo t = new TypeReadInfo( this, k );
