@@ -151,12 +151,22 @@ namespace CK.BinarySerialization
                     }
                     else
                     {
-                        _writer.Write( (byte)'V' );
+                        if( t.IsInterface )
+                        {
+                            _writer.Write( (byte)'I' );
+                        }
+                        else
+                        {
+                            _writer.Write( (byte)'V' );
+                        }
                     }
                     var args = t.GetGenericArguments();
                     // Currently we work in oblivious nullable mode: all reference types are de facto nullable,
                     // except one: the dictionary key.
-                    if( args.Length == 2 && t.GetGenericTypeDefinition() == typeof( Dictionary<,> ) )
+                    if( args.Length == 2
+                        && (t.GetGenericTypeDefinition() == typeof( Dictionary<,> )
+                            || t.GetGenericTypeDefinition() == typeof( IDictionary<,> )
+                            || t.GetGenericTypeDefinition() == typeof( IReadOnlyDictionary<,> )) )
                     {
                         _writer.WriteNonNegativeSmallInt32( 2 );
                         WriteTypeInfo( args[0], false );
@@ -193,7 +203,14 @@ namespace CK.BinarySerialization
                 }
                 else
                 {
-                    _writer.Write( (byte)'v' );
+                    if( t.IsInterface )
+                    {
+                        _writer.Write( (byte)'i' );
+                    }
+                    else
+                    {
+                        _writer.Write( (byte)'v' );
+                    }
                 }
             }
             // Write Names.

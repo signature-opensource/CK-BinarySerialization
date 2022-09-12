@@ -338,8 +338,9 @@ namespace CK.BinarySerialization
                 {
                     Type t;
                     if( Kind == TypeReadInfoKind.GenericValueType 
-                        || Kind == TypeReadInfoKind.GenericSealedClass 
-                        || Kind == TypeReadInfoKind.GenericClass )
+                        || Kind == TypeReadInfoKind.GenericSealedClass
+                        || Kind == TypeReadInfoKind.GenericClass
+                        || Kind == TypeReadInfoKind.GenericInterface )
                     {
                         t = CreateTypeFromNames();
                         var p = new Type[SubTypes.Count];
@@ -385,6 +386,7 @@ namespace CK.BinarySerialization
                     {
                         Debug.Assert( Kind == TypeReadInfoKind.ValueType
                                       || Kind == TypeReadInfoKind.Class
+                                      || Kind == TypeReadInfoKind.Interface
                                       || Kind == TypeReadInfoKind.SealedClass
                                       || Kind == TypeReadInfoKind.GenericValueType
                                       || Kind == TypeReadInfoKind.GenericClass

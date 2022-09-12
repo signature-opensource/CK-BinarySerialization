@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace CK.BinarySerialization
 {
@@ -23,6 +23,16 @@ namespace CK.BinarySerialization
         /// Note that <see cref="Delegate"/> are sealed class.
         /// </summary>
         SealedClass,
+
+        /// <summary>
+        /// Interface type. Instances may be deserialized.
+        /// </summary>
+        Interface,
+
+        /// <summary>
+        /// Generic interface type. Instances may be deserialized.
+        /// </summary>
+        GenericInterface,
 
         /// <summary>
         /// Generic value type. Instances may be deserialized.
