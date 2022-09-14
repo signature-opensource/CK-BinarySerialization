@@ -18,29 +18,22 @@ namespace CK.BinarySerialization
         readonly Dictionary<Type, ISerializationDriver?> _cache;
         readonly Dictionary<object, string> _knownObjects;
         readonly SharedBinarySerializerContext _shared;
-        readonly NullabilityInfoContext _nullabilityCtx;
+        readonly SimpleServiceContainer _services;
         int _maxRecurse;
         bool _inUse;
 
         /// <summary>
         /// Initializes a new <see cref="BinarySerializerContext"/>.
         /// </summary>
-        /// <param name="shared">The shared context to use.</param>
-        public BinarySerializerContext( SharedBinarySerializerContext shared )
+        /// <param name="shared">The shared context to use. Defaults to <see cref="BinarySerializer.DefaultSharedContext"/>.</param>
+        /// <param name="services">Optional base services.</param>
+        public BinarySerializerContext( SharedBinarySerializerContext? shared = null, IServiceProvider? services = null )
         {
             _cache = new Dictionary<Type, ISerializationDriver?>();
             _knownObjects = new Dictionary<object, string>();
-            _shared = shared;
+            _shared = shared ?? BinarySerializer.DefaultSharedContext;
             _maxRecurse = 100;
-            _nullabilityCtx = new NullabilityInfoContext();
-        }
-
-        /// <summary>
-        /// Initializes a new <see cref="BinarySerializerContext"/> bound to the <see cref="BinarySerializer.DefaultSharedContext"/>.
-        /// </summary>
-        public BinarySerializerContext()
-            : this( BinarySerializer.DefaultSharedContext )
-        {
+            _services = new SimpleServiceContainer( services );
         }
 
         internal void Acquire()
@@ -61,6 +54,11 @@ namespace CK.BinarySerialization
         /// Gets the shared serializer context used by this context.
         /// </summary>
         public SharedBinarySerializerContext Shared => _shared;
+
+        /// <summary>
+        /// Gets a mutable service container.
+        /// </summary>
+        public SimpleServiceContainer Services => _services;
 
         /// <summary>
         /// Gets whether a type is serializable: a <see cref="ISerializationDriver"/> is available.
