@@ -11,7 +11,7 @@ namespace CK.BinarySerialization.Deserialization
         readonly TypedReader<TItem> _item;
 
         public DArrayMD( IDeserializationDriver item )
-            : base( item.IsCached )
+            : base( item.IsCacheable )
         {
             _item = Unsafe.As<TypedReader<TItem>>( item.TypedReader );
         }

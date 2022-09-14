@@ -112,6 +112,20 @@ namespace CK.BinarySerialization
             }
             // Now we only write the non nullable info after a byte
             // that qualifies the type.
+            // Gives the serialization driver the opportunity to write another type
+            // that the actual one.
+            //
+            // This enables IPoco objects to be typed by their primary interface rather
+            // than the generated type. The generated IPoco implementation
+            // is suffixed by "_CK" and can be implemented in the StObjAutAssembly or in the
+            // final assembly: we must not rely on this, instead, the deserializer uses the
+            // PocoDirectory and (currently) PocoJsonSerializer to simply deserialize the object,
+            // wherever the Poco code is.
+            if( driver is ISerializationDriverTypeRewriter r )
+            {
+                t = r.GetTypeToWrite( t );
+            }
+
             if( t.IsArray )
             {
                 if( t.ContainsGenericParameters )

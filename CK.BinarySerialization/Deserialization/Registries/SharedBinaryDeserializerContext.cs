@@ -28,6 +28,11 @@ namespace CK.BinarySerialization
         /// </summary>
         static readonly Type? _tSliced = Type.GetType( "CK.BinarySerialization.SlicedDeserializerRegistry, CK.BinarySerialization.Sliced", throwOnError: false );
 
+        /// <summary>
+        /// Same trick as "Sliced" deserialization (and serializer does the same) to
+        /// automatically register the IPoco support if the assembly is available.
+        /// </summary>
+        static readonly Type? _tPoco = Type.GetType( "CK.BinarySerialization.PocoDeserializerRegistry, CK.BinarySerialization.IPoco", throwOnError: false );
 
         /// <summary>
         /// Abstract drivers are statically cached once for all.
@@ -64,15 +69,33 @@ namespace CK.BinarySerialization
             if( useDefaultResolvers )
             {
                 _resolvers = _tSliced != null
-                                ? new IDeserializerResolver[] { BasicTypeDeserializerRegistry.Instance,
-                                                                SimpleBinaryDeserializableRegistry.Instance,
-                                                                new StandardGenericDeserializerRegistry( this ),
-                                                                (IDeserializerResolver)_tSliced.GetField( "Instance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static )!.GetValue( null )!
+                                ? (
+                                    _tPoco != null
+                                    ? new IDeserializerResolver[] { BasicTypeDeserializerRegistry.Instance,
+                                                                    SimpleBinaryDeserializableRegistry.Instance,
+                                                                    new StandardGenericDeserializerRegistry( this ),
+                                                                    (IDeserializerResolver)_tSliced.GetField( "Instance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static )!.GetValue( null )!,
+                                                                    (IDeserializerResolver)_tPoco.GetField( "Instance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static )!.GetValue( null )!
                                                               }
-                                : new IDeserializerResolver[] { BasicTypeDeserializerRegistry.Instance,
-                                                                SimpleBinaryDeserializableRegistry.Instance,
-                                                                new StandardGenericDeserializerRegistry( this )
-                                                              };
+                                    : new IDeserializerResolver[] { BasicTypeDeserializerRegistry.Instance,
+                                                                    SimpleBinaryDeserializableRegistry.Instance,
+                                                                    new StandardGenericDeserializerRegistry( this ),
+                                                                    (IDeserializerResolver)_tSliced.GetField( "Instance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static )!.GetValue( null )!
+                                                                  }
+                                    )
+                                : (
+                                    _tPoco != null
+                                    ? new IDeserializerResolver[] { BasicTypeDeserializerRegistry.Instance,
+                                                                    SimpleBinaryDeserializableRegistry.Instance,
+                                                                    new StandardGenericDeserializerRegistry( this ),
+                                                                    (IDeserializerResolver)_tPoco.GetField( "Instance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static )!.GetValue( null )!
+                                                                  }
+                                    : new IDeserializerResolver[] { BasicTypeDeserializerRegistry.Instance,
+                                                                    SimpleBinaryDeserializableRegistry.Instance,
+                                                                    new StandardGenericDeserializerRegistry( this )
+                                                                  }
+
+                                  );
             }
             else
             {
@@ -128,11 +151,15 @@ namespace CK.BinarySerialization
 
         /// <summary>
         /// Ensures that a resolver is registered.
-        /// When new, the resolver can be inserted before or after the existing ones.
+        /// When new, the resolver can be appended after or inserted before the existing ones.
+        /// <para>
+        /// Deserialization drivers are not cached by the shared context (as opposed to the serialization
+        /// drivers). However, deserialization registrations should be done before any deserialization occur.
+        /// </para>
         /// </summary>
         /// <param name="resolver">The resolver that must be found or added.</param>
-        /// <param name="beforeExisting">Whether to register the resolver before the existing ones or after them.</param>
-        public void Register( IDeserializerResolver resolver, bool beforeExisting )
+        /// <param name="beforeExisting">Whether to register the resolver before the existing ones.</param>
+        public void Register( IDeserializerResolver resolver, bool beforeExisting = false )
         {
             Util.InterlockedAddUnique( ref _resolvers, resolver, beforeExisting );
         }

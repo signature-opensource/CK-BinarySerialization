@@ -1,3 +1,4 @@
+using CK.BinarySerialization.Serialization;
 using CK.Core;
 using System;
 using System.Collections.Concurrent;
@@ -32,6 +33,11 @@ namespace CK.BinarySerialization
         static readonly Type? _tSliced = Type.GetType( "CK.BinarySerialization.SlicedSerializerFactory, CK.BinarySerialization.Sliced", throwOnError: false );
 
         /// <summary>
+        /// Same as <see cref="_tSliced"/> to automatically register IPoco support if the assembly exists.
+        /// </summary>
+        static readonly Type? _tPoco = Type.GetType( "CK.BinarySerialization.PocoSerializerFactory, CK.BinarySerialization.IPoco", throwOnError: false );
+
+        /// <summary>
         /// Initializes a new independent shared context bound to a possibly independent <see cref="SharedSerializerKnownObject"/>, 
         /// optionally with the <see cref="BasicTypeSerializerRegistry.Instance"/>, <see cref="SimpleBinarySerializableFactory.Instance"/> 
         /// and a <see cref="StandardGenericSerializerFactory"/>.
@@ -49,15 +55,32 @@ namespace CK.BinarySerialization
             if( useDefaultResolvers )
             {
                 _resolvers = _tSliced != null
-                                ? new ISerializerResolver[] { BasicTypeSerializerRegistry.Instance,
-                                                              SimpleBinarySerializableFactory.Instance,
-                                                              new StandardGenericSerializerFactory( this ),
-                                                              (ISerializerResolver)Activator.CreateInstance( _tSliced )!
-                                                            }
-                                : new ISerializerResolver[] { BasicTypeSerializerRegistry.Instance,
-                                                              SimpleBinarySerializableFactory.Instance,
-                                                              new StandardGenericSerializerFactory( this )
-                                                            };
+                                ? (
+                                    _tPoco != null
+                                    ? new ISerializerResolver[] { BasicTypeSerializerRegistry.Instance,
+                                                                  SimpleBinarySerializableFactory.Instance,
+                                                                  new StandardGenericSerializerFactory( this ),
+                                                                  (ISerializerResolver)Activator.CreateInstance( _tSliced )!,
+                                                                  (ISerializerResolver)Activator.CreateInstance( _tPoco )!
+                                                                }
+                                    : new ISerializerResolver[] { BasicTypeSerializerRegistry.Instance,
+                                                                  SimpleBinarySerializableFactory.Instance,
+                                                                  new StandardGenericSerializerFactory( this ),
+                                                                  (ISerializerResolver)Activator.CreateInstance( _tSliced )!
+                                                                }
+                                   )
+                                : (
+                                    _tPoco != null
+                                    ? new ISerializerResolver[] { BasicTypeSerializerRegistry.Instance,
+                                                                  SimpleBinarySerializableFactory.Instance,
+                                                                  new StandardGenericSerializerFactory( this ),
+                                                                  (ISerializerResolver)Activator.CreateInstance( _tPoco )!
+                                                                }
+                                    : new ISerializerResolver[] { BasicTypeSerializerRegistry.Instance,
+                                                                  SimpleBinarySerializableFactory.Instance,
+                                                                  new StandardGenericSerializerFactory( this )
+                                                                }
+                                  );
             }
             else
             {
@@ -69,6 +92,37 @@ namespace CK.BinarySerialization
         /// Gets the known objects registry.
         /// </summary>
         public ISerializerKnownObject KnownObjects => _knownObjects;
+
+        /// <summary>
+        /// Used to mark a type for which resolver returned a false <see cref="ISerializationDriver.IsCacheable"/>.
+        /// This avoids the lock around resolution and insertion into the concurrent dictionary after the first lookup and,
+        /// since this caches the ISerializerResolver that has been found, it also avoids the lookup in the _resolvers
+        /// array.
+        /// </summary>
+        sealed class NonCacheableDriverSentinel : ISerializationDriver
+        {
+            public NonCacheableDriverSentinel( ISerializerResolver resolver, SerializationDriverCacheLevel cacheLevel )
+            {
+                Resolver = resolver;
+                CacheLevel = cacheLevel;
+            }
+
+            public ISerializerResolver Resolver { get; }
+
+            public SerializationDriverCacheLevel CacheLevel { get; }
+
+            public string DriverName => nameof( NonCacheableDriverSentinel );
+
+            int ISerializationDriver.SerializationVersion => throw new NotSupportedException();
+
+            Delegate ISerializationDriver.UntypedWriter => throw new NotSupportedException();
+
+            Delegate ISerializationDriver.TypedWriter => throw new NotSupportedException();
+
+            ISerializationDriver ISerializationDriver.ToNullable => throw new NotSupportedException();
+
+            ISerializationDriver ISerializationDriver.ToNonNullable => throw new NotSupportedException();
+        }
 
         /// <inheritdoc />
         public ISerializationDriver? TryFindDriver( Type t )
@@ -83,14 +137,39 @@ namespace CK.BinarySerialization
                     // Double Check Lock.
                     if( !_typedDrivers.TryGetValue( t, out driver ) )
                     {
+                        ISerializerResolver? found = null;
                         foreach( var resolver in _resolvers )
                         {
                             driver = resolver.TryFindDriver( t );
-                            if( driver != null ) break;
+                            if( driver != null )
+                            {
+                                found = resolver;
+                                break;
+                            }
                         }
-                        _typedDrivers.TryAdd( t, driver );
+                        // If the driver is null, we register the null: this type is not serializable.
+                        // If the driver cannot be cached at this level, we use the sentinel.
+                        //
+                        // We use GetOrAdd here so that if a concurrent AddSerializationDriver or
+                        // SetNotSerializable happened, it wins.
+                        if( driver != null && driver.CacheLevel != SerializationDriverCacheLevel.SharedContext )
+                        {
+                            Debug.Assert( found != null );
+                            var sentinel = new NonCacheableDriverSentinel( found, driver.CacheLevel );
+                            var already = _typedDrivers.GetOrAdd( t, sentinel );
+                            if( already != sentinel ) driver = already;
+                        }
+                        else
+                        {
+                            driver = _typedDrivers.GetOrAdd( t, driver );
+                        }
                     }
                 }
+            }
+            // Always do this because of the Double Check Lock.
+            if( driver is NonCacheableDriverSentinel noCache )
+            {
+                driver = noCache.Resolver.TryFindDriver( t );
             }
             return driver;
         }
@@ -113,20 +192,31 @@ namespace CK.BinarySerialization
 
         /// <summary>
         /// Ensures that a resolver is registered.
-        /// When new, the resolver is appended after or inserted before the existing ones.
+        /// When new, the resolver can be appended after or inserted before the existing ones.
+        /// <para>
+        /// Because of caching of drivers, registering should obviously be done before any serialization
+        /// occurs on this shared context.
+        /// </para>
         /// </summary>
         /// <param name="resolver">The resolver that must be found or added.</param>
-        /// <param name="beforeExisting">True to insert the resolver before the other ones, false to append it.</param>
-        public void Register( ISerializerResolver resolver, bool beforeExisting )
+        /// <param name="beforeExisting">True to insert the resolver before the other ones.</param>
+        public void Register( ISerializerResolver resolver, bool beforeExisting = false )
         {
             Util.InterlockedAddUnique( ref _resolvers, resolver, beforeExisting );
         }
 
         /// <summary>
-        /// Registers a driver for a type.
+        /// Registers a driver for a type. The driver will have the priority over any driver that
+        /// could be resolved by the resolvers (see <see cref="Register(ISerializerResolver, bool)"/>.
         /// The driver must be able to handle the type otherwise kitten will be killed.
         /// <para>
-        /// The type MUST not already be associated to a driver otherwise an <see cref="InvalidOperationException"/> is raised.
+        /// The type MUST not already be associated to a driver otherwise an <see cref="InvalidOperationException"/> is raised:
+        /// just like <see cref="Register(ISerializerResolver, bool)"/> this should obviously be done before any serialization
+        /// occurs on this shared context.
+        /// </para>
+        /// <para>
+        /// For coherency, since the driver is cached at this level, it MUST have its <see cref="ISerializationDriver.CacheLevel"/>
+        /// set to <see cref="SerializationDriverCacheLevel.SharedContext"/> otherwise an <see cref="ArgumentException"/> is thrown.
         /// </para>
         /// </summary>
         /// <param name="t">The serializable type.</param>
@@ -135,6 +225,7 @@ namespace CK.BinarySerialization
         {
             Throw.CheckNotNullArgument( t );
             Throw.CheckNotNullArgument( driver );
+            Throw.CheckArgument( driver.CacheLevel == SerializationDriverCacheLevel.SharedContext );
             driver = driver.ToNonNullable;
             bool done = false;
             if( _typedDrivers.TryAdd( t, driver ) )

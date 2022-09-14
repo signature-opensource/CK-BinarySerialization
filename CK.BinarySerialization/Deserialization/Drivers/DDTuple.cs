@@ -1,12 +1,13 @@
-﻿
+
 
 using CK.BinarySerialization;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace CK.BinarySerialization.Deserialization
-{ 
+{
     sealed class DTuple<T1> : ReferenceTypeDeserializer<Tuple<T1>>
     {
         readonly TypedReader<T1> _item1;

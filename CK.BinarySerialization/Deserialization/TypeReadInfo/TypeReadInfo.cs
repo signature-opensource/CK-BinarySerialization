@@ -441,7 +441,7 @@ namespace CK.BinarySerialization
             }
             if( _driver == null )
             {
-                throw new InvalidOperationException( $"Unable to resolve deserialization driver for {ToString()}." );
+                Throw.InvalidOperationException( $"Unable to resolve deserialization driver for {ToString()}." );
             }
             return _driver;
         }

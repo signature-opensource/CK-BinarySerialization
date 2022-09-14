@@ -38,7 +38,7 @@ namespace CK.BinarySerialization
         /// True if the <see cref="TargetType"/> is the same as the <see cref="ITypeReadInfo.TryResolveLocalType()"/>
         /// and <see cref="ITypeReadInfo.IsDirtyInfo"/> is false.
         /// <para>
-        /// Whether the resolved driver is eventually cached (<see cref="IDeserializationDriver.IsCached"/>) is up to
+        /// Whether the resolved driver is eventually cached (<see cref="IDeserializationDriver.IsCacheable"/>) is up to
         /// the resolvers.
         /// </para>
         /// </summary>

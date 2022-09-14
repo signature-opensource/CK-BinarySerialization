@@ -19,7 +19,7 @@ namespace CK.BinarySerialization.Deserialization
         }
 
         public DDictionary( IDeserializationDriver k, IDeserializationDriver v )
-            : base( k.IsCached && v.IsCached )
+            : base( k.IsCacheable && v.IsCacheable )
         {
             _key = Unsafe.As<TypedReader<TKey>>( k.TypedReader );
             _value = Unsafe.As<TypedReader<TValue>>( v.TypedReader );

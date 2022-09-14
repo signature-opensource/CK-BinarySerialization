@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -37,7 +37,7 @@ namespace CK.BinarySerialization
 
             public Delegate TypedReader => _reader;
 
-            public bool IsCached => _deserializer.IsCached;
+            public bool IsCacheable => _deserializer.IsCacheable;
 
             IDeserializationDriver IDeserializationDriver.ToNullable => this;
 
@@ -68,7 +68,7 @@ namespace CK.BinarySerialization
         {
             _null = new NullableAdapter( this );
             _reader = reader;
-            IsCached = isCached;
+            IsCacheable = isCached;
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace CK.BinarySerialization
         public Delegate TypedReader => _reader;
 
         /// <inheritdoc />
-        public bool IsCached { get; }
+        public bool IsCacheable { get; }
 
         /// <inheritdoc />
         public IValueTypeNullableDeserializationDriver<T> ToNullable => _null;

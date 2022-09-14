@@ -47,5 +47,10 @@ namespace CK.BinarySerialization.Serialization
         public ISerializationDriver ToNullable => NullableInstance;
 
         public ISerializationDriver ToNonNullable => Instance;
+
+        /// <summary>
+        /// Somehow irrelevant since this driver (and its nullable) are true singletons. 
+        /// </summary>
+        SerializationDriverCacheLevel ISerializationDriver.CacheLevel => SerializationDriverCacheLevel.SharedContext;
     }
 }

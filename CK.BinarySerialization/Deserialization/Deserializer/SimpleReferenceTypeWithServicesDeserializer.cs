@@ -5,7 +5,8 @@ using System.Runtime.CompilerServices;
 namespace CK.BinarySerialization
 {
     /// <summary>
-    /// Deserializer for reference type <typeparamref name="T"/> from a <see cref="ICKBinaryReader"/>.
+    /// Deserializer for reference type <typeparamref name="T"/> from a <see cref="ICKBinaryReader"/> that can use
+    /// the <see cref="BinaryDeserializerContext.Services"/>.
     /// The object cannot have references to other objects in the graph.
     /// <para>
     /// This deserializer handles the value to reference type mutation natively.
@@ -16,12 +17,12 @@ namespace CK.BinarySerialization
     /// </para>
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
-    public abstract class SimpleReferenceTypeDeserializer<T> : ReferenceTypeDeserializerBase<T> where T : class
+    public abstract class SimpleReferenceTypeWithServicesDeserializer<T> : ReferenceTypeDeserializerBase<T> where T : class
     {
         /// <summary>
         /// Initializes a new <see cref="SimpleReferenceTypeDeserializer{T}"/> that states whether it is cached or not.
         /// </summary>
-        protected SimpleReferenceTypeDeserializer()
+        protected SimpleReferenceTypeWithServicesDeserializer()
             : base( true )
         {
         }
@@ -30,7 +31,7 @@ namespace CK.BinarySerialization
         /// Initializes a new <see cref="SimpleReferenceTypeDeserializer{T}"/> that states whether it is cached or not.
         /// </summary>
         /// <param name="isCached">Whether this deserializer is cached.</param>
-        protected SimpleReferenceTypeDeserializer( bool isCached )
+        protected SimpleReferenceTypeWithServicesDeserializer( bool isCached )
             : base( isCached )
         {
         }
@@ -44,17 +45,18 @@ namespace CK.BinarySerialization
         /// <returns>The new instance.</returns>
         protected sealed override T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
         {
-            var o = ReadInstance( d.Reader, readInfo );
+            var o = ReadInstance( d.Context.Services, d.Reader, readInfo );
             if( !readInfo.IsValueType ) Unsafe.As<BinaryDeserializerImpl>( d ).Track( o );
             return o;
         }
 
         /// <summary>
-        /// Must read a non null instance from the binary reader.
+        /// Must read a non null instance from the binary reader with the help of the <see cref="BinaryDeserializerContext.Services"/>.
         /// </summary>
-       /// <param name="r">The binary reader.</param>
+        /// <param name="services">The <see cref="BinaryDeserializerContext.Services"/>.</param>
+        /// <param name="r">The binary reader.</param>
         /// <param name="readInfo">The read type info.</param>
         /// <returns>The new instance.</returns>
-        protected abstract T ReadInstance( ICKBinaryReader r, ITypeReadInfo readInfo );
+        protected abstract T ReadInstance( IServiceProvider services, ICKBinaryReader r, ITypeReadInfo readInfo );
     }
 }

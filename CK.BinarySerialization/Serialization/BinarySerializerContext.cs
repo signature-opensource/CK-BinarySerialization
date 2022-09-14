@@ -97,7 +97,7 @@ namespace CK.BinarySerialization
             if( !_cache.TryGetValue( t, out var r ) )
             {
                 r = _shared.TryFindDriver( t );
-                _cache.Add( t, r );
+                if( r == null || r.CacheLevel != SerializationDriverCacheLevel.Never )_cache.Add( t, r );
             }
             return r;
         }

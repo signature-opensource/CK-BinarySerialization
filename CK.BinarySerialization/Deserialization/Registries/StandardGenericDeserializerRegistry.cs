@@ -123,7 +123,7 @@ namespace CK.BinarySerialization
                         Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Array );
                         Debug.Assert( info.ReadInfo.SubTypes.Count == 1 );
                         var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver();
-                        return item.IsCached
+                        return item.IsCacheable
                                 ? _cache.GetOrAdd( (item, info.ReadInfo.ArrayRank), CreateCachedArray )
                                 : CreateArray( item, info.ReadInfo.ArrayRank );
                     }
@@ -132,6 +132,7 @@ namespace CK.BinarySerialization
                 case "Set": return TryGetSingleGenericParameter( info.ReadInfo, typeof( Deserialization.DHashSet<> ) );
                 case "Stack": return TryGetSingleGenericParameter( info.ReadInfo, typeof( Deserialization.DStack<> ) );
                 case "Queue": return TryGetSingleGenericParameter( info.ReadInfo, typeof( Deserialization.DQueue<> ) );
+                case "KeyValuePair": return TryGetDoubleGenericParameter( info.ReadInfo, typeof( Deserialization.DKeyValuePair<,> ) );
             }
             return null;
         }
@@ -143,7 +144,7 @@ namespace CK.BinarySerialization
             for( int i = 0; i < tA.Length; ++i )
             {
                 var d = info.SubTypes[i].GetPotentiallyAbstractDriver();
-                isCached &= d.IsCached;
+                isCached &= d.IsCacheable;
                 tA[i] = d;
             }
             var key = new TupleKey( tA, isValueTuple );
@@ -181,7 +182,7 @@ namespace CK.BinarySerialization
         {
             Debug.Assert( info.SubTypes.Count == 1 );
             var item = info.SubTypes[0].GetPotentiallyAbstractDriver();
-            return item.IsCached
+            return item.IsCacheable
                     ? _cache.GetOrAdd( (item, tGenD), CreateCached )
                     : Create( item, tGenD );
 
@@ -203,7 +204,7 @@ namespace CK.BinarySerialization
             Debug.Assert( info.SubTypes.Count == 2 );
             var item1 = info.SubTypes[0].GetPotentiallyAbstractDriver();
             var item2 = info.SubTypes[1].GetPotentiallyAbstractDriver();
-            return item1.IsCached && item2.IsCached
+            return item1.IsCacheable && item2.IsCacheable
                     ? _cache.GetOrAdd( (item1, item2, tGenD), CreateCached )
                     : Create( item1, item2, tGenD );
 

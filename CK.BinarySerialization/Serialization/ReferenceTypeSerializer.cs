@@ -1,3 +1,4 @@
+using CK.BinarySerialization.Serialization;
 using System;
 using System.Runtime.CompilerServices;
 
@@ -31,6 +32,8 @@ namespace CK.BinarySerialization
             public ISerializationDriver ToNullable => this;
 
             public ISerializationDriver ToNonNullable => _serializer;
+
+            public SerializationDriverCacheLevel CacheLevel => _serializer.CacheLevel;
 
             public void WriteNullable( IBinarySerializer s, in T? o )
             {
@@ -92,6 +95,11 @@ namespace CK.BinarySerialization
 
         /// <inheritdoc />
         public abstract int SerializationVersion { get; }
+
+        /// <summary>
+        /// Defaults to <see cref="SerializationDriverCacheLevel.SharedContext"/>.
+        /// </summary>
+        public virtual SerializationDriverCacheLevel CacheLevel => SerializationDriverCacheLevel.SharedContext;
 
     }
 }

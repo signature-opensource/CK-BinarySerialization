@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -13,7 +13,7 @@ namespace CK.BinarySerialization
     /// more efficient than this one.
     /// </para>
     /// <para>
-    /// By design, <see cref="IDeserializationDriver.IsCached"/> is false.
+    /// By design, <see cref="IDeserializationDriver.IsCacheable"/> is false.
     /// </para>
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
@@ -39,7 +39,7 @@ namespace CK.BinarySerialization
 
             public Delegate TypedReader => _reader;
 
-            public bool IsCached => false;  
+            public bool IsCacheable => false;  
 
             IDeserializationDriver IDeserializationDriver.ToNullable => this;
 
@@ -114,7 +114,7 @@ namespace CK.BinarySerialization
         public IValueTypeNonNullableDeserializationDriver<T> ToNonNullable => this;
 
         /// <inheritdoc />
-        public bool IsCached => false;
+        public bool IsCacheable => false;
 
         IDeserializationDriver IDeserializationDriver.ToNullable => _null;
 
