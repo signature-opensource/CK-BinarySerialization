@@ -14,22 +14,22 @@ namespace CK.BinarySerialization
     /// <summary>
     /// Factory for "Sliced" serialization drivers.
     /// </summary>
-    public sealed class SlicedSerializerFactory : ISerializerResolver
+    public sealed class SlicedSerializerResolver : ISerializerResolver
     {
         /// <summary>
-        /// Gets the default factory that is automatically registered in the <see cref="BinarySerializer.DefaultSharedContext"/>.
+        /// Gets the singleton instance.
         /// </summary>
-        public static readonly SlicedSerializerFactory Default = new SlicedSerializerFactory();
+        public static readonly SlicedSerializerResolver Instance = new SlicedSerializerResolver();
 
-        /// <summary>
-        /// Initializes a new factory.
-        /// </summary>
-        public SlicedSerializerFactory()
+        SlicedSerializerResolver()
         {
         }
 
         /// <inheritdoc />
-        public ISerializationDriver? TryFindDriver( Type t )
+        /// <remarks>
+        /// The <paramref name="context"/> is not used by this resolver.
+        /// </remarks>
+        public ISerializationDriver? TryFindDriver( BinarySerializerContext context, Type t )
         {
             if( t.ContainsGenericParameters || !typeof(ICKSlicedSerializable).IsAssignableFrom( t ) ) return null;
             return Create( t );
@@ -91,7 +91,7 @@ namespace CK.BinarySerialization
             }
         }
 
-        ISerializationDriver Create( Type t )
+        static ISerializationDriver Create( Type t )
         {
             var version = SerializationVersionAttribute.GetRequiredVersion( t );
             if( t.IsValueType )

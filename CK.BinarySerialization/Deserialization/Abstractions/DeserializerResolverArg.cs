@@ -29,10 +29,9 @@ namespace CK.BinarySerialization
         public string DriverName => ReadInfo.DriverName!;
 
         /// <summary>
-        /// Gets the shared context. 
-        /// This is used only to detect mismatch of resolution context.
+        /// Gets the deserialization context. 
         /// </summary>
-        public readonly SharedBinaryDeserializerContext Context;
+        public readonly BinaryDeserializerContext Context;
 
         /// <summary>
         /// True if the <see cref="TargetType"/> is the same as the <see cref="ITypeReadInfo.TryResolveLocalType()"/>
@@ -50,7 +49,7 @@ namespace CK.BinarySerialization
         /// <param name="info">The type info for which a deserialization driver must be resolved.</param>
         /// <param name="context">The shared context is used only to detect mismatch of resolution context.</param>
         /// <param name="targetType">Optional target local type. When not null, overrides <see cref="ITypeReadInfo.TargetType"/>.</param>
-        public DeserializerResolverArg( ITypeReadInfo info, SharedBinaryDeserializerContext context, Type? targetType = null )
+        public DeserializerResolverArg( ITypeReadInfo info, BinaryDeserializerContext context, Type? targetType = null )
         {
             Throw.CheckNotNullArgument( info );
             Throw.CheckArgument( "Type must not be nullable.", !info.IsNullable );
@@ -58,10 +57,7 @@ namespace CK.BinarySerialization
             Throw.CheckNotNullArgument( context );
             ReadInfo = info;
             TargetType = targetType ?? info.TargetType ?? info.ResolveLocalType();
-            if( TargetType.IsAbstract )
-            {
-                Throw.ArgumentException( nameof( info ), $"Cannot deserialize an abstract type '{TargetType}'." );
-            }
+            // The TargetType MAY be an interface (it is up to the resolvers to be able to satisfy it).
             if( TargetType == info.TargetType && info.HasResolvedConcreteDriver )
             {
                 Throw.ArgumentException( nameof( info ), "Deserialization driver must not be already resolved." );

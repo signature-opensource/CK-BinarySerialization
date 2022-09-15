@@ -13,14 +13,14 @@ namespace CK.BinarySerialization
     /// cache since the synthesized drivers only depends on the local type.
     /// </para>
     /// </summary>
-    public sealed class SimpleBinaryDeserializableRegistry : IDeserializerResolver
+    public sealed class SimpleBinaryDeserializerResolver : IDeserializerResolver
     {
         /// <summary>
         /// Gets the default registry.
         /// </summary>
-        public static readonly IDeserializerResolver Instance = new SimpleBinaryDeserializableRegistry();
+        public static readonly IDeserializerResolver Instance = new SimpleBinaryDeserializerResolver();
 
-        SimpleBinaryDeserializableRegistry() { }
+        SimpleBinaryDeserializerResolver() { }
 
         /// <summary>
         /// Synthesizes a deserialization driver if the <see cref="DeserializerResolverArg.DriverName"/>

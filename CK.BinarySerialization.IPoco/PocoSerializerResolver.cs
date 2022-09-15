@@ -1,0 +1,69 @@
+using CK.Core;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Text.Json;
+using static CK.Core.PocoJsonSerializer;
+
+namespace CK.BinarySerialization
+{
+    /// <summary>
+    /// Factory for <see cref="IPoco"/> serialization drivers.
+    /// </summary>
+    public sealed class PocoSerializerResolver : ISerializerResolver
+    {
+        /// <summary>
+        /// Gets the singleton instance.
+        /// </summary>
+        public static readonly PocoSerializerResolver Instance = new PocoSerializerResolver();
+
+        PocoSerializerResolver()
+        {
+        }
+
+        /// <inheritdoc />
+        public ISerializationDriver? TryFindDriver( BinarySerializerContext context, Type t )
+        {
+            if( !t.IsClass || !typeof(IPoco).IsAssignableFrom( t ) ) return null;
+            var f = context.Services.GetRequiredService<PocoDirectory>().Find( t );
+            if( f == null ) return null;
+            var tR = typeof( PocoSerializableDriver<> ).MakeGenericType( t );
+            return ((ISerializationDriver)Activator.CreateInstance( tR, f )!).ToNullable;
+        }
+
+        sealed class PocoSerializableDriver<T> : ReferenceTypeSerializer<T>, ISerializationDriverTypeRewriter where T : class, IPoco
+        {
+            readonly IPocoFactory _factory;
+
+            public PocoSerializableDriver( IPocoFactory factory )
+            {
+                _factory = factory;
+            }
+
+            public override string DriverName => "IPocoJson";
+
+            public override int SerializationVersion => -1;
+
+            public override SerializationDriverCacheLevel CacheLevel => SerializationDriverCacheLevel.Context;
+
+            public Type GetTypeToWrite( Type type ) => _factory.PrimaryInterface;
+
+            protected override void Write( IBinarySerializer s, in T o )
+            {
+                // We don't write the ["TypeName",{ ... }] envelope since we rely on the rewritten Type
+                // that is the primary interface: the type name is free to change and it the type is
+                // hooked and a new TargetType is set, this MAY work...
+                var m = o.JsonSerialize( withType: false );
+                s.Writer.WriteNonNegativeSmallInt32( m.Length );
+                s.Writer.Write( m.Span );
+            }
+        }
+
+    }
+}

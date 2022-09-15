@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace CK.BinarySerialization
@@ -6,21 +6,21 @@ namespace CK.BinarySerialization
     /// <summary>
     /// Immutable singleton that contains default serializers for well-known types.
     /// <para>
-    /// A simple dictionary is enough since it is only read.
+    /// A simple static dictionary is enough since it is only read.
     /// </para>
     /// </summary>
-    public class BasicTypeSerializerRegistry : ISerializerResolver
+    public sealed class BasicTypesSerializerResolver : ISerializerResolver
     {
         static readonly Dictionary<Type, ISerializationDriver> _byType;
 
         /// <summary>
         /// Gets the singleton instance.
         /// </summary>
-        public static readonly BasicTypeSerializerRegistry Instance = new BasicTypeSerializerRegistry();
+        public static readonly BasicTypesSerializerResolver Instance = new BasicTypesSerializerResolver();
 
-        BasicTypeSerializerRegistry() { }
+        BasicTypesSerializerResolver() { }
 
-        static BasicTypeSerializerRegistry()
+        static BasicTypesSerializerResolver()
         {
             _byType = new Dictionary<Type, ISerializationDriver>();
             Register( new Serialization.DString() );
@@ -64,7 +64,10 @@ namespace CK.BinarySerialization
         }
 
         /// <inheritdoc />
-        public ISerializationDriver? TryFindDriver( Type t ) => _byType.GetValueOrDefault( t );
+        /// <remarks>
+        /// The <paramref name="context"/> is not used by this resolver.
+        /// </remarks>
+        public ISerializationDriver? TryFindDriver( BinarySerializerContext context, Type t ) => _byType.GetValueOrDefault( t );
 
     }
 }

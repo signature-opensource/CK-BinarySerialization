@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
@@ -11,18 +11,18 @@ namespace CK.BinarySerialization
     /// A simple dictionary is enough since it is only read.
     /// </para>
     /// </summary>
-    public sealed class BasicTypeDeserializerRegistry : IDeserializerResolver
+    public sealed class BasicTypesDeserializerResolver : IDeserializerResolver
     {
         static readonly Dictionary<string, IDeserializationDriver> _byName;
 
         /// <summary>
         /// Gets the default registry.
         /// </summary>
-        public static readonly IDeserializerResolver Instance = new BasicTypeDeserializerRegistry();
+        public static readonly IDeserializerResolver Instance = new BasicTypesDeserializerResolver();
 
-        BasicTypeDeserializerRegistry() { }
+        BasicTypesDeserializerResolver() { }
 
-        static BasicTypeDeserializerRegistry()
+        static BasicTypesDeserializerResolver()
         {
             _byName = new Dictionary<string, IDeserializationDriver>()
             {

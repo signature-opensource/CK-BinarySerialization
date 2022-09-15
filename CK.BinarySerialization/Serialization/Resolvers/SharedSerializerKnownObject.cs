@@ -13,7 +13,7 @@ namespace CK.BinarySerialization
     /// Thread safe implementation of unique association between a key string and its object.
     /// <see cref="StringComparer.Ordinal"/> and all other static comparer are preregistered.
     /// </summary>
-    public class SharedSerializerKnownObject : ISerializerKnownObject
+    public sealed class SharedSerializerKnownObject : ISerializerKnownObject
     {
         /// <summary>
         /// Gets a shared thread safe instance.

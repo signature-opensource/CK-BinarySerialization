@@ -60,14 +60,14 @@ namespace CK.BinarySerialization
     /// </list>
     /// </para>
     /// </summary>
-    public sealed class SlicedDeserializerRegistry : IDeserializerResolver
+    public sealed class SlicedDeserializerResolver : IDeserializerResolver
     {
         /// <summary>
         /// Gets the registry.
         /// </summary>
-        public static readonly SlicedDeserializerRegistry Instance = new SlicedDeserializerRegistry();
+        public static readonly SlicedDeserializerResolver Instance = new SlicedDeserializerResolver();
 
-        SlicedDeserializerRegistry() { }
+        SlicedDeserializerResolver() { }
 
         sealed class SlicedDeserializerDriverVWithRef<T> : ValueTypeDeserializerWithRef<T> where T : struct
         {
@@ -191,8 +191,8 @@ namespace CK.BinarySerialization
                 {
                     // No: it has been written as a Sliced but this has changed.
                     //     Let's try the Versioned and Simple deserialization constructor.
-                    return SimpleBinaryDeserializableRegistry.TryGetOrCreateVersionedDriver( ref info ) 
-                            ?? SimpleBinaryDeserializableRegistry.TryGetOrCreateSimpleDriver( ref info );
+                    return SimpleBinaryDeserializerResolver.TryGetOrCreateVersionedDriver( ref info ) 
+                            ?? SimpleBinaryDeserializerResolver.TryGetOrCreateSimpleDriver( ref info );
                 }
                 // We are on a Sliced deserialization.
                 if( info.TargetType.IsValueType )

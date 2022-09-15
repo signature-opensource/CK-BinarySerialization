@@ -63,15 +63,7 @@ namespace CK.BinarySerialization
 
         internal IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
-            try
-            {
-                return _shared.TryFindDriver( ref info );
-            }
-            catch( System.Reflection.TargetInvocationException ex )
-            {
-                if( ex.InnerException != null ) throw ex.InnerException;
-                else throw;
-            }
+            return _shared.TryFindDriver( ref info );
         }
 
         internal object? GetKnownObject( string instanceKey )

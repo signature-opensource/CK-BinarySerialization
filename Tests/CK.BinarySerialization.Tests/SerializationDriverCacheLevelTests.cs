@@ -49,12 +49,12 @@ namespace CK.BinarySerialization.Tests
         /// <summary>
         /// This resolver is contextless (except the static WriterCacheLevel dependency
         /// for tests).
-        /// More complex like <see cref="StandardGenericSerializerFactory"/> can depend on
+        /// More complex like <see cref="StandardGenericSerializerResolver"/> can depend on
         /// the shared context in order to compose serializers.
         /// </summary>
         sealed class Resolver : ISerializerResolver
         {
-            public ISerializationDriver? TryFindDriver( Type t )
+            public ISerializationDriver? TryFindDriver( BinarySerializerContext context, Type t )
             {
                 if( t == typeof(Thing) )
                 {
@@ -97,7 +97,7 @@ namespace CK.BinarySerialization.Tests
             var back2 = TestHelper.SaveAndLoadObject( thing, sC, dC );
             back2.FromWriter.Should().StartWith( "Written by 'Second'." );
 
-            // Not that this test works because the StandardGenericSerializerFactory propagates the_Never
+            // Not that this test works because the StandardGenericSerializerResolver propagates the_Never
             // cache level to the containers it handles: here the ValuTuple`2 serialization driver is also
             // never cached.
             ICanChange = "Even in the same session!";
@@ -146,7 +146,7 @@ namespace CK.BinarySerialization.Tests
         }
 
         [Test]
-        public void StandardGenericSerializerFactory_propagates_the_Never_cache_level_to_its_containers()
+        public void StandardGenericSerializerResolver_propagates_the_Never_cache_level_to_its_containers()
         {
             var thing = new Thing { Name = "Don't care." };
 

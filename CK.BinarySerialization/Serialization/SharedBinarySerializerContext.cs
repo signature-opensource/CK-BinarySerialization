@@ -16,7 +16,7 @@ namespace CK.BinarySerialization
     /// the first time or it will never be by this shared context.
     /// </para>
     /// </summary>
-    public class SharedBinarySerializerContext : ISerializerResolver
+    public sealed class SharedBinarySerializerContext : ISerializerResolver
     {
         ISerializerResolver[] _resolvers;
         readonly ConcurrentDictionary<Type, ISerializationDriver?> _typedDrivers;
@@ -28,19 +28,19 @@ namespace CK.BinarySerialization
         // RuntimeHelpers.RunModuleConstructor on modules of assemblies loaded, typically from 
         // a OnAssemblyLoad event. This doesn't seem to be a good idea: code generation may 
         // be a better way of doing this.
-        // Currently, only the Sliced companion should be systematically registered, so let's do
+        // Currently, the Sliced and Poco companion should be systematically registered, so let's do
         // this rather awful trick.
-        static readonly Type? _tSliced = Type.GetType( "CK.BinarySerialization.SlicedSerializerFactory, CK.BinarySerialization.Sliced", throwOnError: false );
+        static readonly ISerializerResolver? _rSliced = (ISerializerResolver?)GetInstance( "CK.BinarySerialization.SlicedSerializerResolver, CK.BinarySerialization.Sliced" );
+        static readonly ISerializerResolver? _rPoco = (ISerializerResolver?)GetInstance( "CK.BinarySerialization.PocoSerializerResolver, CK.BinarySerialization.IPoco" );
 
-        /// <summary>
-        /// Same as <see cref="_tSliced"/> to automatically register IPoco support if the assembly exists.
-        /// </summary>
-        static readonly Type? _tPoco = Type.GetType( "CK.BinarySerialization.PocoSerializerFactory, CK.BinarySerialization.IPoco", throwOnError: false );
+        static internal object? GetInstance( string aqn ) => Type.GetType( aqn, throwOnError: false )?
+                                                                  .GetField( "Instance", BindingFlags.Static | BindingFlags.Public )?
+                                                                  .GetValue( null );
 
         /// <summary>
         /// Initializes a new independent shared context bound to a possibly independent <see cref="SharedSerializerKnownObject"/>, 
-        /// optionally with the <see cref="BasicTypeSerializerRegistry.Instance"/>, <see cref="SimpleBinarySerializableFactory.Instance"/> 
-        /// and a <see cref="StandardGenericSerializerFactory"/>.
+        /// optionally with the <see cref="BasicTypesSerializerResolver.Instance"/>, <see cref="SimpleBinarySerializableResolver.Instance"/> 
+        /// and <see cref="StandardGenericSerializerResolver.Instance"/> along with Sliced and Poco resolvers if they can be loaded.
         /// <para>
         /// Caution: if <see cref="SharedSerializerKnownObject.Default"/> is not used, default comparers for dictionary keys will NOT be automatically
         /// registered in the <see cref="KnownObjects"/> (they are only automatically registered in <see cref="SharedSerializerKnownObject.Default"/>).
@@ -54,31 +54,31 @@ namespace CK.BinarySerialization
             _typedDrivers = new ConcurrentDictionary<Type, ISerializationDriver?>();
             if( useDefaultResolvers )
             {
-                _resolvers = _tSliced != null
+                _resolvers = _rSliced != null
                                 ? (
-                                    _tPoco != null
-                                    ? new ISerializerResolver[] { BasicTypeSerializerRegistry.Instance,
-                                                                  SimpleBinarySerializableFactory.Instance,
-                                                                  new StandardGenericSerializerFactory( this ),
-                                                                  (ISerializerResolver)Activator.CreateInstance( _tSliced )!,
-                                                                  (ISerializerResolver)Activator.CreateInstance( _tPoco )!
+                                    _rPoco != null
+                                    ? new ISerializerResolver[] { BasicTypesSerializerResolver.Instance,
+                                                                  SimpleBinarySerializableResolver.Instance,
+                                                                  StandardGenericSerializerResolver.Instance,
+                                                                  _rSliced,
+                                                                  _rPoco
                                                                 }
-                                    : new ISerializerResolver[] { BasicTypeSerializerRegistry.Instance,
-                                                                  SimpleBinarySerializableFactory.Instance,
-                                                                  new StandardGenericSerializerFactory( this ),
-                                                                  (ISerializerResolver)Activator.CreateInstance( _tSliced )!
+                                    : new ISerializerResolver[] { BasicTypesSerializerResolver.Instance,
+                                                                  SimpleBinarySerializableResolver.Instance,
+                                                                  StandardGenericSerializerResolver.Instance,
+                                                                  _rSliced
                                                                 }
                                    )
                                 : (
-                                    _tPoco != null
-                                    ? new ISerializerResolver[] { BasicTypeSerializerRegistry.Instance,
-                                                                  SimpleBinarySerializableFactory.Instance,
-                                                                  new StandardGenericSerializerFactory( this ),
-                                                                  (ISerializerResolver)Activator.CreateInstance( _tPoco )!
+                                    _rPoco != null
+                                    ? new ISerializerResolver[] { BasicTypesSerializerResolver.Instance,
+                                                                  SimpleBinarySerializableResolver.Instance,
+                                                                  StandardGenericSerializerResolver.Instance,
+                                                                  _rPoco
                                                                 }
-                                    : new ISerializerResolver[] { BasicTypeSerializerRegistry.Instance,
-                                                                  SimpleBinarySerializableFactory.Instance,
-                                                                  new StandardGenericSerializerFactory( this )
+                                    : new ISerializerResolver[] { BasicTypesSerializerResolver.Instance,
+                                                                  SimpleBinarySerializableResolver.Instance,
+                                                                  StandardGenericSerializerResolver.Instance
                                                                 }
                                   );
             }
@@ -125,8 +125,11 @@ namespace CK.BinarySerialization
         }
 
         /// <inheritdoc />
-        public ISerializationDriver? TryFindDriver( Type t )
+        public ISerializationDriver? TryFindDriver( BinarySerializerContext context, Type t )
         {
+            Throw.CheckArgument( context?.Shared == this );
+            Throw.CheckNotNullArgument( t );
+
             if( !_typedDrivers.TryGetValue( t, out var driver ) )
             {
                 // We avoid duplicate instantiation: as soon as a driver must be resolved
@@ -140,7 +143,7 @@ namespace CK.BinarySerialization
                         ISerializerResolver? found = null;
                         foreach( var resolver in _resolvers )
                         {
-                            driver = resolver.TryFindDriver( t );
+                            driver = resolver.TryFindDriver( context, t );
                             if( driver != null )
                             {
                                 found = resolver;
@@ -169,25 +172,9 @@ namespace CK.BinarySerialization
             // Always do this because of the Double Check Lock.
             if( driver is NonCacheableDriverSentinel noCache )
             {
-                driver = noCache.Resolver.TryFindDriver( t );
+                driver = noCache.Resolver.TryFindDriver( context, t );
             }
             return driver;
-        }
-
-        /// <summary>
-        /// If the type is not sealed (it's necessarily a class) then returns a generic driver that relies
-        /// on the actual runtime type. Otherwise calls <see cref="TryFindDriver(Type)"/>.
-        /// </summary>
-        /// <param name="t">The type for which a driver is needed.</param>
-        /// <returns>The driver or null.</returns>
-        public ISerializationDriver? TryFindPossiblyAbstractDriver( Type t )
-        {
-            if( !t.IsSealed )
-            {
-                Debug.Assert( t.IsClass, "Currently nullable by default." );
-                return Serialization.DAbstract.Instance.ToNullable;
-            }
-            return TryFindDriver( t );
         }
 
         /// <summary>

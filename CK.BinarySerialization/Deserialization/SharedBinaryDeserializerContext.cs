@@ -24,15 +24,10 @@ namespace CK.BinarySerialization
         Action<IMutableTypeReadInfo>[] _hooks;
 
         /// <summary>
-        /// See <see cref="SharedBinarySerializerContext._tSliced"/> for rationales.
+        /// See <see cref="SharedBinarySerializerContext._rSliced"/> for rationales.
         /// </summary>
-        static readonly Type? _tSliced = Type.GetType( "CK.BinarySerialization.SlicedDeserializerRegistry, CK.BinarySerialization.Sliced", throwOnError: false );
-
-        /// <summary>
-        /// Same trick as "Sliced" deserialization (and serializer does the same) to
-        /// automatically register the IPoco support if the assembly is available.
-        /// </summary>
-        static readonly Type? _tPoco = Type.GetType( "CK.BinarySerialization.PocoDeserializerRegistry, CK.BinarySerialization.IPoco", throwOnError: false );
+        static readonly IDeserializerResolver? _rSliced = (IDeserializerResolver?)SharedBinarySerializerContext.GetInstance( "CK.BinarySerialization.SlicedDeserializerResolver, CK.BinarySerialization.Sliced" );
+        static readonly IDeserializerResolver? _rPoco = (IDeserializerResolver?)SharedBinarySerializerContext.GetInstance( "CK.BinarySerialization.PocoDeserializerResolver, CK.BinarySerialization.IPoco" );
 
         /// <summary>
         /// Abstract drivers are statically cached once for all.
@@ -51,8 +46,8 @@ namespace CK.BinarySerialization
 
         /// <summary>
         /// Initializes a new registry bound to a possibly independent <see cref="SharedDeserializerKnownObject"/> and
-        /// the <see cref="BasicTypeDeserializerRegistry.Instance"/>, <see cref="SimpleBinaryDeserializableRegistry.Instance"/> 
-        /// and a <see cref="StandardGenericDeserializerRegistry"/>.
+        /// the <see cref="BasicTypesDeserializerResolver.Instance"/>, <see cref="SimpleBinaryDeserializerResolver.Instance"/> 
+        /// and a <see cref="StandardGenericDeserializerResolver"/>.
         /// <para>
         /// Caution: if <see cref="SharedDeserializerKnownObject.Default"/> is not used, default comparers for dictionary keys will NOT be automatically
         /// registered in the <see cref="KnownObjects"/> (they are only automatically registered in <see cref="SharedDeserializerKnownObject.Default"/>).
@@ -68,31 +63,31 @@ namespace CK.BinarySerialization
 
             if( useDefaultResolvers )
             {
-                _resolvers = _tSliced != null
+                _resolvers = _rSliced != null
                                 ? (
-                                    _tPoco != null
-                                    ? new IDeserializerResolver[] { BasicTypeDeserializerRegistry.Instance,
-                                                                    SimpleBinaryDeserializableRegistry.Instance,
-                                                                    new StandardGenericDeserializerRegistry( this ),
-                                                                    (IDeserializerResolver)_tSliced.GetField( "Instance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static )!.GetValue( null )!,
-                                                                    (IDeserializerResolver)_tPoco.GetField( "Instance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static )!.GetValue( null )!
+                                    _rPoco != null
+                                    ? new IDeserializerResolver[] { BasicTypesDeserializerResolver.Instance,
+                                                                    SimpleBinaryDeserializerResolver.Instance,
+                                                                    new StandardGenericDeserializerResolver( this ),
+                                                                    _rSliced,
+                                                                    _rPoco
                                                               }
-                                    : new IDeserializerResolver[] { BasicTypeDeserializerRegistry.Instance,
-                                                                    SimpleBinaryDeserializableRegistry.Instance,
-                                                                    new StandardGenericDeserializerRegistry( this ),
-                                                                    (IDeserializerResolver)_tSliced.GetField( "Instance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static )!.GetValue( null )!
+                                    : new IDeserializerResolver[] { BasicTypesDeserializerResolver.Instance,
+                                                                    SimpleBinaryDeserializerResolver.Instance,
+                                                                    new StandardGenericDeserializerResolver( this ),
+                                                                    _rSliced
                                                                   }
                                     )
                                 : (
-                                    _tPoco != null
-                                    ? new IDeserializerResolver[] { BasicTypeDeserializerRegistry.Instance,
-                                                                    SimpleBinaryDeserializableRegistry.Instance,
-                                                                    new StandardGenericDeserializerRegistry( this ),
-                                                                    (IDeserializerResolver)_tPoco.GetField( "Instance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static )!.GetValue( null )!
+                                    _rPoco != null
+                                    ? new IDeserializerResolver[] { BasicTypesDeserializerResolver.Instance,
+                                                                    SimpleBinaryDeserializerResolver.Instance,
+                                                                    new StandardGenericDeserializerResolver( this ),
+                                                                    _rPoco
                                                                   }
-                                    : new IDeserializerResolver[] { BasicTypeDeserializerRegistry.Instance,
-                                                                    SimpleBinaryDeserializableRegistry.Instance,
-                                                                    new StandardGenericDeserializerRegistry( this )
+                                    : new IDeserializerResolver[] { BasicTypesDeserializerResolver.Instance,
+                                                                    SimpleBinaryDeserializerResolver.Instance,
+                                                                    new StandardGenericDeserializerResolver( this )
                                                                   }
 
                                   );

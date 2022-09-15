@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using CSemVer;
 using System;
 using System.Diagnostics;
@@ -100,8 +100,8 @@ namespace CK.BinarySerialization.Serialization
         public static void Write( IBinarySerializer s, in SVersionBound o )
         {
             s.WriteObject( o.Base );
-            s.Writer.WriteEnum( o.Lock );
-            s.Writer.WriteEnum( o.MinQuality );
+            s.Writer.Write( (byte)o.Lock );
+            s.Writer.Write( (byte)o.MinQuality );
         }
     }
 

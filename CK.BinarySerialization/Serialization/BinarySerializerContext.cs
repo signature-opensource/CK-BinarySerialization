@@ -1,6 +1,7 @@
 using CK.Core;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 
 namespace CK.BinarySerialization
@@ -13,7 +14,7 @@ namespace CK.BinarySerialization
     /// that must be disposed before reusing this context (otherwise a <see cref="InvalidOperationException"/> is raised).
     /// </para>
     /// </summary>
-    public class BinarySerializerContext : ISerializerResolver
+    public class BinarySerializerContext
     {
         readonly Dictionary<Type, ISerializationDriver?> _cache;
         readonly Dictionary<object, string> _knownObjects;
@@ -96,10 +97,43 @@ namespace CK.BinarySerialization
         {
             if( !_cache.TryGetValue( t, out var r ) )
             {
-                r = _shared.TryFindDriver( t );
+                r = _shared.TryFindDriver( this, t );
                 if( r == null || r.CacheLevel != SerializationDriverCacheLevel.Never )_cache.Add( t, r );
             }
             return r;
+        }
+
+        /// <summary>
+        /// If the type is not sealed (it's necessarily a class) then returns a generic driver that relies
+        /// on the actual runtime type. Otherwise calls <see cref="TryFindDriver(BinarySerializerContext, Type)"/>.
+        /// </summary>
+        /// <param name="context">The serializer context.</param>
+        /// <param name="t">The type for which a driver is needed.</param>
+        /// <returns>The driver or null.</returns>
+        public ISerializationDriver? TryFindPossiblyAbstractDriver( Type t )
+        {
+            if( !t.IsSealed )
+            {
+                Debug.Assert( t.IsClass, "Currently nullable by default." );
+                return Serialization.DAbstract.Instance.ToNullable;
+            }
+            return TryFindDriver( t );
+        }
+
+        /// <summary>
+        /// Finds a driver or throws a <see cref="InvalidOperationException"/>.
+        /// </summary>
+        /// <param name="r">This resolver.</param>
+        /// <param name="t">The type for which a driver must be resolved.</param>
+        /// <returns>The driver.</returns>
+        public ISerializationDriver FindDriver( Type t )
+        {
+            var d = TryFindDriver( t );
+            if( d == null )
+            {
+                Throw.InvalidOperationException( $"Unable to find a serialization driver for type '{t}'." );
+            }
+            return d;
         }
 
         /// <inheritdoc cref="ISerializerKnownObject.GetKnownObjectKey(object)"/>

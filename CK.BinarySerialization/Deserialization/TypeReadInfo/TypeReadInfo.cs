@@ -436,7 +436,7 @@ namespace CK.BinarySerialization
             if( !_driverLookupDone )
             {
                 _driverLookupDone = true;
-                var a = new DeserializerResolverArg( this, _deserializer.Context.Shared );
+                var a = new DeserializerResolverArg( this, _deserializer.Context );
                 _driver = _deserializer.Context.TryFindDriver( ref a );
             }
             if( _driver == null )

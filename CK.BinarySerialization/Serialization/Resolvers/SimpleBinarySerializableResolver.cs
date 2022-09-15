@@ -14,21 +14,24 @@ namespace CK.BinarySerialization
     /// will be used), introducing another level of cache would be quite pointless.
     /// </para>
     /// </summary>
-    public class SimpleBinarySerializableFactory : ISerializerResolver
+    public sealed class SimpleBinarySerializableResolver : ISerializerResolver
     {
         /// <summary>
         /// Gets the singleton instance.
         /// </summary>
-        public static readonly SimpleBinarySerializableFactory Instance = new SimpleBinarySerializableFactory();
+        public static readonly SimpleBinarySerializableResolver Instance = new SimpleBinarySerializableResolver();
 
-        SimpleBinarySerializableFactory() { }
+        SimpleBinarySerializableResolver() { }
 
         /// <summary>
         /// Handles the type if it implements <see cref="ICKSimpleBinarySerializable"/> or <see cref="ICKVersionedBinarySerializable"/>.
         /// </summary>
         /// <param name="t">The type for which a serialization driver must be resolved.</param>
         /// <returns>A new driver or null.</returns>
-        public ISerializationDriver? TryFindDriver( Type t )
+        /// <remarks>
+        /// The <paramref name="context"/> is not used by this resolver.
+        /// </remarks>
+        public ISerializationDriver? TryFindDriver( BinarySerializerContext context, Type t )
         {
             try
             {
@@ -47,8 +50,7 @@ namespace CK.BinarySerialization
             }
             catch( System.Reflection.TargetInvocationException ex )
             {
-                if( ex.InnerException != null ) throw ex.InnerException;
-                throw;
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture( ex.InnerException! ).Throw();
             }
             return null;
         }

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -10,8 +10,8 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="CK.Poco.Json" Version="20.0.0" />
-    <PackageReference Include="CK.StObj.Model" Version="20.0.0" />
+    <PackageReference Include="CK.Poco.Json" Version="20.0.1--0009-develop" />
+    <PackageReference Include="CK.StObj.Model" Version="20.0.1--0009-develop" />
   </ItemGroup>
 
   <ItemGroup>

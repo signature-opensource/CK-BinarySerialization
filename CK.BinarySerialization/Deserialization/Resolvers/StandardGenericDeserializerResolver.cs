@@ -18,11 +18,10 @@ namespace CK.BinarySerialization
     /// by the bound <see cref="SharedBinaryDeserializerContext"/>.
     /// </para>
     /// </summary>
-    public sealed class StandardGenericDeserializerRegistry : IDeserializerResolver
+    public sealed class StandardGenericDeserializerResolver : IDeserializerResolver
     {
         // Caching here relies on the subordinated cached deserializers and the generic type to synthesize.
-        // We can use a simple ConcurrentDictionary and its simple GetOrAdd method since 2
-        // deserializers with the same subordinated cached deserializers: we can accept the concurrency issue
+        // We can use a simple ConcurrentDictionary and its simple GetOrAdd: we can accept the concurrency issue
         // and duplicated calls to create functions (this should barely happen) and the GetOrAdd will
         // always return the winner.
         // The key is an object that contains the resolved subordinated items drivers (and may be an
@@ -63,10 +62,10 @@ namespace CK.BinarySerialization
         }
 
         /// <summary>
-        /// Initializes a new <see cref="StandardGenericDeserializerRegistry"/>.
+        /// Initializes a new <see cref="StandardGenericDeserializerResolver"/>.
         /// </summary>
         /// <param name="context">The bound shared context. Used only to detect mismatch of resolution context.</param>
-        public StandardGenericDeserializerRegistry( SharedBinaryDeserializerContext context ) 
+        public StandardGenericDeserializerResolver( SharedBinaryDeserializerContext context ) 
         {
             _cache = new ConcurrentDictionary<object, IDeserializationDriver>();
             _context = context;
@@ -80,31 +79,32 @@ namespace CK.BinarySerialization
         /// <returns>The driver or null.</returns>
         public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
-            Throw.CheckArgument( "Deserialization context mismatch.", _context == info.Context );
+            Throw.CheckArgument( "Deserialization context mismatch.", _context == info.Context.Shared );
             switch( info.DriverName )
             {
                 case "Enum":
                     {
-                        // Enum is automatically adapted to its local type, including using any integral local type.
-                        Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Enum && info.ReadInfo.SubTypes.Count == 1 );
-                        var uD = info.ReadInfo.SubTypes[0].GetConcreteDriver();
-                        // We cache only the "nominal deserializer".
-                        if( info.TargetType == uD.ResolvedType )
-                        {
-                            return _cache.GetOrAdd( (info.TargetType, uD), CreateNominalEnum );
-                        }
-                        // If info.TargetType.IsEnum is false (the target type is NOT an enum), we could do this (it works):
+                        // If info.TargetType.IsEnum is false (the target type is NOT an enum), we could do this for integral types (it works):
                         //
                         //   var tDiffOther = typeof( Deserialization.DEnumDiff<,,> ).MakeGenericType( info.TargetType, info.TargetType, uD.ResolvedType );
                         //   return (IDeserializationDriver)Activator.CreateInstance( tDiffOther, uD.TypedReader )!;
                         //
-                        // However we don't to stay consistent. Mutations must be coherent, if we do this then we should also handle 
+                        // However we don't do this to stay consistent. Mutations must be coherent, if we do this then we should also handle 
                         // the opposite (written integral types read as enums). We may do this once.
                         // 
-                        // For the moment, supporting mapping to different enums types only makes deserialization hooks and
-                        // IMutableTypeReadInfo.SetTargetType a simple way to handle enum migrations.
+                        // For the moment, to support mapping to different enums types use deserialization hooks and
+                        // IMutableTypeReadInfo.SetTargetType.
                         //
                         if( !info.TargetType.IsEnum ) return null;
+
+                        // Enum is automatically adapted to its local type, including using any integral local type.
+                        Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Enum && info.ReadInfo.SubTypes.Count == 1 );
+                        var uD = info.ReadInfo.SubTypes[0].GetConcreteDriver();
+                        // We cache only if no type adaptation is required.
+                        if( info.TargetType.GetEnumUnderlyingType() == uD.ResolvedType )
+                        {
+                            return _cache.GetOrAdd( (info.TargetType, uD), CreateNominalEnum );
+                        }
 
                         var tDiff = typeof( Deserialization.DEnumDiff<,,> )
                                     .MakeGenericType( info.TargetType, info.TargetType.GetEnumUnderlyingType(), uD.ResolvedType );

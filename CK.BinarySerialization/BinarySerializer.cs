@@ -20,8 +20,8 @@ namespace CK.BinarySerialization
         public const int SerializerVersion = 10;
 
         /// <summary>
-        /// Gets the default thread safe static context initialized with the <see cref="BasicTypeSerializerRegistry.Instance"/>,
-        /// <see cref="SimpleBinarySerializableFactory.Instance"/> and a <see cref="StandardGenericSerializerFactory"/>
+        /// Gets the default thread safe static context initialized with the <see cref="BasicTypesSerializerResolver.Instance"/>,
+        /// <see cref="SimpleBinarySerializableResolver.Instance"/> and a <see cref="StandardGenericSerializerResolver"/>
         /// deserializer resolvers and <see cref="SharedSerializerKnownObject.Default"/>.
         /// </summary>
         public static readonly SharedBinarySerializerContext DefaultSharedContext = new SharedBinarySerializerContext();

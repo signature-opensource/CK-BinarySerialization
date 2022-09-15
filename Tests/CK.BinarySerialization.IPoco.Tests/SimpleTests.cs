@@ -27,19 +27,20 @@ namespace CK.BinarySerialization.Poco.Tests
             var o1 = s.GetRequiredService<PocoDirectory>().Create<ISimple>();
             var o2 = s.GetRequiredService<PocoDirectory>().Create<ISimple>( o => o.Thing = "Goodbye!" );
 
-            // The deserializer context's services must contain the PocoDirectory.
-            var deserializerContext = new BinaryDeserializerContext( BinaryDeserializer.DefaultSharedContext, s );
+            // The de/serializer contexts' services must contain the PocoDirectory.
+            var dC = new BinaryDeserializerContext( BinaryDeserializer.DefaultSharedContext, s );
+            var sC = new BinarySerializerContext( BinarySerializer.DefaultSharedContext, s );
 
-            object? backO1 = TestHelper.SaveAndLoadAny( o1, deserializerContext: deserializerContext );
+            object? backO1 = TestHelper.SaveAndLoadAny( o1, sC, dC );
             backO1.Should().NotBeSameAs( o1 );
             backO1.Should().BeEquivalentTo( o1 );
 
-            object? backO2 = TestHelper.SaveAndLoadAny( o2, deserializerContext: deserializerContext );
+            object? backO2 = TestHelper.SaveAndLoadAny( o2, sC, dC );
             backO2.Should().NotBeSameAs( o2 );
             backO2.Should().BeEquivalentTo( o2 );
 
-            BinarySerializer.IdempotenceCheck( o1, deserializerContext: deserializerContext );
-            BinarySerializer.IdempotenceCheck( o2, deserializerContext: deserializerContext );
+            BinarySerializer.IdempotenceCheck( o1, sC, dC );
+            BinarySerializer.IdempotenceCheck( o2, sC, dC );
         }
 
     }
