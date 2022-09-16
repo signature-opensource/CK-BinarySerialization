@@ -20,8 +20,8 @@ namespace CK.BinarySerialization
     /// <list type="bullet">
     ///     <item>
     ///     When the local type is a class with only one existing deserialization constructor (its base class is Object or a non ICKSlicedSerializable 
-    ///     object), we have no other options to trust its constructor that must then be able to handle 
-    ///     any "previous" writes with potentially multiple TypeReadInfo from previous base classes and the standard <see cref="ReferenceTypeDeserializer{T}"/>
+    ///     object), we have no other options to trust its constructor that must be able to handle any "previous" writes with potentially
+    ///     multiple TypeReadInfo from previous base classes and since the standard <see cref="ReferenceTypeDeserializer{T}"/>
     ///     gracefully handles previously written struct: we can cache and reuse the driver.
     ///     </item>
     ///     <item>
@@ -121,7 +121,7 @@ namespace CK.BinarySerialization
                 var parameters = new object?[] { d, readInfo.TypePath[idxInfo] };
                 // Call the top one.
                 _ctors[0].Invoke( o, parameters );
-                // Challenge the IDestroyable and calls the remainders if the object is not destroyed.
+                // Challenges the IDestroyable and calls the remainders if the object is not destroyed.
                 if( o is not IDestroyable destroyed || !destroyed.IsDestroyed )
                 {
                     int idxCtor = 1;
@@ -166,7 +166,7 @@ namespace CK.BinarySerialization
                     int idxCtor = 1;
                     do
                     {
-                        parameters[1] = readInfo.TypePath[idxCtor];
+                        parameters[1] = _readTypes[idxCtor];
                         _ctors[idxCtor].Invoke( o, parameters );
                     }
                     while( ++idxCtor < _readTypes.Length );

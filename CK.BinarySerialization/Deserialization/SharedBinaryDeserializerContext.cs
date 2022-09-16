@@ -20,7 +20,7 @@ namespace CK.BinarySerialization
     {
         IDeserializerResolver[] _resolvers;
         readonly IDeserializerKnownObject _knownObjects;
-        readonly ConcurrentDictionary<Type, IDeserializationDriver> _typedDrivers;
+        readonly ConcurrentDictionary<Type, IDeserializationDriver> _localTypedDrivers;
         Action<IMutableTypeReadInfo>[] _hooks;
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Initializes a new registry bound to a possibly independent <see cref="SharedDeserializerKnownObject"/> and
         /// the <see cref="BasicTypesDeserializerResolver.Instance"/>, <see cref="SimpleBinaryDeserializerResolver.Instance"/> 
-        /// and a <see cref="StandardGenericDeserializerResolver"/>.
+        /// and <see cref="StandardGenericDeserializerResolver"/>.
         /// <para>
         /// Caution: if <see cref="SharedDeserializerKnownObject.Default"/> is not used, default comparers for dictionary keys will NOT be automatically
         /// registered in the <see cref="KnownObjects"/> (they are only automatically registered in <see cref="SharedDeserializerKnownObject.Default"/>).
@@ -58,7 +58,7 @@ namespace CK.BinarySerialization
         public SharedBinaryDeserializerContext( bool useDefaultResolvers = true, SharedDeserializerKnownObject? knownObjects = null )
         {
             _knownObjects = knownObjects ?? SharedDeserializerKnownObject.Default;
-            _typedDrivers = new ConcurrentDictionary<Type, IDeserializationDriver>();
+            _localTypedDrivers = new ConcurrentDictionary<Type, IDeserializationDriver>();
             _hooks = Array.Empty<Action<IMutableTypeReadInfo>>();
 
             if( useDefaultResolvers )
@@ -98,7 +98,7 @@ namespace CK.BinarySerialization
             }
         }
 
-        internal IDeserializationDriver GetAbstractDriver( Type t )
+        internal static IDeserializationDriver GetAbstractDriver( Type t )
         {
             return _abstractDrivers.GetOrAdd( t, Create );
 
@@ -126,11 +126,11 @@ namespace CK.BinarySerialization
         public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
             // The added local type drivers have the priority.
-            if( _typedDrivers.TryGetValue( info.ExpectedType, out var d ) )
+            if( _localTypedDrivers.TryGetValue( info.TargetType, out var d ) )
             {
                 return d;
             }
-            // Do not cache TargetType in _typedDrivers here: the same type may be
+            // Do not cache TargetType in _localTypedDrivers here: the same type may be
             // built by more than one driver.
             // We must not lookup the PureLocalTypeDependentDrivers here: some drivers may be resolved
             // based on different informations from the TypeReadInfo (typically the DriverName) that 
@@ -174,13 +174,13 @@ namespace CK.BinarySerialization
         {
             var n = driver.ToNullable.ResolvedType;
             bool done = false;
-            if( _typedDrivers.TryAdd( n, driver.ToNullable ) )
+            if( _localTypedDrivers.TryAdd( n, driver.ToNullable ) )
             {
                 done = true;
                 var nn = driver.ToNonNullable.ResolvedType;
                 if( nn != n )
                 {
-                    done = _typedDrivers.TryAdd( nn, driver.ToNonNullable );
+                    done = _localTypedDrivers.TryAdd( nn, driver.ToNonNullable );
                     n = nn;
                 }
             }

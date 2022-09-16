@@ -59,7 +59,7 @@ namespace CK.BinarySerialization
         /// </summary>
         public SimpleServiceContainer Services => _services;
 
-        internal IDeserializationDriver GetAbstractDriver( Type t ) => _abstractDrivers.GetOrSet( t, _shared.GetAbstractDriver );
+        internal IDeserializationDriver GetAbstractDriver( Type t ) => _abstractDrivers.GetOrSet( t, SharedBinaryDeserializerContext.GetAbstractDriver );
 
         internal IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {

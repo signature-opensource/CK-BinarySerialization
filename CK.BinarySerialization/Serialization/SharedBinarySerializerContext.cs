@@ -8,12 +8,14 @@ using System.Reflection;
 namespace CK.BinarySerialization
 {
     /// <summary>
-    /// Thread safe composite implementation for <see cref="ISerializerResolver"/> and concurrent 
-    /// cache of type to <see cref="ISerializationDriver"/> mappings.
+    /// Thread safe composite implementation for <see cref="ISerializerResolver"/>.
+    /// <para>
+    /// Holds a concurrent cache of Type to <see cref="ISerializationDriver"/> mappings for
+    /// drivers with <see cref="ISerializationDriver.CacheLevel"/> set to <see cref="SerializationDriverCacheLevel.SharedContext"/>.
+    /// </para>
     /// A singleton instance is exposed by <see cref="BinarySerializer.DefaultSharedContext"/>.
     /// <para>
-    /// Unresolved serializers are cached (by definitely storing a null driver): a driver must be resolved
-    /// the first time or it will never be by this shared context.
+    /// Unresolved serializers are NOT cached.
     /// </para>
     /// </summary>
     public sealed class SharedBinarySerializerContext : ISerializerResolver
@@ -94,7 +96,8 @@ namespace CK.BinarySerialization
         public ISerializerKnownObject KnownObjects => _knownObjects;
 
         /// <summary>
-        /// Used to mark a type for which resolver returned a false <see cref="ISerializationDriver.IsCacheable"/>.
+        /// Used to mark a type for which resolver returned a <see cref="SerializationDriverCacheLevel.Never"/> or
+        /// <see cref="SerializationDriverCacheLevel.Context"/>.
         /// This avoids the lock around resolution and insertion into the concurrent dictionary after the first lookup and,
         /// since this caches the ISerializerResolver that has been found, it also avoids the lookup in the _resolvers
         /// array.
@@ -150,12 +153,13 @@ namespace CK.BinarySerialization
                                 break;
                             }
                         }
-                        // If the driver is null, we register the null: this type is not serializable.
+                        // If the driver is null, we don't register the null: this type is currently not serializable
+                        // but it may be thanks to new resolvers or serializers.
+                        if( driver == null ) return null;
                         // If the driver cannot be cached at this level, we use the sentinel.
-                        //
                         // We use GetOrAdd here so that if a concurrent AddSerializationDriver or
                         // SetNotSerializable happened, it wins.
-                        if( driver != null && driver.CacheLevel != SerializationDriverCacheLevel.SharedContext )
+                        if( driver.CacheLevel != SerializationDriverCacheLevel.SharedContext )
                         {
                             Debug.Assert( found != null );
                             var sentinel = new NonCacheableDriverSentinel( found, driver.CacheLevel );
