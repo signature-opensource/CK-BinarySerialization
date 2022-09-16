@@ -81,9 +81,11 @@ namespace CK.BinarySerialization
             return true;
         }
 
-        public object ReadAny()
+        public object ReadAny() => ReadAny( null );
+
+        object ReadAny( Type? expected )
         {
-            var o = ReadAnyNullable();
+            var o = ReadAnyNullable( expected );
             if( o == null ) ThrowInvalidDataException( "Expected non null object or value type." );
             return o!;
         }
@@ -120,7 +122,9 @@ namespace CK.BinarySerialization
             return _objects[idx];
         }
 
-        public object? ReadAnyNullable()
+        public object? ReadAnyNullable() => ReadAnyNullable( null );
+
+        object? ReadAnyNullable( Type? expected )
         {
             var b = (SerializationMarker)_reader.ReadByte();
             switch( b )
@@ -155,7 +159,7 @@ namespace CK.BinarySerialization
                 ThrowInvalidDataException( $"Expecting marker ObjectData or DeferredObject. Got '{b}'." );
             }
             var info = ReadTypeInfo();
-            return ReadObjectCore( b, info, (IDeserializationDriverInternal)info.GetConcreteDriver().ToNonNullable );
+            return ReadObjectCore( b, info, (IDeserializationDriverInternal)info.GetConcreteDriver( expected ).ToNonNullable );
         }
 
         internal object ReadObjectCore( SerializationMarker b, ITypeReadInfo info, IDeserializationDriverInternal d )
@@ -338,9 +342,9 @@ namespace CK.BinarySerialization
             }
         }
 
-        public T ReadObject<T>() where T : class => (T)ReadAny();
+        public T ReadObject<T>() where T : class => (T)ReadAny( typeof(T) );
 
-        public T? ReadNullableObject<T>() where T : class => (T?)ReadAnyNullable();
+        public T? ReadNullableObject<T>() where T : class => (T?)ReadAnyNullable( typeof(T) );
 
         public T ReadValue<T>() where T : struct
         {
@@ -365,12 +369,12 @@ namespace CK.BinarySerialization
                 if( b == SerializationMarker.DeferredObject )
                 {
                     var deferredInfo = ReadTypeInfo();
-                    return (T)ReadObjectCore( b, deferredInfo, (IDeserializationDriverInternal)deferredInfo.GetConcreteDriver().ToNonNullable );
+                    return (T)ReadObjectCore( b, deferredInfo, (IDeserializationDriverInternal)deferredInfo.GetConcreteDriver( typeof( T ) ).ToNonNullable );
                 }
                 ThrowInvalidDataException( $"Unexpected '{b}' marker while reading non nullable '{typeof( T )}'." );
             }
             var info = ReadTypeInfo();
-            var d = (IValueTypeNonNullableDeserializationDriver<T>)info.GetConcreteDriver();
+            var d = (IValueTypeNonNullableDeserializationDriver<T>)info.GetConcreteDriver( typeof(T) );
             return d.ReadInstance( this, info );
         }
 

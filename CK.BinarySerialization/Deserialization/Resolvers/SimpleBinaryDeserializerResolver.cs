@@ -52,7 +52,7 @@ namespace CK.BinarySerialization
         /// Publicly exposed to allow other deserializers to be able to fallback to Simple deserialization
         /// if they want.
         /// Note that only the existence of the simple deserialization constructor matters: the <see cref="ICKSimpleBinarySerializable"/> interface
-        /// doesn't need to be defined on the <see cref="DeserializerResolverArg.TargetType"/>.
+        /// doesn't need to be defined on the <see cref="DeserializerResolverArg.ExpectedType"/>.
         /// </summary>
         /// <param name="info">The info to resolve.</param>
         /// <returns>The driver or null.</returns>
@@ -63,7 +63,7 @@ namespace CK.BinarySerialization
 
         static IDeserializationDriver? TryGetOrCreateSimpleDriver( ref DeserializerResolverArg info, bool internalCall )
         {
-            ConstructorInfo? ctor = BinaryDeserializer.Helper.GetSimpleConstructor( info.TargetType );
+            ConstructorInfo? ctor = BinaryDeserializer.Helper.GetSimpleConstructor( info.ExpectedType );
             if( ctor != null )
             {
                 // Simple basic strategy here: as soon as the written type is not the target one, we skip caching.
@@ -74,25 +74,25 @@ namespace CK.BinarySerialization
                     // the only existing adaptation).
                     // We may have duplicate calls to Create here (that should barely happen but who knows), but GetOrAdd
                     // will return the winner.
-                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateCachedSimple, ctor );
+                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.ExpectedType, CreateCachedSimple, ctor );
                 }
-                if( info.TargetType.IsValueType )
+                if( info.ExpectedType.IsValueType )
                 {
                     if( info.ReadInfo.IsValueType )
                     {
                         // Creates a non cached value type deserializer.
                         return (IDeserializationDriver)Activator.CreateInstance(
-                                        typeof( SimpleBinaryDeserializableDriverV<> ).MakeGenericType( info.TargetType ),
+                                        typeof( SimpleBinaryDeserializableDriverV<> ).MakeGenericType( info.ExpectedType ),
                                         ctor,
                                         false )!;
 
                     }
                     // FromRef is by design not cached.
                     return (IDeserializationDriver)Activator.CreateInstance(
-                                    typeof( SimpleBinaryDeserializableDriverVFromRef<> ).MakeGenericType( info.TargetType ),
+                                    typeof( SimpleBinaryDeserializableDriverVFromRef<> ).MakeGenericType( info.ExpectedType ),
                                     ctor )!;
                 }
-                var tR = typeof( SimpleBinaryDeserializableDriverR<> ).MakeGenericType( info.TargetType );
+                var tR = typeof( SimpleBinaryDeserializableDriverR<> ).MakeGenericType( info.ExpectedType );
                 return (IDeserializationDriver)Activator.CreateInstance( tR, ctor, false )!;
             }
             return null;
@@ -102,7 +102,7 @@ namespace CK.BinarySerialization
         /// Publicly exposed to allow other deserializers to be able to fallback to Versioned serialization
         /// if they want.
         /// Note that only the existence of the versioned deserialization constructor matters: the <see cref="ICKVersionedBinarySerializable"/> interface
-        /// doesn't need to be defined on the <see cref="DeserializerResolverArg.TargetType"/>.
+        /// doesn't need to be defined on the <see cref="DeserializerResolverArg.ExpectedType"/>.
         /// </summary>
         /// <param name="info">The info to resolve.</param>
         /// <returns>The driver or null.</returns>
@@ -113,31 +113,31 @@ namespace CK.BinarySerialization
 
         static IDeserializationDriver? TryGetOrCreateVersionedDriver( ref DeserializerResolverArg info, bool internalCall )
         {
-            ConstructorInfo? ctor = BinaryDeserializer.Helper.GetVersionedConstructor( info.TargetType );
+            ConstructorInfo? ctor = BinaryDeserializer.Helper.GetVersionedConstructor( info.ExpectedType );
             if( ctor != null )
             {
                 // Simple basic strategy here: as soon as the written type is not the target one, we skip caching.
                 if( internalCall && info.IsPossibleNominalDeserialization )
                 {
-                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateCachedVersioned, ctor );
+                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.ExpectedType, CreateCachedVersioned, ctor );
                 }
-                if( info.TargetType.IsValueType )
+                if( info.ExpectedType.IsValueType )
                 {
                     if( info.ReadInfo.IsValueType )
                     {
                         // Creates a non cached value type deserializer.
                         return (IDeserializationDriver)Activator.CreateInstance(
-                                        typeof( VersionedBinaryDeserializableDriverV<> ).MakeGenericType( info.TargetType ),
+                                        typeof( VersionedBinaryDeserializableDriverV<> ).MakeGenericType( info.ExpectedType ),
                                         ctor,
                                         false )!;
 
                     }
                     // FromRef is by design not cached.
                     return (IDeserializationDriver)Activator.CreateInstance(
-                                    typeof( VersionedBinaryDeserializableDriverVFromRef<> ).MakeGenericType( info.TargetType ),
+                                    typeof( VersionedBinaryDeserializableDriverVFromRef<> ).MakeGenericType( info.ExpectedType ),
                                     ctor )!;
                 }
-                var tR = typeof( VersionedBinaryDeserializableDriverR<> ).MakeGenericType( info.TargetType );
+                var tR = typeof( VersionedBinaryDeserializableDriverR<> ).MakeGenericType( info.ExpectedType );
                 return (IDeserializationDriver)Activator.CreateInstance( tR, ctor, false )!;
             }
             return null;

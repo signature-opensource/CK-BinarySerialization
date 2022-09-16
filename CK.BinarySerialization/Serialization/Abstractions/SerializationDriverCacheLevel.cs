@@ -8,7 +8,9 @@ namespace CK.BinarySerialization
     public enum SerializationDriverCacheLevel
     {
         /// <summary>
-        /// The serialization driver can be cached in the <see cref="SharedBinarySerializerContext"/>.
+        /// The serialization driver can be cached at the <see cref="SharedBinaryDeserializerContext"/> level
+        /// since it depends solely on the type to serialize (and may be on other drivers that are also shared).
+        /// Any driver that relies on it (and on other shared drivers) can also be shared.
         /// This is the default and the most efficient.
         /// </summary>
         SharedContext,

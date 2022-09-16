@@ -62,18 +62,19 @@ namespace CK.BinarySerialization
         /// <inheritdoc />
         public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
-            if( info.DriverName == "IPocoJson" && typeof( IPoco ).IsAssignableFrom( info.TargetType ) )
+            if( info.DriverName == "IPocoJson" && typeof( IPoco ).IsAssignableFrom( info.ExpectedType ) )
             {
                 var d = info.Context.Services.GetRequiredService<PocoDirectory>();
-                bool isWinner = Interlocked.CompareExchange( ref _winner, d, null ) == null;
 
-                var factory = d.Find( info.TargetType );
+                var factory = d.Find( info.ExpectedType );
                 if( factory == null ) return null;
+
+                bool isWinner = Interlocked.CompareExchange( ref _winner, d, null ) == null;
                 if( isWinner )
                 {
-                    return _winnerDriver ?? CreateCached( info.TargetType, factory );
+                    return _winnerDriver ?? CreateCached( info.ExpectedType, factory );
                 }
-                var tV = typeof( PocoDeserializerDriver<> ).MakeGenericType( info.TargetType );
+                var tV = typeof( PocoDeserializerDriver<> ).MakeGenericType( info.ExpectedType );
                 return (IDeserializationDriver)Activator.CreateInstance( tV, factory, false )!;
             }
             return null;

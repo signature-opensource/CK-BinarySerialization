@@ -95,19 +95,19 @@ namespace CK.BinarySerialization
                         // For the moment, to support mapping to different enums types use deserialization hooks and
                         // IMutableTypeReadInfo.SetTargetType.
                         //
-                        if( !info.TargetType.IsEnum ) return null;
+                        if( !info.ExpectedType.IsEnum ) return null;
 
                         // Enum is automatically adapted to its local type, including using any integral local type.
                         Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Enum && info.ReadInfo.SubTypes.Count == 1 );
-                        var uD = info.ReadInfo.SubTypes[0].GetConcreteDriver();
+                        var uD = info.ReadInfo.SubTypes[0].GetConcreteDriver( null );
                         // We cache only if no type adaptation is required.
-                        if( info.TargetType.GetEnumUnderlyingType() == uD.ResolvedType )
+                        if( info.ExpectedType.GetEnumUnderlyingType() == uD.ResolvedType )
                         {
-                            return _cache.GetOrAdd( (info.TargetType, uD), CreateNominalEnum );
+                            return _cache.GetOrAdd( (info.ExpectedType, uD), CreateNominalEnum );
                         }
 
                         var tDiff = typeof( Deserialization.DEnumDiff<,,> )
-                                    .MakeGenericType( info.TargetType, info.TargetType.GetEnumUnderlyingType(), uD.ResolvedType );
+                                    .MakeGenericType( info.ExpectedType, info.ExpectedType.GetEnumUnderlyingType(), uD.ResolvedType );
                         return (IDeserializationDriver)Activator.CreateInstance( tDiff, uD.TypedReader )!;
                     }
                 case "ValueTuple":
@@ -122,7 +122,7 @@ namespace CK.BinarySerialization
                     {
                         Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Array );
                         Debug.Assert( info.ReadInfo.SubTypes.Count == 1 );
-                        var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver();
+                        var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver( null );
                         return item.IsCacheable
                                 ? _cache.GetOrAdd( (item, info.ReadInfo.ArrayRank), CreateCachedArray )
                                 : CreateArray( item, info.ReadInfo.ArrayRank );
@@ -143,7 +143,7 @@ namespace CK.BinarySerialization
             bool isCached = true;
             for( int i = 0; i < tA.Length; ++i )
             {
-                var d = info.SubTypes[i].GetPotentiallyAbstractDriver();
+                var d = info.SubTypes[i].GetPotentiallyAbstractDriver( null );
                 isCached &= d.IsCacheable;
                 tA[i] = d;
             }
@@ -181,7 +181,7 @@ namespace CK.BinarySerialization
         IDeserializationDriver TryGetSingleGenericParameter( ITypeReadInfo info, Type tGenD )
         {
             Debug.Assert( info.SubTypes.Count == 1 );
-            var item = info.SubTypes[0].GetPotentiallyAbstractDriver();
+            var item = info.SubTypes[0].GetPotentiallyAbstractDriver( null );
             return item.IsCacheable
                     ? _cache.GetOrAdd( (item, tGenD), CreateCached )
                     : Create( item, tGenD );
@@ -202,8 +202,8 @@ namespace CK.BinarySerialization
         IDeserializationDriver TryGetDoubleGenericParameter( ITypeReadInfo info, Type tGenD )
         {
             Debug.Assert( info.SubTypes.Count == 2 );
-            var item1 = info.SubTypes[0].GetPotentiallyAbstractDriver();
-            var item2 = info.SubTypes[1].GetPotentiallyAbstractDriver();
+            var item1 = info.SubTypes[0].GetPotentiallyAbstractDriver( null );
+            var item2 = info.SubTypes[1].GetPotentiallyAbstractDriver( null );
             return item1.IsCacheable && item2.IsCacheable
                     ? _cache.GetOrAdd( (item1, item2, tGenD), CreateCached )
                     : Create( item1, item2, tGenD );

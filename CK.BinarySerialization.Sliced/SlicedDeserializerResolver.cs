@@ -187,7 +187,7 @@ namespace CK.BinarySerialization
             if( info.DriverName == "Sliced" )
             {
                 // Is the TargetType a ICKSlicedSerializable?
-                if( !typeof( ICKSlicedSerializable ).IsAssignableFrom( info.TargetType ) )
+                if( !typeof( ICKSlicedSerializable ).IsAssignableFrom( info.ExpectedType ) )
                 {
                     // No: it has been written as a Sliced but this has changed.
                     //     Let's try the Versioned and Simple deserialization constructor.
@@ -195,27 +195,27 @@ namespace CK.BinarySerialization
                             ?? SimpleBinaryDeserializerResolver.TryGetOrCreateSimpleDriver( ref info );
                 }
                 // We are on a Sliced deserialization.
-                if( info.TargetType.IsValueType )
+                if( info.ExpectedType.IsValueType )
                 {
                     if( info.ReadInfo.IsValueType )
                     {
-                        return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateCachedValueTypeDriver );
+                        return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.ExpectedType, CreateCachedValueTypeDriver );
                     }
-                    var tV = typeof( SlicedDeserializerDriverVWithRef<> ).MakeGenericType( info.TargetType );
-                    return (IDeserializationDriver)Activator.CreateInstance( tV, GetDeserializationCtor( info.TargetType ) )!;
+                    var tV = typeof( SlicedDeserializerDriverVWithRef<> ).MakeGenericType( info.ExpectedType );
+                    return (IDeserializationDriver)Activator.CreateInstance( tV, GetDeserializationCtor( info.ExpectedType ) )!;
                 }
                 // Looking for mono constructor: the base type (that may be Object) is not a ICKSlicedSerializable.
-                var b = info.TargetType.BaseType;
+                var b = info.ExpectedType.BaseType;
                 Debug.Assert( b != null );  
                 if( !typeof( ICKSlicedSerializable ).IsAssignableFrom( b ) )
                 {
-                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateCachedMonoConstructorDriver );
+                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.ExpectedType, CreateCachedMonoConstructorDriver );
                 }
                 // Multiple constructors case: check the TypePath and only if it matches cache the driver.
                 List<ConstructorInfo> ctors = new();
-                if( GetConstructorsTopDownAndCheckNominality( info.TargetType, ctors, info.ReadInfo ) )
+                if( GetConstructorsTopDownAndCheckNominality( info.ExpectedType, ctors, info.ReadInfo ) )
                 {
-                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.TargetType, CreateCachedNominalDriver, ctors );
+                    return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.ExpectedType, CreateCachedNominalDriver, ctors );
                 }
                 // The TypeReadInfos don't match deserialization constructors.
                 // We build a driver that tries its best to associate the TypeReadInfos to the constructors and don't cache it:
@@ -225,7 +225,7 @@ namespace CK.BinarySerialization
                 var readTypeInfo = info.ReadInfo;
                 Lazy<MissingSlicedTypeReadInfo> missing = new( () => new MissingSlicedTypeReadInfo( readTypeInfo.TypePath ) );
                 var types = ctors.Select( ctor => readTypeInfo.TypePath.FirstOrDefault( i => i.TryResolveLocalType() == ctor.DeclaringType ) ?? missing.Value ).ToArray();
-                var tGoodLuck = typeof( SlicedDeserializerDriverGoodLuck<> ).MakeGenericType( info.TargetType );
+                var tGoodLuck = typeof( SlicedDeserializerDriverGoodLuck<> ).MakeGenericType( info.ExpectedType );
                 return (IDeserializationDriver)Activator.CreateInstance( tGoodLuck, ctors, types )!;
 
             }

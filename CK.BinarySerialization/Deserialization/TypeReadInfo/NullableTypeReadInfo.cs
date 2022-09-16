@@ -100,11 +100,11 @@ namespace CK.BinarySerialization
             return _localType;
         }
 
-        public IDeserializationDriver GetConcreteDriver() => _nonNull.GetConcreteDriver().ToNullable;
+        public IDeserializationDriver GetConcreteDriver( Type? expected ) => _nonNull.GetConcreteDriver( expected ).ToNullable;
 
         public override string ToString() => '?' + _nonNull.ToString();
 
-        public IDeserializationDriver GetPotentiallyAbstractDriver() => _nonNull.GetPotentiallyAbstractDriver().ToNullable;
+        public IDeserializationDriver GetPotentiallyAbstractDriver( Type? expected ) => _nonNull.GetPotentiallyAbstractDriver( expected ).ToNullable;
 
     }
 }

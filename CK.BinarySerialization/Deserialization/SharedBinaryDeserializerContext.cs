@@ -126,7 +126,7 @@ namespace CK.BinarySerialization
         public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
             // The added local type drivers have the priority.
-            if( _typedDrivers.TryGetValue( info.TargetType, out var d ) )
+            if( _typedDrivers.TryGetValue( info.ExpectedType, out var d ) )
             {
                 return d;
             }

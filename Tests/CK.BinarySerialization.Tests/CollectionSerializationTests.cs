@@ -33,6 +33,9 @@ namespace CK.BinarySerialization.Tests
             object? backA = TestHelper.SaveAndLoadObject( a );
             backA.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
 
+            var backB = TestHelper.SaveAndLoadObject<IList<uint>>( a );
+            backB.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
+
             a.Clear();
             ((List<uint>)TestHelper.SaveAndLoadObject( a )).Should().BeEmpty();
         }

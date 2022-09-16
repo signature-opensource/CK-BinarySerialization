@@ -15,6 +15,10 @@ namespace CK.BinarySerialization
 {
     /// <summary>
     /// Factory for <see cref="IPoco"/> serialization drivers.
+    /// <para>
+    /// This currently uses Json serialization (the driver name is "IPocoJson").
+    /// Drivers are cached at the <see cref="BinarySerializerContext"/> level
+    /// </para>
     /// </summary>
     public sealed class PocoSerializerResolver : ISerializerResolver
     {
