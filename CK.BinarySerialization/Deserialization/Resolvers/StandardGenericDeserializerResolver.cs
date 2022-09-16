@@ -30,8 +30,7 @@ namespace CK.BinarySerialization
         // This lookup obviously costs but this is done only once per deserialization session
         // since the TypeReadInfo ultimately caches the final driver (including unresolved and non cached ones).
         // The object key is:
-        //  - The (Type LocalType, IDeserializationDriver WrittenUnderlyingDriverType) for an enum: the target enum
-        //    must exist locally but its current underlying type may not be the same as the written one.
+        //  - The local Type for an enum when the local target enum underlying type is the same as the written one.
         //  - TupleKey (see below) for ValueTuple and Tuple.
         //  - Boxed ValueTuple for other types:
         //     - (IDeserializationDriver Item, int Rank) for array (Rank >= 1).
@@ -97,13 +96,14 @@ namespace CK.BinarySerialization
                         //
                         if( !info.ExpectedType.IsEnum ) return null;
 
-                        // Enum is automatically adapted to its local type, including using any integral local type.
+                        // Enum is automatically adapted to its local type, including using any integral local type thanks to 
+                        // the (not cached) DEnumDiff<,,> deserializer.
                         Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Enum && info.ReadInfo.SubTypes.Count == 1 );
                         var uD = info.ReadInfo.SubTypes[0].GetConcreteDriver( null );
                         // We cache only if no type adaptation is required.
                         if( info.ExpectedType.GetEnumUnderlyingType() == uD.ResolvedType )
                         {
-                            return _cache.GetOrAdd( (info.ExpectedType, uD), CreateNominalEnum );
+                            return _cache.GetOrAdd( info.ExpectedType, CreateNominalEnum, uD );
                         }
 
                         var tDiff = typeof( Deserialization.DEnumDiff<,,> )
@@ -122,6 +122,8 @@ namespace CK.BinarySerialization
                     {
                         Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Array );
                         Debug.Assert( info.ReadInfo.SubTypes.Count == 1 );
+                        // Here, expected type should be info.TargetType.SubTypes[0] where
+                        // TargetType is a NullableTypeTree...
                         var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver( null );
                         return item.IsCacheable
                                 ? _cache.GetOrAdd( (item, info.ReadInfo.ArrayRank), CreateCachedArray )
@@ -143,6 +145,7 @@ namespace CK.BinarySerialization
             bool isCached = true;
             for( int i = 0; i < tA.Length; ++i )
             {
+                // The expected type should be based on the NullableTypeTree TargetType SubTypes...
                 var d = info.SubTypes[i].GetPotentiallyAbstractDriver( null );
                 isCached &= d.IsCacheable;
                 tA[i] = d;
@@ -181,6 +184,7 @@ namespace CK.BinarySerialization
         IDeserializationDriver TryGetSingleGenericParameter( ITypeReadInfo info, Type tGenD )
         {
             Debug.Assert( info.SubTypes.Count == 1 );
+            // The expected type should be based on the NullableTypeTree TargetType SubTypes...
             var item = info.SubTypes[0].GetPotentiallyAbstractDriver( null );
             return item.IsCacheable
                     ? _cache.GetOrAdd( (item, tGenD), CreateCached )
@@ -202,6 +206,7 @@ namespace CK.BinarySerialization
         IDeserializationDriver TryGetDoubleGenericParameter( ITypeReadInfo info, Type tGenD )
         {
             Debug.Assert( info.SubTypes.Count == 2 );
+            // The expected types should be based on the NullableTypeTree TargetType SubTypes...
             var item1 = info.SubTypes[0].GetPotentiallyAbstractDriver( null );
             var item2 = info.SubTypes[1].GetPotentiallyAbstractDriver( null );
             return item1.IsCacheable && item2.IsCacheable
@@ -239,12 +244,12 @@ namespace CK.BinarySerialization
             return (IDeserializationDriver)Activator.CreateInstance( tM, item )!;
         }
 
-        IDeserializationDriver CreateNominalEnum( object key )
+        IDeserializationDriver CreateNominalEnum( object keyType, IDeserializationDriver underlying )
         {
-            var k = ((Type Target, IDeserializationDriver U))key;
-            Debug.Assert( k.Target.GetEnumUnderlyingType() == k.U.ResolvedType );
-            var tSame = typeof( Deserialization.DEnum<,> ).MakeGenericType( k.Target, k.U.ResolvedType );
-            return (IDeserializationDriver)Activator.CreateInstance( tSame, k.U.TypedReader )!;
+            var type = (Type)keyType;
+            Debug.Assert( type.GetEnumUnderlyingType() == underlying.ResolvedType );
+            var tSame = typeof( Deserialization.DEnum<,> ).MakeGenericType( type, underlying.ResolvedType );
+            return (IDeserializationDriver)Activator.CreateInstance( tSame, underlying.TypedReader )!;
         }
 
     }

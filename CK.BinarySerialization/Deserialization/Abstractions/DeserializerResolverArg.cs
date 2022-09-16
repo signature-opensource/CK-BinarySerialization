@@ -49,7 +49,10 @@ namespace CK.BinarySerialization
         /// </summary>
         /// <param name="info">The type info for which a deserialization driver must be resolved.</param>
         /// <param name="context">The shared context is used only to detect mismatch of resolution context.</param>
-        /// <param name="expectedType">Type that must be deserialized.</param>
+        /// <param name="expectedType">
+        /// Type that must be deserialized.
+        /// This should be changed to a NullableTypeTree once to be able to handle generic type mutations.
+        /// </param>
         internal DeserializerResolverArg( ITypeReadInfo info, BinaryDeserializerContext context, Type expectedType )
         {
             Debug.Assert( info != null);
