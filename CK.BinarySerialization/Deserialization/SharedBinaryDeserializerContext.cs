@@ -154,7 +154,7 @@ namespace CK.BinarySerialization
         /// </summary>
         /// <param name="resolver">The resolver that must be found or added.</param>
         /// <param name="beforeExisting">Whether to register the resolver before the existing ones.</param>
-        public void Register( IDeserializerResolver resolver, bool beforeExisting = false )
+        public void AddResolver( IDeserializerResolver resolver, bool beforeExisting = false )
         {
             Util.InterlockedAddUnique( ref _resolvers, resolver, beforeExisting );
         }

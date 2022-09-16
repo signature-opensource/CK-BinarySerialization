@@ -83,7 +83,7 @@ namespace CK.BinarySerialization.Tests
 
             // Never mind the context: the serializer is recreated for each written instance.
             var sC = new BinarySerializerContext( new SharedBinarySerializerContext() );
-            sC.Shared.Register( new Resolver() );
+            sC.Shared.AddResolver( new Resolver() );
 
             var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
             dC.Shared.AddLocalTypeDeserializer( new ThingDeserializer() );
@@ -114,7 +114,7 @@ namespace CK.BinarySerialization.Tests
             var thing = new Thing { Name = "Don't care." };
 
             var sharedContext = new SharedBinarySerializerContext();
-            sharedContext.Register( new Resolver() );
+            sharedContext.AddResolver( new Resolver() );
 
             var sC1 = new BinarySerializerContext( sharedContext );
             var sC2 = new BinarySerializerContext( sharedContext );
@@ -151,7 +151,7 @@ namespace CK.BinarySerialization.Tests
             var thing = new Thing { Name = "Don't care." };
 
             var sC = new BinarySerializerContext( new SharedBinarySerializerContext() );
-            sC.Shared.Register( new Resolver() );
+            sC.Shared.AddResolver( new Resolver() );
 
             var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
             dC.Shared.AddLocalTypeDeserializer( new ThingDeserializer() );

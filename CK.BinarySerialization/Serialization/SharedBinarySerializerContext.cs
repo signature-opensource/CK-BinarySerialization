@@ -191,18 +191,18 @@ namespace CK.BinarySerialization
         /// </summary>
         /// <param name="resolver">The resolver that must be found or added.</param>
         /// <param name="beforeExisting">True to insert the resolver before the other ones.</param>
-        public void Register( ISerializerResolver resolver, bool beforeExisting = false )
+        public void AddResolver( ISerializerResolver resolver, bool beforeExisting = false )
         {
             Util.InterlockedAddUnique( ref _resolvers, resolver, beforeExisting );
         }
 
         /// <summary>
         /// Registers a driver for a type. The driver will have the priority over any driver that
-        /// could be resolved by the resolvers (see <see cref="Register(ISerializerResolver, bool)"/>.
+        /// could be resolved by the resolvers (see <see cref="AddResolver(ISerializerResolver, bool)"/>.
         /// The driver must be able to handle the type otherwise kitten will be killed.
         /// <para>
         /// The type MUST not already be associated to a driver otherwise an <see cref="InvalidOperationException"/> is raised:
-        /// just like <see cref="Register(ISerializerResolver, bool)"/> this should obviously be done before any serialization
+        /// just like <see cref="AddResolver(ISerializerResolver, bool)"/> this should obviously be done before any serialization
         /// occurs on this shared context.
         /// </para>
         /// <para>
