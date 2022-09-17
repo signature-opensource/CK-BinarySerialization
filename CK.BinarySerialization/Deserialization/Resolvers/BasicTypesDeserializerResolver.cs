@@ -83,14 +83,14 @@ namespace CK.BinarySerialization
             // type that can be assigned from the resolved type: no need to check for this.
             Debug.Assert( !info.ExpectedType.IsAssignableFrom( d.ResolvedType ) );
 
-            // Allow Convert.ChangeType to occur but not to/from string or any object.
-            var source = Type.GetTypeCode( d.ResolvedType );
-            if( source == TypeCode.String || source == TypeCode.Object || source == TypeCode.Empty )
-            {
-                return null;
-            }
-            var target = Type.GetTypeCode( info.ExpectedType );
-            if( target == TypeCode.String || source == TypeCode.Object || source == TypeCode.Empty )
+            // Allow Convert.ChangeType to occur but not to/from string or any object. Note that DateTime is not convertible to other type than string.
+            //
+            // Note that If the ExpectedType is an Enum, this just work because Convert.ChangeType handles it.
+            //
+            Debug.Assert( IsBasicallyConvertible( d.ResolvedType ) != TypeCode.Empty );
+
+            var target = IsBasicallyConvertible( info.ExpectedType );
+            if( target == TypeCode.Empty )
             {
                 return null;
             }
@@ -98,5 +98,12 @@ namespace CK.BinarySerialization
             return (IDeserializationDriver)Activator.CreateInstance( tV, d.TypedReader, target )!;
         }
 
+        internal static TypeCode IsBasicallyConvertible( Type type )
+        {
+            var c = Type.GetTypeCode( type );
+            return c == TypeCode.String || c == TypeCode.Object || c == TypeCode.DateTime
+                    ? TypeCode.Empty
+                    : c;
+        }
     }
 }

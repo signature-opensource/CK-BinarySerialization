@@ -105,9 +105,8 @@ namespace CK.BinarySerialization
 
         /// <summary>
         /// If the type is not sealed (it's necessarily a class) then returns a generic driver that relies
-        /// on the actual runtime type. Otherwise calls <see cref="TryFindDriver(BinarySerializerContext, Type)"/>.
+        /// on the actual runtime type. Otherwise calls <see cref="TryFindDriver(Type)"/>.
         /// </summary>
-        /// <param name="context">The serializer context.</param>
         /// <param name="t">The type for which a driver is needed.</param>
         /// <returns>The driver or null.</returns>
         public ISerializationDriver? TryFindPossiblyAbstractDriver( Type t )
@@ -123,7 +122,6 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Finds a driver or throws a <see cref="InvalidOperationException"/>.
         /// </summary>
-        /// <param name="r">This resolver.</param>
         /// <param name="t">The type for which a driver must be resolved.</param>
         /// <returns>The driver.</returns>
         public ISerializationDriver FindDriver( Type t )

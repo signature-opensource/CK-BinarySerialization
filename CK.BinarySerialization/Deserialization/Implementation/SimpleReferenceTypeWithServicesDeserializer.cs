@@ -12,21 +12,13 @@ namespace CK.BinarySerialization
     /// This deserializer handles the value to reference type mutation natively.
     /// </para>
     /// <para>
-    /// The default constructor sets <see cref="ReferenceTypeDeserializerBase{T}.IsCacheable"/> to true. This is fine for basic drivers but as soon as
+    /// The default constructor sets <see cref="ReferenceTypeDeserializerBase{T}.IsCached"/> to true. This is fine for basic drivers but as soon as
     /// the driver depends on others (like generics drivers), the non default constructor should be used. 
     /// </para>
     /// </summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>
     public abstract class SimpleReferenceTypeWithServicesDeserializer<T> : ReferenceTypeDeserializerBase<T> where T : class
     {
-        /// <summary>
-        /// Initializes a new <see cref="SimpleReferenceTypeDeserializer{T}"/> that states whether it is cached or not.
-        /// </summary>
-        protected SimpleReferenceTypeWithServicesDeserializer()
-            : base( true )
-        {
-        }
-
         /// <summary>
         /// Initializes a new <see cref="SimpleReferenceTypeDeserializer{T}"/> that states whether it is cached or not.
         /// </summary>
@@ -37,7 +29,7 @@ namespace CK.BinarySerialization
         }
 
         /// <summary>
-        /// Calls the protected <see cref="ReadInstance(ICKBinaryReader, ITypeReadInfo)"/> and
+        /// Calls the protected <see cref="ReadInstance(IServiceProvider, ICKBinaryReader, ITypeReadInfo)"/> and
         /// handles struct to class migration if needed.
         /// </summary>
         /// <param name="d">The deserializer.</param>

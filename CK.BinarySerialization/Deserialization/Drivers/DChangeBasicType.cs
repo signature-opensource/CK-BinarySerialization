@@ -11,7 +11,7 @@ namespace CK.BinarySerialization.Deserialization
         readonly TypeCode _target;
 
         public DChangeBasicType( TypedReader<TRead> r, TypeCode target )
-            : base( false )
+            : base( isCached: false )
         {
             _r = r;
             _target = target;

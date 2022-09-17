@@ -18,7 +18,10 @@ namespace CK.BinarySerialization
     /// <summary>
     /// Registry for <see cref="IPoco"/> deserializers.
     /// <para>
-    /// 
+    /// This resolver caches its drivers for the first PocoDirectory it gets from
+    /// the <see cref="BinaryDeserializerContext.Services"/>. This should cover
+    /// the vast majority of runs since in practice there's one and only one PocoDirectory
+    /// in a process/domain.
     /// </para>
     /// </summary>
     public sealed class PocoDeserializerResolver : IDeserializerResolver
@@ -30,12 +33,15 @@ namespace CK.BinarySerialization
 
         PocoDeserializerResolver() { }
 
+        static PocoDirectory? _winner;
+        static readonly ConcurrentDictionary<Type,IDeserializationDriver?> _winnerDrivers = new ConcurrentDictionary<Type, IDeserializationDriver?>();
+
         sealed class PocoDeserializerDriver<T> : SimpleReferenceTypeDeserializer<T> where T : class, IPoco
         {
             readonly IPocoFactory<T> _factory;
 
-            public PocoDeserializerDriver( IPocoFactory<T> factory, bool isCacheable )
-                : base( isCacheable )
+            public PocoDeserializerDriver( IPocoFactory<T> factory, bool isCached )
+                : base( isCached )
             {
                 _factory = factory;
             }
@@ -56,34 +62,33 @@ namespace CK.BinarySerialization
             }
         }
 
-        static PocoDirectory? _winner;
-        static IDeserializationDriver? _winnerDriver;
-
         /// <inheritdoc />
         public IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
             if( info.DriverName == "IPocoJson" && typeof( IPoco ).IsAssignableFrom( info.ExpectedType ) )
             {
                 var d = info.Context.Services.GetRequiredService<PocoDirectory>();
-
+                var firstDirectory = Interlocked.CompareExchange( ref _winner, d, null );
+                if( firstDirectory == null || firstDirectory == d )
+                {
+                    return _winnerDrivers.GetOrAdd( info.ExpectedType, CreateCached );
+                }
                 var factory = d.Find( info.ExpectedType );
                 if( factory == null ) return null;
-
-                bool isWinner = Interlocked.CompareExchange( ref _winner, d, null ) == null;
-                if( isWinner )
-                {
-                    return _winnerDriver ?? CreateCached( info.ExpectedType, factory );
-                }
                 var tV = typeof( PocoDeserializerDriver<> ).MakeGenericType( info.ExpectedType );
                 return (IDeserializationDriver)Activator.CreateInstance( tV, factory, false )!;
             }
             return null;
         }
 
-        static IDeserializationDriver CreateCached( Type targetType, IPocoFactory factory )
+        static IDeserializationDriver? CreateCached( Type t )
         {
-            var tV = typeof( PocoDeserializerDriver<> ).MakeGenericType( targetType );
+            Debug.Assert( _winner != null );
+            var factory = _winner.Find( t );
+            if( factory == null ) return null;
+            var tV = typeof( PocoDeserializerDriver<> ).MakeGenericType( t );
             return (IDeserializationDriver)Activator.CreateInstance( tV, factory, true )!;
         }
+
     }
 }

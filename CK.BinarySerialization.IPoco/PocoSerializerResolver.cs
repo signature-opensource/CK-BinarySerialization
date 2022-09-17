@@ -17,7 +17,8 @@ namespace CK.BinarySerialization
     /// Factory for <see cref="IPoco"/> serialization drivers.
     /// <para>
     /// This currently uses Json serialization (the driver name is "IPocoJson").
-    /// Drivers are cached at the <see cref="BinarySerializerContext"/> level
+    /// Drivers are cached at the <see cref="BinarySerializerContext"/> level because
+    /// everything depends on the <see cref="PocoDirectory"/>.
     /// </para>
     /// </summary>
     public sealed class PocoSerializerResolver : ISerializerResolver
@@ -34,7 +35,7 @@ namespace CK.BinarySerialization
         /// <inheritdoc />
         public ISerializationDriver? TryFindDriver( BinarySerializerContext context, Type t )
         {
-            if( !t.IsClass || !typeof(IPoco).IsAssignableFrom( t ) ) return null;
+            if( !t.IsClass || !typeof( IPoco ).IsAssignableFrom( t ) ) return null;
             var f = context.Services.GetRequiredService<PocoDirectory>().Find( t );
             if( f == null ) return null;
             var tR = typeof( PocoSerializableDriver<> ).MakeGenericType( t );

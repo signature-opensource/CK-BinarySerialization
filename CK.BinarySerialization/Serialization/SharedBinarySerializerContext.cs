@@ -41,7 +41,7 @@ namespace CK.BinarySerialization
 
         /// <summary>
         /// Initializes a new independent shared context bound to a possibly independent <see cref="SharedSerializerKnownObject"/>, 
-        /// optionally with the <see cref="BasicTypesSerializerResolver.Instance"/>, <see cref="SimpleBinarySerializableResolver.Instance"/> 
+        /// optionally with the <see cref="BasicTypesSerializerResolver.Instance"/>, <see cref="SimpleBinarySerializerResolver.Instance"/> 
         /// and <see cref="StandardGenericSerializerResolver.Instance"/> along with Sliced and Poco resolvers if they can be loaded.
         /// <para>
         /// Caution: if <see cref="SharedSerializerKnownObject.Default"/> is not used, default comparers for dictionary keys will NOT be automatically
@@ -60,13 +60,13 @@ namespace CK.BinarySerialization
                                 ? (
                                     _rPoco != null
                                     ? new ISerializerResolver[] { BasicTypesSerializerResolver.Instance,
-                                                                  SimpleBinarySerializableResolver.Instance,
+                                                                  SimpleBinarySerializerResolver.Instance,
                                                                   StandardGenericSerializerResolver.Instance,
                                                                   _rSliced,
                                                                   _rPoco
                                                                 }
                                     : new ISerializerResolver[] { BasicTypesSerializerResolver.Instance,
-                                                                  SimpleBinarySerializableResolver.Instance,
+                                                                  SimpleBinarySerializerResolver.Instance,
                                                                   StandardGenericSerializerResolver.Instance,
                                                                   _rSliced
                                                                 }
@@ -74,12 +74,12 @@ namespace CK.BinarySerialization
                                 : (
                                     _rPoco != null
                                     ? new ISerializerResolver[] { BasicTypesSerializerResolver.Instance,
-                                                                  SimpleBinarySerializableResolver.Instance,
+                                                                  SimpleBinarySerializerResolver.Instance,
                                                                   StandardGenericSerializerResolver.Instance,
                                                                   _rPoco
                                                                 }
                                     : new ISerializerResolver[] { BasicTypesSerializerResolver.Instance,
-                                                                  SimpleBinarySerializableResolver.Instance,
+                                                                  SimpleBinarySerializerResolver.Instance,
                                                                   StandardGenericSerializerResolver.Instance
                                                                 }
                                   );

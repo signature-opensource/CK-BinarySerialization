@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using FluentAssertions;
 using NUnit.Framework;
 using System;
@@ -13,6 +13,7 @@ namespace CK.BinarySerialization.Tests
     {
         enum NewGranteLevel : byte
         {
+            SuperEditor = 80,
             NewNameOfAdmin = 127
         }
 
@@ -103,6 +104,20 @@ namespace CK.BinarySerialization.Tests
             back = TestHelper.SaveAndLoadAny( canAlsoDoIt, deserializerContext: dC );
             back.Should().BeOfType<NowItsAInt>();
             back.Should().Be( NowItsAInt.FitInByte );
+        }
+
+        [Test]
+        public void enum_type_mutation_when_reading_value_is_possible_even_if_underlying_type_differ()
+        {
+            TestHelper.SaveAndLoad( s => s.WriteValue( GrantLevel.SuperEditor ), d => d.ReadValue<NewGranteLevel>().Should().Be( NewGranteLevel.SuperEditor ) );
+            TestHelper.SaveAndLoad( s => s.WriteValue( BeforeItWasALong.FitInInt ), d => d.ReadValue<NowItsAInt>().Should().Be( NowItsAInt.FitInInt ) );
+        }
+
+        [Test]
+        public void enum_type_and_numeric_type_can_mutate_as_long_as_there_is_no_overflow()
+        {
+            TestHelper.SaveAndLoad( s => s.WriteValue<long>( 80 ), d => d.ReadValue<GrantLevel>().Should().Be( GrantLevel.SuperEditor ) );
+            TestHelper.SaveAndLoad( s => s.WriteValue( GrantLevel.SuperEditor ), d => d.ReadValue<byte>().Should().Be( 80 ) );
         }
 
     }

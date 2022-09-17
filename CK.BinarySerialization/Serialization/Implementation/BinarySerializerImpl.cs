@@ -271,7 +271,7 @@ namespace CK.BinarySerialization
 
         public void WriteValue<T>( in T value ) where T : struct
         {
-            var d = _context.TryFindDriver( typeof( T ) );
+            var d = _context.FindDriver( typeof( T ) );
             _writer.Write( (byte)SerializationMarker.ObjectData );
             WriteTypeInfo( new NullableTypeRoot( typeof( T ), false ), d, true );
             ((TypedWriter<T>)d.TypedWriter)( this, value );

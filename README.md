@@ -35,7 +35,7 @@ are quite different beasts. They, of course, work together and the high level AP
 To serialize a graph of objects, a `IDisposableBinarySerializer` must first be obtained thanks to `BinarySerializer.Create`
 factory method that takes a Stream and a Context.
 
-> [BinarySerializer](CK.BinarySerialization/Serialization/BinarySerializer.cs) and [BinaryDeserializer](CK.BinarySerialization/Deserialization/BinaryDeserializer.cs)
+> [BinarySerializer](CK.BinarySerialization/BinarySerializer.cs) and [BinaryDeserializer](CK.BinarySerialization/BinaryDeserializer.cs)
 > are purely static classes.
 
 This serializes 2 lists. (Note that a User may reference one or more Books here, any references among these objects
@@ -82,15 +82,15 @@ deserialization sessions.
 and [BinaryDeserializerContext](CK.BinarySerialization/Deserialization/BinaryDeserializerContext.cs) are simple
 non concurrent caches that can be reused to avoid recomputing Type to [ISerializationDriver](CK.BinarySerialization/Serialization/Abstractions/ISerializationDriver.cs)
 and [ITypeReadInfo](CK.BinarySerialization/Deserialization/TypeReadInfo/ITypeReadInfo.cs) to [IDeserializationDriver](CK.BinarySerialization/Deserialization/Abstractions/IDeserializationDriver.cs)
-mappings.
+mappings and expose a `IServiceProvider`. De/Serialization can rely on available services.
+Deserializers can "rebind" the deserialized objects to any external services (or other contextual objects) if needed.
 
-The `BinaryDeserializerContext` can also capture a `IServiceProvider` that can be used by deserializers to "rebind" the
-deserialized objects to any external services (or other contextual objects) if needed.
 
-These are only caches: mappings definition are managed by the thread safe [SharedBinarySerializerContext](CK.BinarySerialization/Serialization/Registries/SharedBinarySerializerContext.cs)
-and [SharedBinaryDeserializerContext](CK.BinarySerialization/Deserialization/Registries/SharedBinaryDeserializerContext.cs).
 
-The shared contexts choose the appropriate drivers (they respectively implement [ISerializerResolver](CK.BinarySerialization/Serialization/Abstractions/ISerializerResolver.cs)
+
+These contexts are only caches: mappings definition are managed by the thread safe [SharedBinarySerializerContext](CK.BinarySerialization/Serialization/SharedBinarySerializerContext.cs)
+and [SharedBinaryDeserializerContext](CK.BinarySerialization/Deserialization/SharedBinaryDeserializerContext.cs) that use Resolvers
+([ISerializerResolver](CK.BinarySerialization/Serialization/Abstractions/ISerializerResolver.cs)
 and [IDeserializerResolver](CK.BinarySerialization/Deserialization/Abstractions/IDeserializerResolver.cs)) and can be
 configured to handle singletons, new types and type mutations.
 
@@ -128,8 +128,8 @@ Or [StringComparer.OrdinalIgnoreCase](https://docs.microsoft.com/en-us/dotnet/ap
 This is a more complex issue than it may appear. CK.BinarySerialization implements a basic answer by allowing to give a
 name to these objects.
 
-[SharedSerializerKnownObject](CK.BinarySerialization/Serialization/Registries/SharedSerializerKnownObject.cs) and
-[SharedDeserializerKnownObject](CK.BinarySerialization/Deserialization/Registries/SharedDeserializerKnownObject.cs)
+[SharedSerializerKnownObject](CK.BinarySerialization/Serialization/Resolvers/SharedSerializerKnownObject.cs) and
+[SharedDeserializerKnownObject](CK.BinarySerialization/Deserialization/Resolvers/SharedDeserializerKnownObject.cs)
 both expose a static `Default` property that can be used to register these "known objects".
 
 By default, the following singletons are registered: `DBNull.Value`, `Type.Missing`, `StringComparer.Ordinal`,
@@ -248,7 +248,7 @@ The plan regarding full NRT support is to:
 ## IBinarySerializer and ICKBinaryWriter, IBinaryDeserializer and ICKBinaryReader
 
 The `ICKBinaryWriter` and `ICKBinaryReader` are defined and implemented by `CKBinaryWriter`
-and `CKBinaryReader` in CK.Core. They specialize the .Net System.IO.BinaryReader/Writer classes
+and `CKBinaryReader` in CK.Core. They extend the .Net System.IO.BinaryReader/Writer classes
 and provides an enriched API that reads/writes basic types like `Guid` or `DateTimeOffset` and support
 nullable value types once for all.
 
@@ -422,8 +422,7 @@ be raised.
 **Important:** 
 Underlying type mutation will work ONLY when using `IBinarySerializer.WriteValue<T>(in T)` and 
 `IBinaryDeserializer.ReadValue<T>()`.
-Using the `ICKBinaryWriter.WriteEnum<T>(T)` and `ICKBinaryReader.ReadEnum<T>` CANNOT handle such migrations, but they 
-can be done easily:
+You can also choose to simply use casts between the enum type and its underlying type:
 ```c#
     /// Status was a long in version 1, we are now in version 2 and this is now a short.
     if( info.Version < 2 )
@@ -432,25 +431,22 @@ can be done easily:
     }
     else
     {
-        MyStatus = d.Reader.ReadEnum<Status>();
+        MyStatus = (Status)d.Reader.ReadInt16();
     }
 ```
-> `ICKBinaryWriter.WriteEnum<T>(T)` and `ICKBinaryReader.ReadEnum<T>` will be deprecated soon. They are not efficient
-> and should be replaced by writing and reading the base type of the enum and simply casting it just as in the example above.
-
 
 ## General support of struct to class and class to (nullable!) struct mutations
 
 This simply works for struct to class: each serialized struct becomes a new object. The 2 possible 
-base classes for reference type ([`ReferenceTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/Deserializer/ReferenceTypeDeserializer.cs) 
-and [`SimpleReferenceTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/Deserializer/SimpleReferenceTypeDeserializer.cs)) directly 
+base classes for reference type ([`ReferenceTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/Implementation/ReferenceTypeDeserializer.cs) 
+and [`SimpleReferenceTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/Implementation/SimpleReferenceTypeDeserializer.cs)) directly 
 supports this mutation.
 
 Transforming a class into a struct is more complex because a serialized reference type is written 
 only once (subsequent references are written as simple numbers). The efficient value type deserializer 
-[`ValueTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/Deserializer/ValueTypeDeserializer.cs) is not able to handle
+[`ValueTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/Implementation/ValueTypeDeserializer.cs) is not able to handle
 this mutation. When a serialized stream that has been written with classes must be read back, 
-the [`ValueTypeDeserializerWithRef<T>`](CK.BinarySerialization/Deserialization/Deserializer/ValueTypeDeserializerWithRef.cs)
+the [`ValueTypeDeserializerWithRef<T>`](CK.BinarySerialization/Deserialization/Implementation/ValueTypeDeserializerWithRef.cs)
 must be used.
 
 Another aspect to consider is, because of the current partial NRT support, that a class is nullable by default ("oblivious context"). So 

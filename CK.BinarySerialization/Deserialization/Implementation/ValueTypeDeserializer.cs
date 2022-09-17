@@ -12,7 +12,7 @@ namespace CK.BinarySerialization
     /// reference types must still be read).
     /// </para>
     /// <para>
-    /// The default constructor sets <see cref="IsCacheable"/> to true. This is fine for basic drivers but as soon as
+    /// The default constructor sets <see cref="IsCached"/> to true. This is fine for basic drivers but as soon as
     /// the driver depends on others (like generics drivers), the non default constructor should be used. 
     /// </para>
     /// </summary>
@@ -39,7 +39,7 @@ namespace CK.BinarySerialization
 
             public Delegate TypedReader => _reader;
 
-            public bool IsCacheable => _deserializer.IsCacheable;
+            public bool IsCached => _deserializer.IsCached;
 
             IDeserializationDriver IDeserializationDriver.ToNullable => this;
 
@@ -61,7 +61,7 @@ namespace CK.BinarySerialization
         readonly TypedReader<T> _reader;
 
         /// <summary>
-        /// Initializes a new <see cref="ValueTypeDeserializer{T}"/> where <see cref="IsCacheable"/> is true.
+        /// Initializes a new <see cref="ValueTypeDeserializer{T}"/> where <see cref="IsCached"/> is true.
         /// <para>
         /// Caution: this cached default is easier for basic types but not for composite drivers that relies on other ones (like generic ones).
         /// </para>
@@ -70,7 +70,7 @@ namespace CK.BinarySerialization
         {
             _null = new NullableAdapter( this );
             _reader = ReadInstance;
-            IsCacheable = true;
+            IsCached = true;
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace CK.BinarySerialization
         {
             _null = new NullableAdapter( this );
             _reader = ReadInstance;
-            IsCacheable = isCached;
+            IsCached = isCached;
         }
 
         /// <summary>
@@ -99,7 +99,7 @@ namespace CK.BinarySerialization
         public Delegate TypedReader => _reader;
 
         /// <inheritdoc />
-        public bool IsCacheable { get; }
+        public bool IsCached { get; }
 
         /// <inheritdoc />
         public IValueTypeNullableDeserializationDriver<T> ToNullable => _null;

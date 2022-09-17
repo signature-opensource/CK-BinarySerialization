@@ -21,7 +21,7 @@ namespace CK.BinarySerialization
 
         /// <summary>
         /// Gets the default thread safe static context initialized with the <see cref="BasicTypesSerializerResolver.Instance"/>,
-        /// <see cref="SimpleBinarySerializableResolver.Instance"/> and a <see cref="StandardGenericSerializerResolver"/>
+        /// <see cref="SimpleBinarySerializerResolver.Instance"/> and a <see cref="StandardGenericSerializerResolver"/>
         /// deserializer resolvers and <see cref="SharedSerializerKnownObject.Default"/>.
         /// </summary>
         public static readonly SharedBinarySerializerContext DefaultSharedContext = new SharedBinarySerializerContext();

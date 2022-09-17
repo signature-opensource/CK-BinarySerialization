@@ -1,3 +1,4 @@
+using CK.BinarySerialization.Deserialization;
 using CK.Core;
 using System;
 using System.Collections.Concurrent;
@@ -83,6 +84,8 @@ namespace CK.BinarySerialization
             {
                 case "Enum":
                     {
+                        Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Enum && info.ReadInfo.SubTypes.Count == 1 );
+
                         // If info.TargetType.IsEnum is false (the target type is NOT an enum), we could do this for integral types (it works):
                         //
                         //   var tDiffOther = typeof( Deserialization.DEnumDiff<,,> ).MakeGenericType( info.TargetType, info.TargetType, uD.ResolvedType );
@@ -94,19 +97,26 @@ namespace CK.BinarySerialization
                         // For the moment, to support mapping to different enums types use deserialization hooks and
                         // IMutableTypeReadInfo.SetTargetType.
                         //
-                        if( !info.ExpectedType.IsEnum ) return null;
+                        if( !info.ExpectedType.IsEnum )
+                        {
+                            var target = BasicTypesDeserializerResolver.IsBasicallyConvertible( info.ExpectedType );
+                            if( target == TypeCode.Empty )
+                            {
+                                return null;
+                            }
+                            var underlying = info.ReadInfo.SubTypes[0].GetConcreteDriver( null );
+                            var tV = typeof( DChangeBasicType<,> ).MakeGenericType( info.ExpectedType, underlying.ResolvedType );
+                            return (IDeserializationDriver)Activator.CreateInstance( tV, underlying.TypedReader, target )!;
+                        }
 
-                        // Enum is automatically adapted to its local type, including using any integral local type thanks to 
-                        // the (not cached) DEnumDiff<,,> deserializer.
-                        Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Enum && info.ReadInfo.SubTypes.Count == 1 );
+                        // We cache only if no type adaptation is required and IsPossibleNominalDeserialization.
                         var uD = info.ReadInfo.SubTypes[0].GetConcreteDriver( null );
-                        // We cache only if no type adaptation is required.
-                        if( info.ExpectedType.GetEnumUnderlyingType() == uD.ResolvedType )
+                        if( info.IsPossibleNominalDeserialization && info.ExpectedType.GetEnumUnderlyingType() == uD.ResolvedType )
                         {
                             return _cache.GetOrAdd( info.ExpectedType, CreateNominalEnum, uD );
                         }
 
-                        var tDiff = typeof( Deserialization.DEnumDiff<,,> )
+                        var tDiff = typeof( DEnumDiff<,,> )
                                     .MakeGenericType( info.ExpectedType, info.ExpectedType.GetEnumUnderlyingType(), uD.ResolvedType );
                         return (IDeserializationDriver)Activator.CreateInstance( tDiff, uD.TypedReader )!;
                     }
@@ -125,16 +135,16 @@ namespace CK.BinarySerialization
                         // Here, expected type should be info.TargetType.SubTypes[0] where
                         // TargetType is a NullableTypeTree...
                         var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver( null );
-                        return item.IsCacheable
+                        return item.IsCached
                                 ? _cache.GetOrAdd( (item, info.ReadInfo.ArrayRank), CreateCachedArray )
                                 : CreateArray( item, info.ReadInfo.ArrayRank );
                     }
-                case "Dictionary": return TryGetDoubleGenericParameter( info.ReadInfo, typeof( Deserialization.DDictionary<,> ) );
-                case "List": return TryGetSingleGenericParameter( info.ReadInfo, typeof( Deserialization.DList<> ) );
-                case "Set": return TryGetSingleGenericParameter( info.ReadInfo, typeof( Deserialization.DHashSet<> ) );
-                case "Stack": return TryGetSingleGenericParameter( info.ReadInfo, typeof( Deserialization.DStack<> ) );
-                case "Queue": return TryGetSingleGenericParameter( info.ReadInfo, typeof( Deserialization.DQueue<> ) );
-                case "KeyValuePair": return TryGetDoubleGenericParameter( info.ReadInfo, typeof( Deserialization.DKeyValuePair<,> ) );
+                case "Dictionary": return TryGetDoubleGenericParameter( info.ReadInfo, typeof( DDictionary<,> ) );
+                case "List": return TryGetSingleGenericParameter( info.ReadInfo, typeof( DList<> ) );
+                case "Set": return TryGetSingleGenericParameter( info.ReadInfo, typeof( DHashSet<> ) );
+                case "Stack": return TryGetSingleGenericParameter( info.ReadInfo, typeof( DStack<> ) );
+                case "Queue": return TryGetSingleGenericParameter( info.ReadInfo, typeof( DQueue<> ) );
+                case "KeyValuePair": return TryGetDoubleGenericParameter( info.ReadInfo, typeof( DKeyValuePair<,> ) );
             }
             return null;
         }
@@ -147,7 +157,7 @@ namespace CK.BinarySerialization
             {
                 // The expected type should be based on the NullableTypeTree TargetType SubTypes...
                 var d = info.SubTypes[i].GetPotentiallyAbstractDriver( null );
-                isCached &= d.IsCacheable;
+                isCached &= d.IsCached;
                 tA[i] = d;
             }
             var key = new TupleKey( tA, isValueTuple );
@@ -186,7 +196,7 @@ namespace CK.BinarySerialization
             Debug.Assert( info.SubTypes.Count == 1 );
             // The expected type should be based on the NullableTypeTree TargetType SubTypes...
             var item = info.SubTypes[0].GetPotentiallyAbstractDriver( null );
-            return item.IsCacheable
+            return item.IsCached
                     ? _cache.GetOrAdd( (item, tGenD), CreateCached )
                     : Create( item, tGenD );
 
@@ -209,7 +219,7 @@ namespace CK.BinarySerialization
             // The expected types should be based on the NullableTypeTree TargetType SubTypes...
             var item1 = info.SubTypes[0].GetPotentiallyAbstractDriver( null );
             var item2 = info.SubTypes[1].GetPotentiallyAbstractDriver( null );
-            return item1.IsCacheable && item2.IsCacheable
+            return item1.IsCached && item2.IsCached
                     ? _cache.GetOrAdd( (item1, item2, tGenD), CreateCached )
                     : Create( item1, item2, tGenD );
 

@@ -13,7 +13,7 @@ namespace CK.BinarySerialization.Deserialization
         readonly TypedReader<T> _item;
 
         public DStack( IDeserializationDriver item )
-            : base( item.IsCacheable )
+            : base( item.IsCached )
         {
             _item = Unsafe.As<TypedReader<T>>( item.TypedReader );
         }

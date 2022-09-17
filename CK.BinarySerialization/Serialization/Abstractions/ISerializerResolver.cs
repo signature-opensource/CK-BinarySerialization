@@ -8,9 +8,8 @@ namespace CK.BinarySerialization
     /// <summary>
     /// Finds a serializer for a type.
     /// <para>
-    /// Not all the resolvers are the same: <see cref="BasicTypesSerializerResolver.Instance"/> relies on 
-    /// immutable mappings and is exposed as a singleton, <see cref="SimpleBinarySerializerResolver"/> is 
-    /// a pure factory (it doesn't cache its result).
+    /// They are typically exposed as singletons like <see cref="BasicTypesSerializerResolver.Instance"/>
+    /// since they are purely factories of drivers.
     /// </para>
     /// </summary>
     public interface ISerializerResolver

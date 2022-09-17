@@ -37,7 +37,7 @@ namespace CK.BinarySerialization
 
             public Delegate TypedReader => _reader;
 
-            public bool IsCacheable => _deserializer.IsCacheable;
+            public bool IsCached => _deserializer.IsCached;
 
             IDeserializationDriver IDeserializationDriver.ToNullable => this;
 
@@ -68,7 +68,7 @@ namespace CK.BinarySerialization
         {
             _null = new NullableAdapter( this );
             _reader = reader;
-            IsCacheable = isCached;
+            IsCached = isCached;
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace CK.BinarySerialization
         public Delegate TypedReader => _reader;
 
         /// <inheritdoc />
-        public bool IsCacheable { get; }
+        public bool IsCached { get; }
 
         /// <inheritdoc />
         public IValueTypeNullableDeserializationDriver<T> ToNullable => _null;

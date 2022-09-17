@@ -13,7 +13,7 @@ namespace CK.BinarySerialization.Deserialization
         readonly TypedReader<TValue> _value;
 
         public DKeyValuePair( IDeserializationDriver k, IDeserializationDriver v )
-            : base( k.IsCacheable && v.IsCacheable )
+            : base( k.IsCached && v.IsCached )
         {
             _key = Unsafe.As<TypedReader<TKey>>( k.TypedReader );
             _value = Unsafe.As<TypedReader<TValue>>( v.TypedReader );

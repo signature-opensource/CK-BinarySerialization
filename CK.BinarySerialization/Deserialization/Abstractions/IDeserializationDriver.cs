@@ -21,11 +21,11 @@ namespace CK.BinarySerialization
         Delegate TypedReader { get; }
 
         /// <summary>
-        /// Gets whether this driver can be cached and reused.
+        /// Gets whether this driver is cached and reused.
         /// <para>
         /// Note that this caching is not done at the <see cref="BinaryDeserializerContext"/> level nor at
-        /// the <see cref="SharedBinaryDeserializerContext"/>: this can only be done by resolvers and, ultimately,
-        /// the deserializer is cached in the <see cref="ITypeReadInfo"/> per deserialization session instance.
+        /// the <see cref="SharedBinaryDeserializerContext"/>: this can only be done by resolvers. (Ultimately,
+        /// the deserializer is always cached in the <see cref="ITypeReadInfo"/> per deserialization session instance).
         /// </para>
         /// <para>
         /// A driver that relies on other drivers can only be cached and reused if 
@@ -39,7 +39,7 @@ namespace CK.BinarySerialization
         /// it is up to the resolver to handle its caching if it can.
         /// </para>
         /// </summary>
-        bool IsCacheable { get; }
+        bool IsCached { get; }
 
         /// <summary>
         /// Gets the nullable driver.

@@ -38,7 +38,7 @@ namespace CK.BinarySerialization
         /// True if the <see cref="ExpectedType"/> is the same as the <see cref="ITypeReadInfo.TryResolveLocalType()"/>
         /// and <see cref="ITypeReadInfo.IsDirtyInfo"/> is false.
         /// <para>
-        /// Whether the resolved driver is eventually cached (<see cref="IDeserializationDriver.IsCacheable"/>) is up to
+        /// Whether the resolved driver is eventually cached (<see cref="IDeserializationDriver.IsCached"/>) is up to
         /// the resolvers.
         /// </para>
         /// </summary>
@@ -61,6 +61,7 @@ namespace CK.BinarySerialization
             Debug.Assert( context != null );
             Debug.Assert( expectedType != null );
             Debug.Assert( expectedType != info.TargetType || !info.HasResolvedConcreteDriver, "Deserialization driver for TargetType must not be already resolved." );
+            Debug.Assert( expectedType == info.TargetType || info.TargetType == null || !expectedType.IsAssignableFrom( info.TargetType ) );
             ReadInfo = info;
             ExpectedType = expectedType;
             IsPossibleNominalDeserialization = ExpectedType == info.TryResolveLocalType() && !info.IsDirtyInfo;
