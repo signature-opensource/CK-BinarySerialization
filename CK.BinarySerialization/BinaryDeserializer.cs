@@ -17,14 +17,15 @@ namespace CK.BinarySerialization
     public static class BinaryDeserializer
     {
         /// <summary>
-        /// Gets the default thread safe static registry of <see cref="IDeserializerResolver"/>.
+        /// Gets the default thread safe static context initialized <see cref="BasicTypesDeserializerResolver.Instance"/>,
+        /// <see cref="SimpleBinaryDeserializerResolver.Instance"/>, a <see cref="StandardGenericDeserializerResolver"/>
+        /// and <see cref="SharedDeserializerKnownObject.Default"/>.
+        /// <para>
+        /// If the CK.BinarySerialization.IPoco or CK.BinarySerialization.Sliced assemblies can be loaded, then resolvers
+        /// for <c>IPoco</c> and <c>ICKSlicedSerializable</c> are automatically registered.
+        /// </para>
         /// </summary>
-        public static readonly SharedBinaryDeserializerContext DefaultSharedContext;
-
-        static BinaryDeserializer()
-        {
-            DefaultSharedContext = new SharedBinaryDeserializerContext();
-        }
+        public static readonly SharedBinaryDeserializerContext DefaultSharedContext = new SharedBinaryDeserializerContext();
 
         /// <summary>
         /// Captures the result of the deserialization.

@@ -2,6 +2,63 @@
 
 Yet another serialization library? Unfortunately yes...
 
+```c#
+// c#
+
+/// <summary>
+/// Converts a base64Url string (that must be valid base64Url otherwise an <see cref="ArgumentException"/> is thrown)
+/// to bytes.
+/// </summary>
+/// <param name="base64UrlString">The string.</param>
+/// <returns>The bytes.</returns>
+public static Memory<byte> FromBase64UrlString( string base64UrlString )
+{
+    if( !TryFromBase64UrlString(base64UrlString, out Memory<byte> result ) )
+    {
+        Throw.ArgumentException( nameof( base64UrlString ), "Invalid Base64Url data." );
+    }
+    return result;
+}
+```
+
+```cs
+// cs
+
+/// <summary>
+/// Converts a base64Url string (that must be valid base64Url otherwise an <see cref="ArgumentException"/> is thrown)
+/// to bytes.
+/// </summary>
+/// <param name="base64UrlString">The string.</param>
+/// <returns>The bytes.</returns>
+public static Memory<byte> FromBase64UrlString( string base64UrlString )
+{
+    if( !TryFromBase64UrlString(base64UrlString, out Memory<byte> result ) )
+    {
+        Throw.ArgumentException( nameof( base64UrlString ), "Invalid Base64Url data." );
+    }
+    return result;
+}
+```
+
+```csharp
+// csharp
+
+/// <summary>
+/// Converts a base64Url string (that must be valid base64Url otherwise an <see cref="ArgumentException"/> is thrown)
+/// to bytes.
+/// </summary>
+/// <param name="base64UrlString">The string.</param>
+/// <returns>The bytes.</returns>
+public static Memory<byte> FromBase64UrlString( string base64UrlString )
+{
+    if( !TryFromBase64UrlString(base64UrlString, out Memory<byte> result ) )
+    {
+        Throw.ArgumentException( nameof( base64UrlString ), "Invalid Base64Url data." );
+    }
+    return result;
+}
+```
+
 ## What matters: performance, immutability and type mutation
 Performance matters and that's why this is all about schema-less, binary serialization. Binary serialization can be
 highly efficient at the cost of some complexity and non readability.
@@ -40,7 +97,7 @@ factory method that takes a Stream and a Context.
 
 This serializes 2 lists. (Note that a User may reference one or more Books here, any references among these objects
 will be preserved and restored.)
-```c#
+```cs
 var stream = new MemoryStream();
 List<User> users = GetAllUsers();
 IReadOnlyList<Book> books = GetAllBooks();
@@ -58,7 +115,7 @@ between a Type to serialize and its serializer is cached in a simple dictionary 
 
 Deserialization uses another pattern: a function must do the job. Here, since we must read back the 2 lists, we return
 a value tuple with the 2 lists.
-```c#
+```cs
 // The stream must be correctly positioned.
 stream.Position = 0;
 var result = BinaryDeserializer.Deserialize( stream, new BinaryDeserializerContext(), d =>
@@ -86,8 +143,6 @@ mappings and expose a `IServiceProvider`. De/Serialization can rely on available
 Deserializers can "rebind" the deserialized objects to any external services (or other contextual objects) if needed.
 
 
-
-
 These contexts are only caches: mappings definition are managed by the thread safe [SharedBinarySerializerContext](CK.BinarySerialization/Serialization/SharedBinarySerializerContext.cs)
 and [SharedBinaryDeserializerContext](CK.BinarySerialization/Deserialization/SharedBinaryDeserializerContext.cs) that use Resolvers
 ([ISerializerResolver](CK.BinarySerialization/Serialization/Abstractions/ISerializerResolver.cs)
@@ -96,13 +151,17 @@ configured to handle singletons, new types and type mutations.
 
 The default shared contexts are exposed by static properties of `BinarySerializer` and `BinaryDeserializer`:
 
-```c#
+```cs
 public static class BinarySerializer
 {
     /// <summary>
     /// Gets the default thread safe static context initialized with the <see cref="BasicTypesSerializerResolver.Instance"/>,
     /// <see cref="SimpleBinarySerializerResolver.Instance"/> and a <see cref="StandardGenericSerializerResolver"/>
     /// deserializer resolvers and <see cref="SharedSerializerKnownObject.Default"/>.
+    /// <para>
+    /// If the CK.BinarySerialization.IPoco or CK.BinarySerialization.Sliced assemblies can be loaded, then resolvers
+    /// for <c>IPoco</c> and <c>ICKSlicedSerializable</c> are automatically registered.
+    /// </para>
     /// </summary>
     public static readonly SharedBinarySerializerContext DefaultSharedContext = new SharedBinarySerializerContext();
 
@@ -112,9 +171,15 @@ public static class BinarySerializer
 public static class BinaryDeserializer
 {
     /// <summary>
-    /// Gets the default thread safe static registry of <see cref="IDeserializerResolver"/>.
+    /// Gets the default thread safe static context initialized <see cref="BasicTypesDeserializerResolver.Instance"/>,
+    /// <see cref="SimpleBinaryDeserializerResolver.Instance"/>, a <see cref="StandardGenericDeserializerResolver"/>
+    /// and <see cref="SharedDeserializerKnownObject.Default"/>.
+    /// <para>
+    /// If the CK.BinarySerialization.IPoco or CK.BinarySerialization.Sliced assemblies can be loaded, then resolvers
+    /// for <c>IPoco</c> and <c>ICKSlicedSerializable</c> are automatically registered.
+    /// </para>
     /// </summary>
-    public static readonly SharedBinaryDeserializerContext DefaultSharedContext;
+    public static readonly SharedBinaryDeserializerContext DefaultSharedContext = new SharedBinaryDeserializerContext();;
 
     ...
 }
@@ -139,10 +204,11 @@ By default, the following singletons are registered: `DBNull.Value`, `Type.Missi
 This is not perfect but it works.
 
 ### Supporting new types
+#### Registering a Serializer and a Deserializer
 Any type can be serialized thanks to dedicated Serializers and Deserializers that can be registered in the shared contexts.
 
 For a simple (but potentially recursive) class like this one:
-```c#
+```cs
   class Node
   {
       public string? Name { get; set; }
@@ -152,7 +218,7 @@ For a simple (but potentially recursive) class like this one:
 ```
 Its serializer is a `ReferenceTypeSerializer<Node>`. The `DriverName` must be unique (but can be any string),
 the `SerializationVersion` typically starts at 0 and must be incremented whenever the binary layout changes:
-```c#
+```cs
   sealed class NodeSerializer : ReferenceTypeSerializer<Node>
   {
       public override string DriverName => "Node needs Node!";
@@ -167,7 +233,7 @@ the `SerializationVersion` typically starts at 0 and must be incremented wheneve
   }
 ```
 The `ReferenceTypeDeserializer<Node>` is even simpler:
-```c#
+```cs
   sealed class NodeDeserializer : ReferenceTypeDeserializer<Node>
   {
       protected override void ReadInstance( ref RefReader r )
@@ -180,12 +246,32 @@ The `ReferenceTypeDeserializer<Node>` is even simpler:
       }
   }
 ```
-Registering these deserializer and serializer in the default shared contexts must be obviously done
-before any de/serialization, typically in a type initializer (a Type's static constructor):
-```c#
+Registering these deserializer and serializer in the appropriate shared contexts (quite always the default ones)
+must be obviously done before any de/serialization. For default shared context, this is typically done in a type
+initializer (a Type's static constructor):
+```cs
 BinarySerializer.DefaultSharedContext.AddSerializationDriver( typeof( Node ), new NodeSerializer() );
-BinaryDeserializer.DefaultSharedContext.AddLocalTypeDeserializer( new NodeDeserializer() );
+BinaryDeserializer.DefaultSharedContext.AddDeserializerDriver( new NodeDeserializer() );
 ``` 
+The type to handle must NOT already be associated to an existing driver otherwise an `InvalidOperationException` is
+thrown.
+
+These explicitly registered drivers take precedence over the ones that may be resolved by resolvers.
+
+#### Registering Resolvers
+Serialization and deserialization drivers handle a specific Type. This is not enough for "Type families" like a "User" base
+class that can be specialized of for generic types like a `Container<T1,T2>`. To handle such polymorphic types,
+([ISerializerResolver](CK.BinarySerialization/Serialization/Abstractions/ISerializerResolver.cs)
+and [IDeserializerResolver](CK.BinarySerialization/Deserialization/Abstractions/IDeserializerResolver.cs)) can
+be used.
+
+Resolvers have the responsibility to locate or synthesize Drivers and handle type mutations.
+They can be rather simple ([BasicTypesSerializerResolver](CK.BinarySerialization/Serialization/Resolvers/BasicTypesSerializerResolver.cs))
+or quite complex ([StandardGenericDeserializerResolver](CK.BinarySerialization/Deserialization/Resolvers/StandardGenericDeserializerResolver.cs)).
+
+Deserialization resolvers are nearly always more complex than their serialization counterpart.
+
+## Mutations
 
 ### Simple mutations: renaming Types
 
@@ -194,7 +280,7 @@ Bad naming happens often and serialization should not block the process of choos
 
 The code below handles a `Domain` to `ODomain` and `Coordinator` to `OCoordinatorRoot` renaming.
 
-```c#
+```cs
   static CoordinatorClient()
   {
       BinaryDeserializer.DefaultSharedContext.AddDeserializationHook( t =>
@@ -221,7 +307,11 @@ objects.
 > Note that once you're assured that any files or serialized streams that may exist with the old naming have 
 > been rewritten at least once, the hook can (and should) be removed.
 
-## Nullable handling is currently partial
+## Nullable handling is "oblivious"
+
+> Definitions from _Oxford Languages_: 
+> __not aware of or concerned about what is happening around one.__
+> _"She became absorbed, oblivious to the passage of time"_
 
 Nullable value types like `int?` (`Nullable<int>`) are serialized with a marker byte and then the value itself if it is not null. 
 Nullable value types are easy: the types are not the same. It's unfortunately much more subtle for reference types: A `User?` is 
@@ -232,11 +322,15 @@ as a `List<User?>`: a reference type instance always require an extra byte that 
 vs. a new (not seen yet) instance. Note that this byte marker is also used for the `null` value for nullable reference type
 (and we cannot avoid it). 
 
-As of today, CK.BinarySerialization considers all reference types as being potentially null (this is called the "oblivious nullable context",
-with one exception: the key of a `Dictionary<TKey,TValue>` that is assumed to be not nullable.
+CK.BinarySerialization considers all reference types as being potentially null (this is called the "oblivious nullable context".
+Full nullable reference type support is possible (NullableTypeTree from CK.CodeGen does the job) however the gain would be
+marginal. 
 
-Since the binary layout of reference types always require a byte to handle potential references and that nullable value types are not the 
-same as their regular type, full support of NRT will have no real impact on the size or the performance... Its real objective
+- Since the binary layout of reference types always require a byte to handle potential references and that nullable value types are not the 
+same as their regular type, full support of NRT will have no impact on the size or the performance.
+- Automatic Mutations
+
+ Its real objective
 is related to mutation support. Current partial NRT support makes today mutation from class to struct to actually be class to nullable
 struct mutation. This is discussed in more details below.
 
@@ -278,7 +372,7 @@ the objects that are "simple serializable".
 
 ## ICKSlicedBinarySerializable (any type)
 The `CK.BinarySerialization.ICKSlicedSerializable` interface is a pure marker interface:
-```c#
+```cs
     /// <summary>
     /// Marker interface for types that can use the "Sliced" serialization. 
     /// </summary>
@@ -291,7 +385,7 @@ This interface implies that the type must be decorated with the SerializationVer
 a `public static Write` method (and, if the class is not sealed, a special empty deserialization constructor to be called by specialized types). 
 Below is a typical base class implementation (`IsDestroyed` property is discussed below):
 
-```c#
+```cs
 [SerializationVersion(0)]
 public class Person : ICKSlicedSerializable, IDestroyable
 {
@@ -325,7 +419,7 @@ public class Person : ICKSlicedSerializable, IDestroyable
 The base class **must** be marked with `ICKSlicedSerializable`:
 
 Below is a non sealed specialization of this base class:
-```c#
+```cs
 [SerializationVersion(0)]
 public class Employee : Person
 {
@@ -352,7 +446,7 @@ public class Employee : Person
 
 The `IDestroyable` interface is a minimalist interface:
 
-```c#
+```cs
     /// <summary>
     /// Optional interface that exposes a <see cref="IsDestroyed"/> property that can be implemented 
     /// by reference types that have a "alive" semantics (they may be <see cref="IDisposable"/> but this 
@@ -397,20 +491,20 @@ no null values will work whereas another one will fail miserably or worst(?), fo
 
 ### Enum
 Enums can change their underlying type freely:
-```c#
+```cs
 public enum Status : byte { ... }
 ```
 Can become:
-```c#
+```cs
 public enum Status : ushort { ... }
 ```
 As long as the old integral type can be converted at runtime to the new one, this is transparent. At runtime means that 
 the actual values are converted, regardless of the underlying type wideness. The below mutation will work:
-```c#
+```cs
 public enum Status : long { None = 0, On = 1, Off = 2, White = 4, OutOfRange = -5, OutOfOrder = 3712 }
 ```
 Can become:
-```c#
+```cs
 public enum Status : short { None = 0, On = 1, Off = 2, White = 4, OutOfRange = -5, OutOfOrder = 3712 }
 ```
 Since all values fit in a `short` (`Int16`), everything's fine. 
@@ -423,7 +517,7 @@ be raised.
 Underlying type mutation will work ONLY when using `IBinarySerializer.WriteValue<T>(in T)` and 
 `IBinaryDeserializer.ReadValue<T>()`.
 You can also choose to simply use casts between the enum type and its underlying type:
-```c#
+```cs
     /// Status was a long in version 1, we are now in version 2 and this is now a short.
     if( info.Version < 2 )
     {

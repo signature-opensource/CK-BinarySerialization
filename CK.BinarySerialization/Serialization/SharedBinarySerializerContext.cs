@@ -106,6 +106,7 @@ namespace CK.BinarySerialization
         {
             public NonCacheableDriverSentinel( ISerializerResolver resolver, SerializationDriverCacheLevel cacheLevel )
             {
+                Debug.Assert( cacheLevel != SerializationDriverCacheLevel.SharedContext );
                 Resolver = resolver;
                 CacheLevel = cacheLevel;
             }
@@ -113,6 +114,18 @@ namespace CK.BinarySerialization
             public ISerializerResolver Resolver { get; }
 
             public SerializationDriverCacheLevel CacheLevel { get; }
+
+            public void UpdateStatistics( ref BinarySerializerContext.CacheDriverStat s )
+            {
+                if( CacheLevel == SerializationDriverCacheLevel.Never )
+                {
+                    s._driverNeverCached++;
+                }
+                else
+                {
+                    s._driverContextCached++;
+                }
+            }
 
             public string DriverName => nameof( NonCacheableDriverSentinel );
 
@@ -154,20 +167,24 @@ namespace CK.BinarySerialization
                             }
                         }
                         // If the driver is null, we don't register the null: this type is currently not serializable
-                        // but it may be thanks to new resolvers or serializers.
+                        // and the current session will fail but it may be thanks to future resolvers or serializers.
                         if( driver == null ) return null;
                         // If the driver cannot be cached at this level, we use the sentinel.
                         // We use GetOrAdd here so that if a concurrent AddSerializationDriver or
                         // SetNotSerializable happened, it wins.
+                        // Statistics are updated regardless of such concurrent updates (they should barely happen
+                        // and this is not really relevant).
                         if( driver.CacheLevel != SerializationDriverCacheLevel.SharedContext )
                         {
                             Debug.Assert( found != null );
                             var sentinel = new NonCacheableDriverSentinel( found, driver.CacheLevel );
+                            sentinel.UpdateStatistics( ref context.LastStatistics );
                             var already = _typedDrivers.GetOrAdd( t, sentinel );
                             if( already != sentinel ) driver = already;
                         }
                         else
                         {
+                            context.LastStatistics._driverSharedContextCached++;
                             driver = _typedDrivers.GetOrAdd( t, driver );
                         }
                     }
@@ -176,6 +193,7 @@ namespace CK.BinarySerialization
             // Always do this because of the Double Check Lock.
             if( driver is NonCacheableDriverSentinel noCache )
             {
+                noCache.UpdateStatistics( ref context.LastStatistics );
                 driver = noCache.Resolver.TryFindDriver( context, t );
             }
             return driver;

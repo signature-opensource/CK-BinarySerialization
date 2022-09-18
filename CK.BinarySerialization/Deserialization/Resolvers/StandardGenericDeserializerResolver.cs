@@ -86,17 +86,6 @@ namespace CK.BinarySerialization
                     {
                         Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Enum && info.ReadInfo.SubTypes.Count == 1 );
 
-                        // If info.TargetType.IsEnum is false (the target type is NOT an enum), we could do this for integral types (it works):
-                        //
-                        //   var tDiffOther = typeof( Deserialization.DEnumDiff<,,> ).MakeGenericType( info.TargetType, info.TargetType, uD.ResolvedType );
-                        //   return (IDeserializationDriver)Activator.CreateInstance( tDiffOther, uD.TypedReader )!;
-                        //
-                        // However we don't do this to stay consistent. Mutations must be coherent, if we do this then we should also handle 
-                        // the opposite (written integral types read as enums). We may do this once.
-                        // 
-                        // For the moment, to support mapping to different enums types use deserialization hooks and
-                        // IMutableTypeReadInfo.SetTargetType.
-                        //
                         if( !info.ExpectedType.IsEnum )
                         {
                             var target = BasicTypesDeserializerResolver.IsBasicallyConvertible( info.ExpectedType );

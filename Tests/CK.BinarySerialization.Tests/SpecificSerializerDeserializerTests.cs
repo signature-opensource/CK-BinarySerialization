@@ -67,7 +67,7 @@ namespace CK.BinarySerialization.Tests
             sC.Shared.AddSerializationDriver( typeof( Node ), new NodeSerializer() );
 
             var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
-            dC.Shared.AddLocalTypeDeserializer( new NodeDeserializer() );
+            dC.Shared.AddDeserializerDriver( new NodeDeserializer() );
 
             Node back = TestHelper.SaveAndLoadObject( n1, sC, dC );
             back.Should().BeEquivalentTo( n1, options => options.IgnoringCyclicReferences() );
@@ -120,8 +120,8 @@ namespace CK.BinarySerialization.Tests
             sC.Shared.AddSerializationDriver( typeof( NodeRoot ), new NodeRootSerializer() );
 
             var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
-            dC.Shared.AddLocalTypeDeserializer( new NodeDeserializer() );
-            dC.Shared.AddLocalTypeDeserializer( new NodeRootDeserializer() );
+            dC.Shared.AddDeserializerDriver( new NodeDeserializer() );
+            dC.Shared.AddDeserializerDriver( new NodeRootDeserializer() );
 
             NodeRoot back = TestHelper.SaveAndLoadObject( root, sC, dC );
             back.Should().BeEquivalentTo( root );

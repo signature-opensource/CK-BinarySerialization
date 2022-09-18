@@ -160,17 +160,17 @@ namespace CK.BinarySerialization
         }
 
         /// <summary>
-        /// Registers an explicit deserialization driver that will be used 
-        /// when <see cref="ITypeReadInfo.TryResolveLocalType()"/> is its <see cref="IDeserializationDriver.ResolvedType"/>.
+        /// Registers an explicit deserialization driver for a type.
         /// <para>
-        /// The local type MUST not already be mapped otherwise an <see cref="InvalidOperationException"/> is raised.
+        /// This <see cref="IDeserializationDriver.ResolvedType"/> MUST not already be mapped otherwise
+        /// an <see cref="InvalidOperationException"/> is raised.
         /// </para>
         /// <para>
         /// These explicitly registered drivers take precedence over all other resolvers.
         /// </para>
         /// </summary>
         /// <param name="driver">The driver to register.</param>
-        public void AddLocalTypeDeserializer( IDeserializationDriver driver )
+        public void AddDeserializerDriver( IDeserializationDriver driver )
         {
             var n = driver.ToNullable.ResolvedType;
             bool done = false;

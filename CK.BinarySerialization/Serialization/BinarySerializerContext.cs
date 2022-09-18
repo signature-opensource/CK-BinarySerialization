@@ -21,7 +21,60 @@ namespace CK.BinarySerialization
         readonly SharedBinarySerializerContext _shared;
         readonly SimpleServiceContainer _services;
         int _maxRecurse;
+        CacheDriverStat _cacheStat;
+
         bool _inUse;
+
+        /// <summary>
+        /// Captures cache hit statistics from the last session.
+        /// </summary>
+        public struct CacheDriverStat
+        {
+            internal int _driverLookup;
+            internal int _driverSharedLookup;
+            internal int _driverSharedContextCached;
+            internal int _driverContextCached;
+            internal int _driverNeverCached;
+            internal int _driverNonSealed;
+
+            /// <summary>
+            /// Gets the number of drivers lookup.
+            /// </summary>
+            public int DriverLookup => _driverLookup;
+
+            /// <summary>
+            /// Gets the number of drivers lookup in the <see cref="SharedBinarySerializerContext"/>.
+            /// </summary>
+            public int DriverSharedLookup => _driverSharedLookup;
+
+            /// <summary>
+            /// Gets the number of drivers that have been instantiated during this session
+            /// and cached in the <see cref="SharedBinarySerializerContext"/>.
+            /// </summary>
+            public int DriverSharedContextCached => _driverSharedContextCached;
+
+            /// <summary>
+            /// Gets the number of drivers that have been instantiated during this session
+            /// and cached in the <see cref="BinarySerializerContext"/> but not in the <see cref="SharedBinarySerializerContext"/>.
+            /// </summary>
+            public int DriverContextCached => _driverContextCached;
+
+            /// <summary>
+            /// Gets the number of drivers that have been instantiated during this session
+            /// and not cached (their <see cref="ISerializationDriver.CacheLevel"/> is <see cref="SerializationDriverCacheLevel.Never"/>).
+            /// </summary>
+            public int DriverNeverCached => _driverNeverCached;
+
+            /// <summary>
+            /// Gets the number of non sealed classes lookup. These non sealed classes use a generic abstract driver
+            /// that lookups the actual driver based on the runtime type (<see cref="Object.GetType()"/>).
+            /// </summary>
+            public int DriverNonSealed => _driverNonSealed;
+
+            internal void Reset() => this = default;
+
+        }
+
 
         /// <summary>
         /// Initializes a new <see cref="BinarySerializerContext"/>.
@@ -44,6 +97,7 @@ namespace CK.BinarySerialization
                 Throw.InvalidOperationException( "This BinarySerializerContext is already used by an existing BinarySerializer. The existing BinarySerializer must be disposed first." );
             }
             _inUse = true;
+            _cacheStat.Reset();
         }
 
         internal void Release()
@@ -91,14 +145,26 @@ namespace CK.BinarySerialization
             }
         }
 
+        /// <summary>
+        /// Gets the last serialization session statistics.
+        /// </summary>
+        public ref CacheDriverStat LastStatistics => ref _cacheStat;
 
         /// <inheritdoc />
         public ISerializationDriver? TryFindDriver( Type t )
         {
+            ++_cacheStat._driverLookup;
             if( !_cache.TryGetValue( t, out var r ) )
             {
+                ++_cacheStat._driverSharedLookup;
                 r = _shared.TryFindDriver( this, t );
-                if( r == null || r.CacheLevel != SerializationDriverCacheLevel.Never )_cache.Add( t, r );
+                // If the driver is null, we don't register the null: this type is currently not serializable
+                // and the current session will fail but it may be thanks to future resolvers or serializers.
+                if( r == null ) return null;
+                if( r.CacheLevel != SerializationDriverCacheLevel.Never )
+                {
+                    _cache.Add( t, r );
+                }
             }
             return r;
         }
@@ -113,7 +179,8 @@ namespace CK.BinarySerialization
         {
             if( !t.IsSealed )
             {
-                Debug.Assert( t.IsClass, "Currently nullable by default." );
+                Debug.Assert( t.IsClass, "Non sealed is a class." );
+                _cacheStat._driverNeverCached++;
                 return Serialization.DAbstract.Instance.ToNullable;
             }
             return TryFindDriver( t );

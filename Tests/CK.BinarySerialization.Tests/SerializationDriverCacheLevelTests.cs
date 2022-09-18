@@ -86,7 +86,7 @@ namespace CK.BinarySerialization.Tests
             sC.Shared.AddResolver( new Resolver() );
 
             var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
-            dC.Shared.AddLocalTypeDeserializer( new ThingDeserializer() );
+            dC.Shared.AddDeserializerDriver( new ThingDeserializer() );
 
             ICanChange = "First";
 
@@ -120,7 +120,7 @@ namespace CK.BinarySerialization.Tests
             var sC2 = new BinarySerializerContext( sharedContext );
 
             var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
-            dC.Shared.AddLocalTypeDeserializer( new ThingDeserializer() );
+            dC.Shared.AddDeserializerDriver( new ThingDeserializer() );
 
             // sC1 will keep the "First".
             ICanChange = "First";
@@ -154,7 +154,7 @@ namespace CK.BinarySerialization.Tests
             sC.Shared.AddResolver( new Resolver() );
 
             var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
-            dC.Shared.AddLocalTypeDeserializer( new ThingDeserializer() );
+            dC.Shared.AddDeserializerDriver( new ThingDeserializer() );
 
             WriterCacheLevel = SerializationDriverCacheLevel.Never;
 

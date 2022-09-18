@@ -23,6 +23,10 @@ namespace CK.BinarySerialization
         /// Gets the default thread safe static context initialized with the <see cref="BasicTypesSerializerResolver.Instance"/>,
         /// <see cref="SimpleBinarySerializerResolver.Instance"/> and a <see cref="StandardGenericSerializerResolver"/>
         /// deserializer resolvers and <see cref="SharedSerializerKnownObject.Default"/>.
+        /// <para>
+        /// If the CK.BinarySerialization.IPoco or CK.BinarySerialization.Sliced assemblies can be loaded, then resolvers
+        /// for <c>IPoco</c> and <c>ICKSlicedSerializable</c> are automatically registered.
+        /// </para>
         /// </summary>
         public static readonly SharedBinarySerializerContext DefaultSharedContext = new SharedBinarySerializerContext();
 
