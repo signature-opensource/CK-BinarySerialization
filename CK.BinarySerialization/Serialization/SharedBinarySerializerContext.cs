@@ -115,7 +115,7 @@ namespace CK.BinarySerialization
 
             public SerializationDriverCacheLevel CacheLevel { get; }
 
-            public void UpdateStatistics( ref BinarySerializerContext.CacheDriverStat s )
+            public void UpdateStatistics( ref BinarySerializerContext.Statistics s )
             {
                 if( CacheLevel == SerializationDriverCacheLevel.Never )
                 {

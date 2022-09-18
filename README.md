@@ -2,63 +2,6 @@
 
 Yet another serialization library? Unfortunately yes...
 
-```c#
-// c#
-
-/// <summary>
-/// Converts a base64Url string (that must be valid base64Url otherwise an <see cref="ArgumentException"/> is thrown)
-/// to bytes.
-/// </summary>
-/// <param name="base64UrlString">The string.</param>
-/// <returns>The bytes.</returns>
-public static Memory<byte> FromBase64UrlString( string base64UrlString )
-{
-    if( !TryFromBase64UrlString(base64UrlString, out Memory<byte> result ) )
-    {
-        Throw.ArgumentException( nameof( base64UrlString ), "Invalid Base64Url data." );
-    }
-    return result;
-}
-```
-
-```cs
-// cs
-
-/// <summary>
-/// Converts a base64Url string (that must be valid base64Url otherwise an <see cref="ArgumentException"/> is thrown)
-/// to bytes.
-/// </summary>
-/// <param name="base64UrlString">The string.</param>
-/// <returns>The bytes.</returns>
-public static Memory<byte> FromBase64UrlString( string base64UrlString )
-{
-    if( !TryFromBase64UrlString(base64UrlString, out Memory<byte> result ) )
-    {
-        Throw.ArgumentException( nameof( base64UrlString ), "Invalid Base64Url data." );
-    }
-    return result;
-}
-```
-
-```csharp
-// csharp
-
-/// <summary>
-/// Converts a base64Url string (that must be valid base64Url otherwise an <see cref="ArgumentException"/> is thrown)
-/// to bytes.
-/// </summary>
-/// <param name="base64UrlString">The string.</param>
-/// <returns>The bytes.</returns>
-public static Memory<byte> FromBase64UrlString( string base64UrlString )
-{
-    if( !TryFromBase64UrlString(base64UrlString, out Memory<byte> result ) )
-    {
-        Throw.ArgumentException( nameof( base64UrlString ), "Invalid Base64Url data." );
-    }
-    return result;
-}
-```
-
 ## What matters: performance, immutability and type mutation
 Performance matters and that's why this is all about schema-less, binary serialization. Binary serialization can be
 highly efficient at the cost of some complexity and non readability.
@@ -97,7 +40,7 @@ factory method that takes a Stream and a Context.
 
 This serializes 2 lists. (Note that a User may reference one or more Books here, any references among these objects
 will be preserved and restored.)
-```cs
+```csharp
 var stream = new MemoryStream();
 List<User> users = GetAllUsers();
 IReadOnlyList<Book> books = GetAllBooks();
@@ -115,7 +58,7 @@ between a Type to serialize and its serializer is cached in a simple dictionary 
 
 Deserialization uses another pattern: a function must do the job. Here, since we must read back the 2 lists, we return
 a value tuple with the 2 lists.
-```cs
+```csharp
 // The stream must be correctly positioned.
 stream.Position = 0;
 var result = BinaryDeserializer.Deserialize( stream, new BinaryDeserializerContext(), d =>
@@ -151,7 +94,7 @@ configured to handle singletons, new types and type mutations.
 
 The default shared contexts are exposed by static properties of `BinarySerializer` and `BinaryDeserializer`:
 
-```cs
+```csharp
 public static class BinarySerializer
 {
     /// <summary>
@@ -208,7 +151,7 @@ This is not perfect but it works.
 Any type can be serialized thanks to dedicated Serializers and Deserializers that can be registered in the shared contexts.
 
 For a simple (but potentially recursive) class like this one:
-```cs
+```csharp
   class Node
   {
       public string? Name { get; set; }
@@ -218,7 +161,7 @@ For a simple (but potentially recursive) class like this one:
 ```
 Its serializer is a `ReferenceTypeSerializer<Node>`. The `DriverName` must be unique (but can be any string),
 the `SerializationVersion` typically starts at 0 and must be incremented whenever the binary layout changes:
-```cs
+```csharp
   sealed class NodeSerializer : ReferenceTypeSerializer<Node>
   {
       public override string DriverName => "Node needs Node!";
@@ -233,7 +176,7 @@ the `SerializationVersion` typically starts at 0 and must be incremented wheneve
   }
 ```
 The `ReferenceTypeDeserializer<Node>` is even simpler:
-```cs
+```csharp
   sealed class NodeDeserializer : ReferenceTypeDeserializer<Node>
   {
       protected override void ReadInstance( ref RefReader r )
@@ -249,7 +192,7 @@ The `ReferenceTypeDeserializer<Node>` is even simpler:
 Registering these deserializer and serializer in the appropriate shared contexts (quite always the default ones)
 must be obviously done before any de/serialization. For default shared context, this is typically done in a type
 initializer (a Type's static constructor):
-```cs
+```csharp
 BinarySerializer.DefaultSharedContext.AddSerializationDriver( typeof( Node ), new NodeSerializer() );
 BinaryDeserializer.DefaultSharedContext.AddDeserializerDriver( new NodeDeserializer() );
 ``` 
@@ -271,74 +214,6 @@ or quite complex ([StandardGenericDeserializerResolver](CK.BinarySerialization/D
 
 Deserialization resolvers are nearly always more complex than their serialization counterpart.
 
-## Mutations
-
-### Simple mutations: renaming Types
-
-The capability to rename types is crucial, may be even more important than handling struct/class mutations.
-Bad naming happens often and serialization should not block the process of choosing a better name for things.
-
-The code below handles a `Domain` to `ODomain` and `Coordinator` to `OCoordinatorRoot` renaming.
-
-```cs
-  static CoordinatorClient()
-  {
-      BinaryDeserializer.DefaultSharedContext.AddDeserializationHook( t =>
-      {
-          if( t.WrittenInfo.TypeNamespace == "CK.Observable.League" )
-          {
-              if( t.WrittenInfo.TypeName == "Domain" )
-              {
-                  t.SetTargetType( typeof( ODomain ) );
-              }
-              else if( t.WrittenInfo.TypeName == "Coordinator" )
-              {
-                  t.SetTargetType( typeof( OCoordinatorRoot ) );
-              }
-          }
-      } );
-  }
-```
-
-The shared deserialization context must register such deserialization hooks before any serialization occur:
-here we've used the type initializer of the Type that is in charge of serializing and deserializing these
-objects.
-
-> Note that once you're assured that any files or serialized streams that may exist with the old naming have 
-> been rewritten at least once, the hook can (and should) be removed.
-
-## Nullable handling is "oblivious"
-
-> Definitions from _Oxford Languages_: 
-> __not aware of or concerned about what is happening around one.__
-> _"She became absorbed, oblivious to the passage of time"_
-
-Nullable value types like `int?` (`Nullable<int>`) are serialized with a marker byte and then the value itself if it is not null. 
-Nullable value types are easy: the types are not the same. It's unfortunately much more subtle for reference types: A `User?` is 
-exactly of the same type as `User`, the difference is in the way you use it in your code.
-
-The kernel is able to fully support Nullable Reference Type: a `List<User>` will actually be serialized the same way 
-as a `List<User?>`: a reference type instance always require an extra byte that can handle an already deserialized reference
-vs. a new (not seen yet) instance. Note that this byte marker is also used for the `null` value for nullable reference type
-(and we cannot avoid it). 
-
-CK.BinarySerialization considers all reference types as being potentially null (this is called the "oblivious nullable context".
-Full nullable reference type support is possible (NullableTypeTree from CK.CodeGen does the job) however the gain would be
-marginal. 
-
-- Since the binary layout of reference types always require a byte to handle potential references and that nullable value types are not the 
-same as their regular type, full support of NRT will have no impact on the size or the performance.
-- Automatic Mutations
-
- Its real objective
-is related to mutation support. Current partial NRT support makes today mutation from class to struct to actually be class to nullable
-struct mutation. This is discussed in more details below.
-
-The plan regarding full NRT support is to:
-- Extract the NullableTypeTree from CK.CodeGen.
-- Improves it with new features of .net 6 that helps discovering nullabilities of generic parameters.
-- Use it here to fully exploit the NRT.
-
 ## IBinarySerializer and ICKBinaryWriter, IBinaryDeserializer and ICKBinaryReader
 
 The `ICKBinaryWriter` and `ICKBinaryReader` are defined and implemented by `CKBinaryWriter`
@@ -350,7 +225,7 @@ Those are basic APIs. The CK.BinarySerialization.IBinarySerializer/Deserializer 
 serialization (object reference tracking, struct/class neutrality and versioning) but relies
 on the basic Reader/Writer (and expose them).
 
-![IBinarySerializer and its Writer](Doc/IBinarySerializer.png)
+![IBinarySerializer and its Writer](Doc/BinarySerializerInterface.png)
 
 Recommended conventions are:
 - Serializer is **s**: `IBinarySerializer s`
@@ -358,7 +233,7 @@ Recommended conventions are:
 - Deserializer is **d**: `IBinaryDeserializer d`
 - Reader is **r**: `ICKBinaryReader r`
 
-## Basic serialization: CK.Core ICKSimpleBinarySerializable and ICKVersionedBinarySerializable
+### Basic serialization: CK.Core ICKSimpleBinarySerializable and ICKVersionedBinarySerializable
 
 CK.Core package can handle "simple serializable".
 See [here](https://github.com/Invenietis/CK-Core/tree/develop/CK.Core/SimpleSerialization).
@@ -367,12 +242,14 @@ The BinarySerializer is not required for these 2 kind of serializable objects. E
 from CK.Core: the `CK.Core.ICKBinaryReader` and `CK.Core.ICKBinaryWriter` interfaces and their 
 respective default implementations can be used without the CK.BinarySerialization package.
 
-This package offers a much more comprehensive support of binary serialization but handles automatically
-the objects that are "simple serializable".
+However,this CK.BinarySerialization package offers a much more comprehensive support of binary serialization
+thanks to is resolvers and drivers (and handles automatically the objects that are "simple serializable") 
+and thanks to the CK.BinarySerialization.Sliced package that exposes and handles a third marker interface
+`ICKSlicedBinarySerializable`.
 
-## ICKSlicedBinarySerializable (any type)
+## CK.BinarySerialization.Sliced package for any type
 The `CK.BinarySerialization.ICKSlicedSerializable` interface is a pure marker interface:
-```cs
+```csharp
     /// <summary>
     /// Marker interface for types that can use the "Sliced" serialization. 
     /// </summary>
@@ -381,11 +258,19 @@ The `CK.BinarySerialization.ICKSlicedSerializable` interface is a pure marker in
     }
 ```
 
-This interface implies that the type must be decorated with the SerializationVersion attribute, exposes a deserialization constructor,
-a `public static Write` method (and, if the class is not sealed, a special empty deserialization constructor to be called by specialized types). 
+This interface implies that the type must be decorated with the `SerializationVersion` attribute just like
+the `CK.Core.ICKVersionedBinarySerializable` but "Sliced" serialization can be applied to any type
+(whereas the `ICKVersionedBinarySerializable` is limited to sealed classes or structs).
+
+Each sliced serializable type must expose a deserialization constructor, and a `public static Write` method
+(and, if the class is not sealed, a special empty deserialization constructor to be called by specialized types). 
+
+The "Sliced" serialization supports versioned classes specializations: a base class (abstract or simply not sealed)
+can evolve freely without any impact on its potential specialization.
+
 Below is a typical base class implementation (`IsDestroyed` property is discussed below):
 
-```cs
+```csharp
 [SerializationVersion(0)]
 public class Person : ICKSlicedSerializable, IDestroyable
 {
@@ -419,7 +304,7 @@ public class Person : ICKSlicedSerializable, IDestroyable
 The base class **must** be marked with `ICKSlicedSerializable`:
 
 Below is a non sealed specialization of this base class:
-```cs
+```csharp
 [SerializationVersion(0)]
 public class Employee : Person
 {
@@ -446,7 +331,7 @@ public class Employee : Person
 
 The `IDestroyable` interface is a minimalist interface:
 
-```cs
+```csharp
     /// <summary>
     /// Optional interface that exposes a <see cref="IsDestroyed"/> property that can be implemented 
     /// by reference types that have a "alive" semantics (they may be <see cref="IDisposable"/> but this 
@@ -474,37 +359,146 @@ The `IDestroyable` interface is a minimalist interface:
 As the comment states, a destroyed instance is "optimized" by the serializer since only the root Write/Deserialization
 constructor is called, specialized ones are skipped (this is why `Employee` doesn't need to handle it). 
 
-## Automatic mutations supported
+## Type Mutations
 
-Only a few mutations are currently supported, they are detailed below.
+Code refactoring should not be locked by serialization considerations. To support refactoring, this library
+does its best to allow basic, automatic, mutations from what has been written/serialized to the current
+code state and its Types.
 
-However the objective is be able to transparently handle mutations:
-- From non nullable to nullable types for value as well as reference types: this should be handled automatically 
-  and is always safe.
-- From nullable to non nullable types for value as well as reference types: this MAY be handled automatically 
-  but we are still thinking about it since this not "safe by design": some serialized data that __happens__ to have 
-no null values will work whereas another one will fail miserably or worst(?), for value types, default values will 
-"magically" appear in place of their previous null.
-- Between `List<T>`, `T[]`, `Queue<T>` (and may be others).
-- Between Tuple and ValueTuple.
-- etc.
+Automatic Mutations are great but they are not magic: for structural changes, proper version number management
+from the `[SerializationVersion]` attribute is required and, sometimes, the `IBinaryDeserializer.PostActions`
+must be used to fix, adapt, the old data to its new schema. Terrific evolutions can be achieved with Versions and
+post actions: they may need intermediate migration data structures (and a bit of creativity).
 
-### Enum
+One can split the mutations between Global a Local ones with subordinated categories. For each of them,
+we discuss below whether this can, and if yes should, be an "Automatic Mutation", a mutation that can be done
+without the need to increment any version number. 
+
+### Global Mutations
+
+**Global Mutations** apply to the existence, the location or nature of Types. 
+- Simple: 
+  - Renaming a Type (including a change of its namespace). 
+    - This can easily be done thanks to the Deserializer hooks.
+  - Moving a Type from one assembly to another one. 
+    - As above, Deserializer hooks do the job.
+  - Changing a class into a struct or a struct into a class. 
+    - This is automatically handled (not easily but this is implemented).
+- Complex: 
+  - Suppressing a Type.
+    - This cannot be automatic since the binary layout of previous instances must be skipped. 
+      This requires a version increment, the (deprecated) type code that reads the type and all
+      calls to it must be kept for at least one version (the write code can be suppressed).
+  - Splitting/merging of one or more Types into one or more Types.
+    - There is absolutely no generic way to do this. For very complex migrations, you may even need 
+      to introduce intermediate "key versions", that forget previous ones and "starts fresh" to limit
+      code complexity.
+
+#### Renaming Types
+
+The capability to rename types is crucial, may be even more important than handling struct/class mutations.
+Bad naming happens often and serialization should not block the process of choosing a better name for things.
+
+The code below handles a `Domain` to `ODomain` and `Coordinator` to `OCoordinatorRoot` renaming.
+
+```csharp
+  static CoordinatorClient()
+  {
+      BinaryDeserializer.DefaultSharedContext.AddDeserializationHook( t =>
+      {
+          if( t.WrittenInfo.TypeNamespace == "CK.Observable.League" )
+          {
+              if( t.WrittenInfo.TypeName == "Domain" )
+              {
+                  t.SetTargetType( typeof( ODomain ) );
+              }
+              else if( t.WrittenInfo.TypeName == "Coordinator" )
+              {
+                  t.SetTargetType( typeof( OCoordinatorRoot ) );
+              }
+          }
+      } );
+  }
+```
+
+The shared deserialization context must register such deserialization hooks before any serialization occur:
+here we've used the type initializer of the `CoordinatorClient` Type that is in charge of serializing and
+deserializing these objects.
+
+> Note that once you're assured that any files or serialized streams that may exist with the old naming have 
+> been rewritten at least once, the hook can (and should) be removed.
+
+#### Changing namespace or assembly
+
+The code above shows the hook registration. The hook has access to a [IMutableTypeReadInfo](CK.BinarySerialization/Deserialization/TypeReadInfo/IMutableTypeReadInfo.cs).
+
+![MutableTypeReadInfo Model](Doc/MutableTypeReadInfoInterface.png)
+
+This can be used to map the namespace and/or assembly by setting the assembly name, namespace or, more directly,
+the TargetType that must be used.
+
+### Local Mutations
+
+**Local mutations** apply inside a Type. 
+- Safe mutations are mutations that cannot fail.
+  - Non nullable to nullable 
+    - `int` that becomes a `int?`.
+    - `List<(int,User)>` that becomes a `List<(int?,User?)>?`.
+  - Integral type to wider integral type 
+    - `byte` into `int` or `short` into `int`.
+    - An enum into its underlying type.
+    - An enum into a type wider than its underlying type.
+  - Between list type containers: `List<T>`, `T[]` (array), `Stack<T>`
+    - This should be possible. Not implemented yet.
+  - `HashSet<T>` to `List<T>`, `Stack<T>` or `T[]`
+    - This should be possible. Not implemented yet.
+
+Those safe mutations are automatically handled.
+
+- Unsafe mutations may fail at read time because the old data is incompatible with the new one.
+  - Nullable to Non nullable value type. 
+    - If a null is read one can throw an `InvalidDataException` or return the `default` value. 
+      Changing the data to its default value is a dangerous option. Throwing is safer and the developer
+      should use the versioning to safely read the old data.
+    - Since we can check the read, this is an automatic mutation.  
+  - Nullable to Non nullable reference type.
+    - This should be the same as for value type: we should throw an `InvalidDataException`. Bad news
+      is that this is not possible to detect the nullability of generics when used as method parameters...
+      It means that we have no way to check that a `d.ReadObject<List<User>>()` MUST return a list without
+      any null inside because for us, it is not distinguishable from a `d.ReadObject<List<User?>>()` call.
+    - We are stuck here. Forbidding this mutation would _de facto_ forbids the safe `List<User>` to 
+      `List<User?>` mutation... And we have no way to tell which is which: actually, we cannot forbid anything!
+      Our only option is then to allow it. A deserialized graph MAY contain null references to "non nullable"
+      instances. Alea jacta est.
+  - Narrowing integral types:
+    - An `int` changed into a `byte` MAY throw `OverflowException` and this is "safe": we don't allow
+      "dirty read". In doubt it's up to the developer to use versioning to safely read the old data.
+    - Since we can check the read, this is an automatic mutation.  
+  - An integral type into an enum.
+      - This can easily be automatically handled. And it is but note that actual enum values are not checked. 
+  - An enum type into another enum type.
+      - This can easily be automatically handled. And it is. 
+  - `List<T>` or `T[]` to `HashSet<T>`
+    - Because of the uniqueness, this is not safe. This change requires versioning. 
+  - `Queue<T>` is not automatically mutated to `List<T>` or array because of ordering that is reversed
+    and introduces an ambiguity: it's up to the developer to deal with this.
+
+#### Enum samples
 Enums can change their underlying type freely:
-```cs
+```csharp
 public enum Status : byte { ... }
 ```
 Can become:
-```cs
+```csharp
 public enum Status : ushort { ... }
 ```
 As long as the old integral type can be converted at runtime to the new one, this is transparent. At runtime means that 
 the actual values are converted, regardless of the underlying type wideness. The below mutation will work:
-```cs
+```csharp
 public enum Status : long { None = 0, On = 1, Off = 2, White = 4, OutOfRange = -5, OutOfOrder = 3712 }
 ```
 Can become:
-```cs
+```csharp
 public enum Status : short { None = 0, On = 1, Off = 2, White = 4, OutOfRange = -5, OutOfOrder = 3712 }
 ```
 Since all values fit in a `short` (`Int16`), everything's fine. 
@@ -517,7 +511,7 @@ be raised.
 Underlying type mutation will work ONLY when using `IBinarySerializer.WriteValue<T>(in T)` and 
 `IBinaryDeserializer.ReadValue<T>()`.
 You can also choose to simply use casts between the enum type and its underlying type:
-```cs
+```csharp
     /// Status was a long in version 1, we are now in version 2 and this is now a short.
     if( info.Version < 2 )
     {
@@ -529,7 +523,36 @@ You can also choose to simply use casts between the enum type and its underlying
     }
 ```
 
-## General support of struct to class and class to (nullable!) struct mutations
+
+## General considerations
+
+### Nullable handling is "oblivious"
+
+> Definitions from _Oxford Languages_: 
+> __not aware of or concerned about what is happening around one.__
+> _"She became absorbed, oblivious to the passage of time"_
+
+Nullable value types like `int?` (`Nullable<int>`) are serialized with a marker byte and then the value itself if it is not null. 
+Nullable value types are easy: the types are not the same. It's unfortunately much more subtle for reference types: A `User?` is 
+exactly of the same type as `User`, the difference is in the way you use it in your code.
+
+The kernel is able to fully support Nullable Reference Type: a `List<User>` will actually be serialized the same way 
+as a `List<User?>`: a reference type instance always require an extra byte that can handle an already deserialized reference
+vs. a new (not seen yet) instance. Note that this byte marker is also used for the `null` value for nullable reference type
+(and we cannot avoid it). 
+
+CK.BinarySerialization considers all reference types as being potentially null (this is called the "oblivious nullable context".
+Full nullable reference type support is possible for properties, fields and regular method parameters, but not
+in this API because of the use of generics method parameters for reading and writing).
+
+And even if it was possible, the gain would be marginal: the binary layout of reference types always require
+a byte to handle potential references and that byte is also used to denote a null reference: a full support of
+NRT will have no impact on the size or the performance.
+
+Its real objective would be safety, being able to throw an `InvalidDataException` instead of letting a null
+be read in a "non nullable" reference.
+
+### General support of struct to class and class to struct mutations
 
 This simply works for struct to class: each serialized struct becomes a new object. The 2 possible 
 base classes for reference type ([`ReferenceTypeDeserializer<T>`](CK.BinarySerialization/Deserialization/Implementation/ReferenceTypeDeserializer.cs) 
@@ -543,11 +566,7 @@ this mutation. When a serialized stream that has been written with classes must 
 the [`ValueTypeDeserializerWithRef<T>`](CK.BinarySerialization/Deserialization/Implementation/ValueTypeDeserializerWithRef.cs)
 must be used.
 
-Another aspect to consider is, because of the current partial NRT support, that a class is nullable by default ("oblivious context"). So 
-we are stuck today to "class to nullable struct" mutation: a `List<Car>` (where `Car` is a class) must be a `List<Car?>` when `Car` 
-becomes a struct since we don't currently analyze the actual type "in depth".
-
-And the cherry on the cake of class to struct mutation complexity is when the serialized class has been chosen to break a 
+The cherry on the cake of class to struct mutation complexity is when the serialized class has been chosen to break a 
 too deep recursion: 
 - its data has not been written at its first occurrence but later (when the stack is emptied)...
 - so we cannot read its value right now for its first need (and memorize it for its subsequent occurrences)...

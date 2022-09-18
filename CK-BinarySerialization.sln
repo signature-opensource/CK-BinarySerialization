@@ -24,14 +24,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization.Slic
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Doc", "Doc", "{42FA6687-C89D-4B8F-BB4D-78016526CD0E}"
 	ProjectSection(SolutionItems) = preProject
-		Doc\IBinarySerializer.png = Doc\IBinarySerializer.png
+		Doc\BinarySerializerInterface.png = Doc\BinarySerializerInterface.png
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeCakeBuilder", "CodeCakeBuilder\CodeCakeBuilder.csproj", "{19F23EAD-A2C3-47A2-875D-E5D3E0EFA053}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CK.BinarySerialization.IPoco", "CK.BinarySerialization.IPoco\CK.BinarySerialization.IPoco.csproj", "{ED19EF4C-B230-4A16-B093-069A9B426A3C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization.IPoco", "CK.BinarySerialization.IPoco\CK.BinarySerialization.IPoco.csproj", "{ED19EF4C-B230-4A16-B093-069A9B426A3C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CK.BinarySerialization.IPoco.Tests", "Tests\CK.BinarySerialization.IPoco.Tests\CK.BinarySerialization.IPoco.Tests.csproj", "{9B2DAC0A-9901-4B47-949A-08DFF510E817}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization.IPoco.Tests", "Tests\CK.BinarySerialization.IPoco.Tests\CK.BinarySerialization.IPoco.Tests.csproj", "{9B2DAC0A-9901-4B47-949A-08DFF510E817}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -111,41 +111,82 @@ namespace CK.BinarySerialization
                     }
                 case "ValueTuple":
                     {
-                        return CreateTuple( info.ReadInfo, true );
+                        return TryGetTuple( ref info, true );
                     }
                 case "Tuple":
                     {
-                        return CreateTuple( info.ReadInfo, false );
+                        return TryGetTuple( ref info, false );
                     }
                 case "Array":
                     {
                         Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Array );
                         Debug.Assert( info.ReadInfo.SubTypes.Count == 1 );
-                        // Here, expected type should be info.TargetType.SubTypes[0] where
-                        // TargetType is a NullableTypeTree...
-                        var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver( null );
-                        return item.IsCached
-                                ? _cache.GetOrAdd( (item, info.ReadInfo.ArrayRank), CreateCachedArray )
-                                : CreateArray( item, info.ReadInfo.ArrayRank );
+                        // Fast path
+                        if( info.ExpectedType.IsArray )
+                        {
+                            var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver( info.ExpectedType.GetElementType() );
+                            return item.IsCached
+                                    ? _cache.GetOrAdd( (item, info.ReadInfo.ArrayRank), CreateCachedArray )
+                                    : CreateArray( item, info.ReadInfo.ArrayRank );
+                        }
+                        return null;
                     }
-                case "Dictionary": return TryGetDoubleGenericParameter( info.ReadInfo, typeof( DDictionary<,> ) );
-                case "List": return TryGetSingleGenericParameter( info.ReadInfo, typeof( DList<> ) );
-                case "Set": return TryGetSingleGenericParameter( info.ReadInfo, typeof( DHashSet<> ) );
-                case "Stack": return TryGetSingleGenericParameter( info.ReadInfo, typeof( DStack<> ) );
-                case "Queue": return TryGetSingleGenericParameter( info.ReadInfo, typeof( DQueue<> ) );
-                case "KeyValuePair": return TryGetDoubleGenericParameter( info.ReadInfo, typeof( DKeyValuePair<,> ) );
+                case "Dictionary": return GetDoubleGenericParameter( ref info, typeof( DDictionary<,> ) );
+                case "List":
+                case "Set":
+                case "Stack":
+                    return TryGetListOrStackOrSet( ref info );
+                case "Queue":
+                    if( !info.ExpectedType.IsGenericType ) return null;
+                    Type tGenTarget = info.ExpectedType.GetGenericTypeDefinition();
+                    if( tGenTarget != typeof( Queue<> ) ) return null;
+                    return GetSingleGenericParameter( ref info, typeof( DQueue<> ) );
+                case "KeyValuePair": return GetDoubleGenericParameter( ref info, typeof( DKeyValuePair<,> ) );
             }
             return null;
         }
 
-        IDeserializationDriver CreateTuple( ITypeReadInfo info, bool isValueTuple )
+        IDeserializationDriver? TryGetListOrStackOrSet( ref DeserializerResolverArg info )
         {
-            var tA = new IDeserializationDriver[info.SubTypes.Count];
+            if( info.ExpectedType.IsSZArray )
+            {
+                var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver( info.ExpectedType.GetElementType() );
+                return item.IsCached
+                        ? _cache.GetOrAdd( (item, 1), CreateCachedArray )
+                        : CreateArray( item, 1 );
+            }
+            if( !info.ExpectedType.IsGenericType ) return null;
+            Type tGenTarget = info.ExpectedType.GetGenericTypeDefinition();
+            Type tGenD;
+            if( tGenTarget == typeof( List<> ) )
+            {
+                tGenD = typeof( DList<> );
+            }
+            else if( tGenTarget == typeof( HashSet<> ) )
+            {
+                tGenD = typeof( DHashSet<> );
+            }
+            else if( tGenTarget == typeof( Stack<> ) )
+            {
+                tGenD = typeof( DStack<> );
+            }
+            else
+            {
+                return null;
+            }
+            return GetSingleGenericParameter( ref info, tGenD );
+        }
+
+        IDeserializationDriver? TryGetTuple( ref DeserializerResolverArg info, bool isValueTuple )
+        {
+            var tA = new IDeserializationDriver[info.ReadInfo.SubTypes.Count];
+            if( !info.ExpectedType.IsGenericType ) return null;
+            var args = info.ExpectedType.GetGenericArguments();
+            if( args.Length != info.ReadInfo.SubTypes.Count ) return null;
             bool isCached = true;
             for( int i = 0; i < tA.Length; ++i )
             {
-                // The expected type should be based on the NullableTypeTree TargetType SubTypes...
-                var d = info.SubTypes[i].GetPotentiallyAbstractDriver( null );
+                var d = info.ReadInfo.SubTypes[i].GetPotentiallyAbstractDriver( args[i] );
                 isCached &= d.IsCached;
                 tA[i] = d;
             }
@@ -180,11 +221,11 @@ namespace CK.BinarySerialization
 
         }
 
-        IDeserializationDriver TryGetSingleGenericParameter( ITypeReadInfo info, Type tGenD )
+        IDeserializationDriver GetSingleGenericParameter( ref DeserializerResolverArg info, Type tGenD )
         {
-            Debug.Assert( info.SubTypes.Count == 1 );
-            // The expected type should be based on the NullableTypeTree TargetType SubTypes...
-            var item = info.SubTypes[0].GetPotentiallyAbstractDriver( null );
+            Debug.Assert( info.ReadInfo.SubTypes.Count == 1 );
+            Debug.Assert( info.ExpectedType.GetGenericArguments().Length == 1 );
+            var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver( info.ExpectedType.GetGenericArguments()[0] );
             return item.IsCached
                     ? _cache.GetOrAdd( (item, tGenD), CreateCached )
                     : Create( item, tGenD );
@@ -202,12 +243,14 @@ namespace CK.BinarySerialization
             }
         }
 
-        IDeserializationDriver TryGetDoubleGenericParameter( ITypeReadInfo info, Type tGenD )
+        IDeserializationDriver GetDoubleGenericParameter( ref DeserializerResolverArg info, Type tGenD )
         {
-            Debug.Assert( info.SubTypes.Count == 2 );
-            // The expected types should be based on the NullableTypeTree TargetType SubTypes...
-            var item1 = info.SubTypes[0].GetPotentiallyAbstractDriver( null );
-            var item2 = info.SubTypes[1].GetPotentiallyAbstractDriver( null );
+            Debug.Assert( info.ReadInfo.SubTypes.Count == 2 );
+            Debug.Assert( tGenD.IsGenericType );
+            var args = info.ExpectedType.GetGenericArguments();
+            Debug.Assert( args.Length == 2 );
+            var item1 = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver( args[0] );
+            var item2 = info.ReadInfo.SubTypes[1].GetPotentiallyAbstractDriver( args[1] );
             return item1.IsCached && item2.IsCached
                     ? _cache.GetOrAdd( (item1, item2, tGenD), CreateCached )
                     : Create( item1, item2, tGenD );

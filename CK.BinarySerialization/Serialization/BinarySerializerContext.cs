@@ -21,14 +21,14 @@ namespace CK.BinarySerialization
         readonly SharedBinarySerializerContext _shared;
         readonly SimpleServiceContainer _services;
         int _maxRecurse;
-        CacheDriverStat _cacheStat;
+        Statistics _stats;
 
         bool _inUse;
 
         /// <summary>
         /// Captures cache hit statistics from the last session.
         /// </summary>
-        public struct CacheDriverStat
+        public struct Statistics
         {
             internal int _driverLookup;
             internal int _driverSharedLookup;
@@ -97,7 +97,7 @@ namespace CK.BinarySerialization
                 Throw.InvalidOperationException( "This BinarySerializerContext is already used by an existing BinarySerializer. The existing BinarySerializer must be disposed first." );
             }
             _inUse = true;
-            _cacheStat.Reset();
+            _stats.Reset();
         }
 
         internal void Release()
@@ -148,15 +148,15 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Gets the last serialization session statistics.
         /// </summary>
-        public ref CacheDriverStat LastStatistics => ref _cacheStat;
+        public ref Statistics LastStatistics => ref _stats;
 
         /// <inheritdoc />
         public ISerializationDriver? TryFindDriver( Type t )
         {
-            ++_cacheStat._driverLookup;
+            ++_stats._driverLookup;
             if( !_cache.TryGetValue( t, out var r ) )
             {
-                ++_cacheStat._driverSharedLookup;
+                ++_stats._driverSharedLookup;
                 r = _shared.TryFindDriver( this, t );
                 // If the driver is null, we don't register the null: this type is currently not serializable
                 // and the current session will fail but it may be thanks to future resolvers or serializers.
@@ -180,7 +180,7 @@ namespace CK.BinarySerialization
             if( !t.IsSealed )
             {
                 Debug.Assert( t.IsClass, "Non sealed is a class." );
-                _cacheStat._driverNeverCached++;
+                _stats._driverNeverCached++;
                 return Serialization.DAbstract.Instance.ToNullable;
             }
             return TryFindDriver( t );

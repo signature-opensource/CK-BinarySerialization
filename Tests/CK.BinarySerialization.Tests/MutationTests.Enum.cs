@@ -120,5 +120,17 @@ namespace CK.BinarySerialization.Tests
             TestHelper.SaveAndLoad( s => s.WriteValue( GrantLevel.SuperEditor ), d => d.ReadValue<byte>().Should().Be( 80 ) );
         }
 
+        //[Test]
+        //public void from_value_tuple_to_tuple()
+        //{
+        //    TestHelper.SaveAndLoad( s => s.WriteValue( (3712, "Hop") ), d => d.ReadObject<Tuple<int,string>>().Should().BeEquivalentTo( Tuple.Create( 3712, "Hop" ) ) );
+        //}
+
+        //[Test]
+        //public void from_tuple_to_value_tuple()
+        //{
+        //    TestHelper.SaveAndLoad( s => s.WriteAny( Tuple.Create( 3712, "Hop" ) ), d => d.ReadValue < (int,string)> ().Should().BeEquivalentTo( (3712,"Hop") ) );
+        //}
+
     }
 }

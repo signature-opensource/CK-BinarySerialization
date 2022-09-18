@@ -439,29 +439,32 @@ namespace CK.BinarySerialization
             // simply forget it.
             // It's useless to take any base type into account (we don't want to handle and
             // may be cache a IReadOnlyList<int> deserializer: the List<int> is fine).
+            // Another case where we don't want to honor the expectedType is when this expected type
+            // is the locally resolved type: this type is either ourTarget or is being globally
+            // mutated.
             var ourTarget = TargetType;
-            if( expected != null )
+            if( expected != null
+                && ourTarget != null
+                && expected != TryResolveLocalType()
+                && !expected.IsAssignableFrom( ourTarget ) )
             {
-                if( ourTarget != null && !expected.IsAssignableFrom( ourTarget ) )
+                var a = new DeserializerResolverArg( this, _deserializer.Context, expected );
+                var driver = _deserializer.Context.TryFindDriver( ref a );
+                if( driver == null )
                 {
-                    var a = new DeserializerResolverArg( this, _deserializer.Context, expected );
-                    var driver = _deserializer.Context.TryFindDriver( ref a );
-                    if( driver == null )
-                    {
-                        Throw.InvalidOperationException( $"Unable to resolve a deserialization driver for '{expected.FullName}' from read info: {ToString()}." );
-                    }
-                    // We found a driver for the expected type.
-                    // We don't cache it: it is an adapter, not the "nominal" one for our target.
-                    return driver;
+                    Throw.InvalidOperationException( $"Unable to resolve a deserialization driver for '{expected.FullName}' from read info: {ToString()}." );
                 }
+                // We found a driver for the expected type.
+                // We don't cache it: it is an adapter, not the "nominal" one for our target.
+                return driver;
             }
             // We have no expected type here. We have no other choice than to find a driver
             // for our target (and cache it). 
             if( !_driverLookupDone )
             {
                 _driverLookupDone = true;
-                if( ourTarget == null ) ourTarget = ResolveLocalType();
                 // This will throw if the local type cannot be resolved.
+                if( ourTarget == null ) ourTarget = ResolveLocalType();
                 var a = new DeserializerResolverArg( this, _deserializer.Context, ourTarget );
                 _driver = _deserializer.Context.TryFindDriver( ref a );
             }
