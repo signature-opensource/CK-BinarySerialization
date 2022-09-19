@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Text;
+using CK.Core;
 
 namespace CK.BinarySerialization.Deserialization
 {
@@ -13,9 +13,10 @@ namespace CK.BinarySerialization.Deserialization
 
         static DDictionary()
         {
-            var k = typeof( EqualityComparer<TKey> ).AssemblyQualifiedName!;
-            var c = EqualityComparer<TKey>.Default;
-            SharedDeserializerKnownObject.Default.RegisterKnownKey( k, c );
+            // Before, the AssemblyQualifiedName was used.
+            // This should be removed once.
+            var kOld = typeof( EqualityComparer<TKey> ).AssemblyQualifiedName!;
+            SharedDeserializerKnownObject.Default.RegisterKnownKey( kOld, EqualityComparer<TKey>.Default );
         }
 
         public DDictionary( IDeserializationDriver k, IDeserializationDriver v )
@@ -31,20 +32,15 @@ namespace CK.BinarySerialization.Deserialization
             int len = r.Reader.ReadNonNegativeSmallInt32();
             var (d,dict) = r.SetInstance( d =>
             {
-                d.DebugCheckSentinel();
-                var comparer = d.ReadObject<IEqualityComparer<TKey>>();
-                d.DebugCheckSentinel();
+                var comparer = d.ReadNullableObject<IEqualityComparer<TKey>>();
                 return new Dictionary<TKey, TValue>( len, comparer );
             } );
             var kInfo = r.ReadInfo.SubTypes[0];
             var vInfo = r.ReadInfo.SubTypes[1];
             while( --len >= 0 )
             {
-                d.DebugCheckSentinel();
                 dict.Add( _key( d, kInfo ), _value( d, vInfo ) );
-                d.DebugCheckSentinel();
             }
-            d.DebugCheckSentinel();
         }
     }
 }

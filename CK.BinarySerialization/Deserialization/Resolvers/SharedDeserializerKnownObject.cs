@@ -1,6 +1,7 @@
 using CK.Core;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 // These are fixed in Net6.
@@ -40,14 +41,14 @@ namespace CK.BinarySerialization
         {
             _knownKeys = new (string K, object O)[]
             {
-                ("DBNull.Value", DBNull.Value),
-                ("Type.Missing", Type.Missing),
                 ("StringComparer.Ordinal", StringComparer.Ordinal ),
                 ("StringComparer.OrdinalIgnoreCase", StringComparer.OrdinalIgnoreCase ),
                 ("StringComparer.InvariantCulture", StringComparer.InvariantCulture ),
                 ("StringComparer.InvariantCultureIgnoreCase", StringComparer.InvariantCultureIgnoreCase ),
                 ("StringComparer.CurrentCulture", StringComparer.CurrentCulture ),
-                ("StringComparer.CurrentCultureIgnoreCase", StringComparer.CurrentCultureIgnoreCase )
+                ("StringComparer.CurrentCultureIgnoreCase", StringComparer.CurrentCultureIgnoreCase ),
+                ("DBNull.Value", DBNull.Value),
+                ("Type.Missing", Type.Missing),
             };
         }
 

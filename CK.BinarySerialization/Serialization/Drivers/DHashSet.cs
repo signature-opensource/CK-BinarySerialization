@@ -24,6 +24,8 @@ namespace CK.BinarySerialization.Serialization
         internal protected override void Write( IBinarySerializer s, in HashSet<T> o )
         {
             s.Writer.WriteNonNegativeSmallInt32( o.Count );
+            var cmp = o.Comparer;
+            s.WriteNullableObject( cmp == EqualityComparer<T>.Default ? null : cmp );
             foreach( var i in o ) _item( s, i );
         }
     }

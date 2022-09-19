@@ -20,8 +20,11 @@ namespace CK.BinarySerialization.Deserialization
         {
             Debug.Assert( r.ReadInfo.SubTypes.Count == 1 );
             int len = r.Reader.ReadNonNegativeSmallInt32();
-            var a = new HashSet<T>( len );
-            var d = r.SetInstance( a );
+            var (d, a) = r.SetInstance( d =>
+            {
+                var comparer = d.ReadNullableObject<IEqualityComparer<T>>();
+                return new HashSet<T>( len, comparer );
+            } );
             while( --len >= 0 )
             {
                 a.Add( _item( d, r.ReadInfo.SubTypes[0] ) );
