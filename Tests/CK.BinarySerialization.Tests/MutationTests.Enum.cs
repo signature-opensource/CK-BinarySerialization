@@ -92,7 +92,9 @@ namespace CK.BinarySerialization.Tests
             var noWay = BeforeItWasALong.FitInLongOnly;
 
             FluentActions.Invoking( () => TestHelper.SaveAndLoadAny( noWay, deserializerContext: dC ) )
-                .Should().Throw<OverflowException>();
+                .Should().Throw<DeserializationException>()
+                         .WithInnerException<OverflowException>();
+
 
             var canDoIt = BeforeItWasALong.FitInInt;
             var canAlsoDoIt = BeforeItWasALong.FitInByte;

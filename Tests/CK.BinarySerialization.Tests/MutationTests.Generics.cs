@@ -28,7 +28,9 @@ namespace CK.BinarySerialization.Tests
 
             FluentActions.Invoking( () =>
                 TestHelper.SaveAndLoad( s => s.WriteObject( list ), d => d.ReadObject<byte[]>() )
-                ).Should().Throw<OverflowException>();
+                ).Should()
+                 .Throw<DeserializationException>()
+                 .WithInnerException<OverflowException>();
 
             list[1] = 255;
             TestHelper.SaveAndLoad(
@@ -52,7 +54,9 @@ namespace CK.BinarySerialization.Tests
 
             FluentActions.Invoking( () =>
                 TestHelper.SaveAndLoad( s => s.WriteObject( list ), d => d.ReadObject<byte[]>() )
-                ).Should().Throw<OverflowException>();
+                ).Should()
+                 .Throw<DeserializationException>()
+                 .WithInnerException<OverflowException>();
 
             list[1] = 255;
             TestHelper.SaveAndLoad(
@@ -68,5 +72,25 @@ namespace CK.BinarySerialization.Tests
                 s => s.WriteObject( list ),
                 d => d.ReadObject<List<long>>().Should().BeOfType<List<long>>().And.BeEquivalentTo( list ) );
         }
+
+
+        [Test]
+        public void Dictionary_of_numeric_type_mutation()
+        {
+            var dic = new Dictionary<sbyte,short> { { 1, 2 }, { 127, -3 }, { -53, 500 } };
+
+            FluentActions.Invoking( () =>
+                TestHelper.SaveAndLoad( s => s.WriteObject( dic ), d => d.ReadObject<Dictionary<int,sbyte>>() )
+                ).Should()
+                 .Throw<DeserializationException>()
+                 .WithInnerException<OverflowException>();
+
+            TestHelper.SaveAndLoad(
+                s => s.WriteObject( dic ),
+                d => d.ReadObject<Dictionary<int, double>>()
+                        .Should().BeOfType<Dictionary<int, double>>()
+                                 .And.Match( x => x[1] == 2.0 && x[127] == -3.0 && x[-53] == 500.0 ) );
+        }
+
     }
 }

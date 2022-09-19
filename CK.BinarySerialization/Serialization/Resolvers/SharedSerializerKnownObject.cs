@@ -3,10 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-// These are fixed in Net6.
-#pragma warning disable CS8601 // Possible null reference assignment.
-#pragma warning disable CS8604 // Possible null reference argument.
-
 namespace CK.BinarySerialization
 {
     /// <summary>

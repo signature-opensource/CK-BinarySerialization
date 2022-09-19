@@ -1,5 +1,5 @@
-using CK.BinarySerialization.Deserialization;
 using CK.Core;
+using CommunityToolkit.HighPerformance;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -94,14 +94,19 @@ namespace CK.BinarySerialization
             {
                 return null;
             }
-            var tV = typeof( DChangeBasicType<,> ).MakeGenericType( info.ExpectedType, d.ResolvedType );
+            var tV = typeof( Deserialization.DChangeBasicType<,> ).MakeGenericType( info.ExpectedType, d.ResolvedType );
             return (IDeserializationDriver)Activator.CreateInstance( tV, d.TypedReader, target )!;
         }
 
-        internal static TypeCode IsBasicallyConvertible( Type type )
+        /// <summary>
+        /// Returns <see cref="TypeCode.Empty"/> when not convertible.
+        /// </summary>
+        /// <param name="type">The type to test.</param>
+        /// <returns>The type code or <see cref="TypeCode.Empty"/> if the type is not basically convertible.</returns>
+        public static TypeCode IsBasicallyConvertible( Type type )
         {
             var c = Type.GetTypeCode( type );
-            return c == TypeCode.String || c == TypeCode.Object || c == TypeCode.DateTime
+            return c == TypeCode.String || c == TypeCode.Object || c == TypeCode.DateTime || c == TypeCode.DBNull
                     ? TypeCode.Empty
                     : c;
         }

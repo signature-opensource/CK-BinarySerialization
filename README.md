@@ -444,16 +444,34 @@ the TargetType that must be used.
   - Non nullable to nullable 
     - `int` that becomes a `int?`.
     - `List<(int,User)>` that becomes a `List<(int?,User?)>?`.
-  - Integral type to wider integral type 
+  - Numeric type to wider numeric type 
     - `byte` into `int` or `short` into `int`.
-    - An enum into its underlying type.
-    - An enum into a type wider than its underlying type.
+  - An enum into its underlying integral type.
+  - An enum into an integral type wider than its underlying type.
   - Between list type containers: `List<T>`, `T[]` (array), `Stack<T>`
     - This should be possible. Not implemented yet.
   - `HashSet<T>` to `List<T>`, `Stack<T>` or `T[]`
     - This should be possible. Not implemented yet.
 
-Those safe mutations are automatically handled.
+Those totally safe mutations are automatically handled. `Convert.ChangeType` is used
+(that itself rely on `IConvertible`): some of these conversions can throw
+an `OverflowException` (noted with a 'u' in the table below).
+
+|From->To|Bool|Char|SByte|Byte|I16 |U16 |I32 |U32 |I64 |U64 |Sgl |Dbl |Dec |
+|--------|----|----|-----|----|----|----|----|----|----|----|----|----|----|
+|Boolean | .  |    | +   | +  | +  | +  | +  | +  | +  | +  | +  | +  | +  |
+|Char    |    | .  | u   | u  | u  | +  | +  | +  | +  | +  |    |    |    |
+|SByte   | +  | u  | .   | u  | +  | u  | +  | u  | +  | u  | +  | +  | +  |
+|Byte    | +  | +  | u   | .  | +  | +  | +  | +  | +  | +  | +  | +  | +  |
+|Int16   | +  | +  | u   | u  | .  | u  | +  | u  | +  | u  | +  | +  | +  |
+|UInt16  | +  | +  | u   | u  | u  | .  | +  | +  | +  | +  | +  | +  | +  |
+|Int32   | +  | u  | u   | u  | u  | u  | .  | +  | +  | +  | +  | +  | +  |
+|UInt32  | +  | u  | u   | u  | u  | u  | u  | .  | +  | +  | +  | +  | +  |
+|Int64   | +  | u  | u   | u  | u  | u  | u  | u  | .  | +  | +  | +  | +  |
+|UInt64  | +  | u  | u   | u  | u  | u  | u  | u  | u  | .  | +  | +  | +  |
+|Single  | +  |    | u   | u  | u  | u  | u  | u  | u  | u  | .  | +  | +  |
+|Double  | +  |    | u   | u  | u  | u  | u  | u  | u  | u  | u  | .  | +  |
+|Decimal | +  |    | u   | u  | u  | u  | u  | u  | u  | u  | u  | +  | .  |
 
 - Unsafe mutations may fail at read time because the old data is incompatible with the new one.
   - Nullable to Non nullable value type. 
@@ -470,9 +488,10 @@ Those safe mutations are automatically handled.
       `List<User?>` mutation... And we have no way to tell which is which: actually, we cannot forbid anything!
       Our only option is then to allow it. A deserialized graph MAY contain null references to "non nullable"
       instances. Alea jacta est.
-  - Narrowing integral types:
-    - An `int` changed into a `byte` MAY throw `OverflowException` and this is "safe": we don't allow
-      "dirty read". In doubt it's up to the developer to use versioning to safely read the old data.
+  - Narrowing numeric types:
+    - An `int` changed into a `byte` or a `long` to `double` MAY throw `OverflowException` and 
+      this is "safe": we don't allow "dirty read".
+      In doubt it's up to the developer to use versioning to safely read the old data.
     - Since we can check the read, this is an automatic mutation.  
   - An integral type into an enum.
       - This can easily be automatically handled. And it is but note that actual enum values are not checked. 

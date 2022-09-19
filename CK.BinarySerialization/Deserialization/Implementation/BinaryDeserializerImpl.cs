@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Xml;
 
 namespace CK.BinarySerialization
 {
@@ -174,11 +175,11 @@ namespace CK.BinarySerialization
                 {
                     if( !d.ResolvedType.IsValueType )
                     {
-                        Throw.Exception( $"Class '{info.TypeNamespace}.{info.TypeName}' has been serialized as a deferred object but its deserialization driver ({d.GetType().FullName}) is not a {nameof( IDeserializationDeferredDriver )} and the deserialized type '{d.ResolvedType.FullName}' is not a value type." );
+                        throw new DeserializationException( $"Class '{info.TypeNamespace}.{info.TypeName}' has been serialized as a deferred object but its deserialization driver ({d.GetType().ToCSharpName()}) is not a {nameof( IDeserializationDeferredDriver )} and the deserialized type '{d.ResolvedType.ToCSharpName()}' is not a value type." );
                     }
                     if( d is not IValueTypeDeserializerWithRefInternal )
                     {
-                        Throw.Exception( $"Class '{info.TypeNamespace}.{info.TypeName}' is now the struct '{d.ResolvedType.FullName}'. Its deserialization driver ({d.GetType().FullName}) must be a ValueTypeDeserializerWithRef<T>." );
+                        throw new DeserializationException( $"Class '{info.TypeNamespace}.{info.TypeName}' is now the struct '{d.ResolvedType.ToCSharpName()}'. Its deserialization driver ({d.GetType().ToCSharpName()}) must be a ValueTypeDeserializerWithRef<T>." );
                     }
                 }
                 Debug.Assert( defer != null || (d.ResolvedType.IsValueType && d is IValueTypeDeserializerWithRefInternal), "Just to be clear: regular class or struct with a ValueTypeDeserializerWithRef driver." );
@@ -207,9 +208,16 @@ namespace CK.BinarySerialization
             }
             else
             {
-                ++_recurseCount;
-                result = d.ReadObjectData( this, info );
-                --_recurseCount;
+                try
+                {
+                    ++_recurseCount;
+                    result = d.ReadObjectData( this, info );
+                    --_recurseCount;
+                }
+                catch( Exception ex ) when (ex is not DeserializationException)
+                {
+                    throw new DeserializationException( $"While reading an '{info}' instance with driver '{d.GetType().ToCSharpName()}'.", ex );
+                }
             }
             if( _recurseCount == 0 && _deferred != null )
             {
@@ -219,8 +227,16 @@ namespace CK.BinarySerialization
                     var defer = s.D as IDeserializationDeferredDriver;
                     if( defer != null )
                     {
-                        // Regular class deferring. The unitialized tracked instance is initialized in place.
-                        defer.ReadInstance( this, s.T, s.O );
+                        try
+                        {
+                            // Regular class deferring. The unitialized tracked instance is initialized in place.
+                            defer.ReadInstance( this, s.T, s.O );
+
+                        }
+                        catch( Exception ex ) when( ex is not DeserializationException )
+                        {
+                            throw new DeserializationException( $"While reading in place a deferred '{s.T}' instance with driver '{defer.GetType().ToCSharpName()}'.", ex );
+                        }
                     }
                     else
                     {
@@ -229,14 +245,28 @@ namespace CK.BinarySerialization
                         // We must always read it, either to skip or store it.
                         if( _rewindableStream.SecondPass )
                         {
-                            // Skip.
-                            vD.ReadRawObjectData( this, s.T );
+                            try
+                            {
+                                // Skip.
+                                vD.ReadRawObjectData( this, s.T );
+                            }
+                            catch( Exception ex ) when( ex is not DeserializationException )
+                            {
+                                throw new DeserializationException( $"While skipping class layout '{s.T}' instance (that is now a value type) during the second pass with driver '{vD.GetType().ToCSharpName()}'.", ex );
+                            }
                         }
                         else
                         {
                             if( _deferredValueQueue == null ) _deferredValueQueue = new Queue<object>();
-                            // Store for the second pass.
-                            _deferredValueQueue.Enqueue( vD.ReadRawObjectData( this, s.T ) );
+                            try
+                            {
+                                // Store for the second pass.
+                                _deferredValueQueue.Enqueue( vD.ReadRawObjectData( this, s.T ) );
+                            }
+                            catch( Exception ex ) when( ex is not DeserializationException)
+                            {
+                                throw new DeserializationException( $"While reading '{s.T}' instance (that is now a value type) for the first pass with driver '{vD.GetType().ToCSharpName()}'.", ex );
+                            }
                         }
                     }
                     --_recurseCount;
@@ -249,7 +279,12 @@ namespace CK.BinarySerialization
         public ITypeReadInfo ReadTypeInfo()
         {
             int idx = _reader.ReadNonNegativeSmallInt32();
+            if( idx < 0 || idx > _types.Count )
+            {
+                Throw.InvalidDataException( $"Out of range TypeInfo number. Should be between 0 and {_types.Count} but got {idx}." );
+            }
             if( idx < _types.Count ) return _types[idx];
+
             var nMark = _reader.ReadByte();
             switch( nMark )
             {
