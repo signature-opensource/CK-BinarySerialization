@@ -4,10 +4,11 @@ using System.Collections.Generic;
 using CK.Core;
 using static CK.Testing.MonitorTestHelper;
 using FluentAssertions;
-using System.Diagnostics.CodeAnalysis;
 
 namespace CK.BinarySerialization.Tests
 {
+
+
     [TestFixture]
     public class CollectionSerializationTests
     {
@@ -104,19 +105,10 @@ namespace CK.BinarySerialization.Tests
         }
 
 
-        sealed class ByTenEquality : IEqualityComparer<int>
-        {
-            public static readonly ByTenEquality Instance = new ByTenEquality();
-
-            public bool Equals( int x, int y ) => (x / 10) == (y / 10);
-
-            public int GetHashCode( [DisallowNull] int value ) => value / 10;
-        }
-
         [Test]
         public void HashSet_serialization_with_specific_comparer_that_must_be_serializable_or_KnownObject()
         {
-            var a = new HashSet<int>( ByTenEquality.Instance ) { -1, 0, 5, 9, 12, 17 };
+            var a = new HashSet<int>( ByTenInt32Equality.Instance ) { -1, 0, 5, 9, 12, 17 };
             a.Should().HaveCount( 2 );
 
             // The comparer cannot be serialized.
@@ -131,13 +123,13 @@ namespace CK.BinarySerialization.Tests
             // One may also develop and register "fake" serialization and a deserialization drivers, or
             // implement ICKSimpleSerializable (but it's more work).
             // Using KnownObject is easier for true singletons.
-            sC.Shared.KnownObjects.RegisterKnownObject( ByTenEquality.Instance, "Tests.ByTenEqualityComparer" );
-            dC.Shared.KnownObjects.RegisterKnownKey( "Tests.ByTenEqualityComparer", ByTenEquality.Instance );
+            sC.Shared.KnownObjects.RegisterKnownObject( ByTenInt32Equality.Instance, "Tests.ByTenEqualityComparer" );
+            dC.Shared.KnownObjects.RegisterKnownKey( "Tests.ByTenEqualityComparer", ByTenInt32Equality.Instance );
 
             // Now we can serialize our HashSet with its comparer.
             var backA = TestHelper.SaveAndLoadObject( a, sC, dC );
             backA.Should().NotBeSameAs( a ).And.BeEquivalentTo( a );
-            backA.Comparer.Should().BeSameAs( ByTenEquality.Instance );
+            backA.Comparer.Should().BeSameAs( ByTenInt32Equality.Instance );
 
         }
 

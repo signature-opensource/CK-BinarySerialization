@@ -449,9 +449,6 @@ the TargetType that must be used.
   - An enum into its underlying integral type.
   - An enum into an integral type wider than its underlying type.
   - Between list type containers: `List<T>`, `T[]` (array), `Stack<T>`
-    - This should be possible. Not implemented yet.
-  - `HashSet<T>` to `List<T>`, `Stack<T>` or `T[]`
-    - This should be possible. Not implemented yet.
 
 Those totally safe mutations are automatically handled. `Convert.ChangeType` is used
 (that itself rely on `IConvertible`): some of these conversions can throw
@@ -497,10 +494,13 @@ an `OverflowException` (noted with a 'u' in the table below).
       - This can easily be automatically handled. And it is but note that actual enum values are not checked. 
   - An enum type into another enum type.
       - This can easily be automatically handled. And it is. 
-  - `List<T>` or `T[]` to `HashSet<T>`
-    - Because of the uniqueness, this is not safe. This change requires versioning. 
-  - `Queue<T>` is not automatically mutated to `List<T>` or array because of ordering that is reversed
-    and introduces an ambiguity: it's up to the developer to deal with this.
+  - `HashSet<>` and `Dictionary<,>` 
+    - There is a comparer to "invent" (from a list, stack or array) or to forget (when converting
+      into list, stack or array). Changing any of these 2 types requires versioning. 
+  - `Queue<>` 
+    - Is not automatically mutated to list, stack or array because of ordering that is reversed
+    and introduces an ambiguity: just like `HashSet<>`, it's up to the developer to
+    deal with this through versioning.
 
 #### Enum samples
 Enums can change their underlying type freely:

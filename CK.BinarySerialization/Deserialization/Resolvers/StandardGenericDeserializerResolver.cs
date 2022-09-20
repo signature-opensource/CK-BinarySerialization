@@ -129,24 +129,54 @@ namespace CK.BinarySerialization
                                     ? _cache.GetOrAdd( (item, info.ReadInfo.ArrayRank), CreateCachedArray )
                                     : CreateArray( item, info.ReadInfo.ArrayRank );
                         }
+                        if( info.ReadInfo.ArrayRank == 1 && info.ExpectedType.IsGenericType )
+                        {
+                            var eDef = info.ExpectedType.GetGenericTypeDefinition();
+                            if( eDef == typeof( List<> ) )
+                            {
+                                return GetSingleGenericParameter( ref info, typeof( DList<> ) );
+                            }
+                            if( eDef == typeof( Stack<> ) )
+                            {
+                                return GetSingleGenericParameter( ref info, typeof( DStack<> ) );
+                            }
+                        }
                         return null;
                     }
-                case "Dictionary": return GetDoubleGenericParameter( ref info, typeof( DDictionary<,> ) );
+                case "Dictionary":
+                    if( !info.ExpectedType.IsGenericType || info.ExpectedType.GetGenericTypeDefinition() != typeof(Dictionary<,>) )
+                    {
+                        return null;
+                    }
+                    return TryGetDoubleGenericParameter( ref info, typeof( DDictionary<,> ) );
                 case "List":
-                case "Set":
                 case "Stack":
-                    return TryGetListOrStackOrSet( ref info );
+                    return TryGetListOrStack( ref info );
+                case "Set":
+                    {
+                        if( !info.ExpectedType.IsGenericType ) return null;
+                        Type tGenTarget = info.ExpectedType.GetGenericTypeDefinition();
+                        if( tGenTarget != typeof( HashSet<> ) ) return null;
+                        return GetSingleGenericParameter( ref info, typeof( DHashSet<> ) );
+                    }
                 case "Queue":
-                    if( !info.ExpectedType.IsGenericType ) return null;
-                    Type tGenTarget = info.ExpectedType.GetGenericTypeDefinition();
-                    if( tGenTarget != typeof( Queue<> ) ) return null;
-                    return GetSingleGenericParameter( ref info, typeof( DQueue<> ) );
-                case "KeyValuePair": return GetDoubleGenericParameter( ref info, typeof( DKeyValuePair<,> ) );
+                    {
+                        if( !info.ExpectedType.IsGenericType ) return null;
+                        Type tGenTarget = info.ExpectedType.GetGenericTypeDefinition();
+                        if( tGenTarget != typeof( Queue<> ) ) return null;
+                        return GetSingleGenericParameter( ref info, typeof( DQueue<> ) );
+                    }
+                case "KeyValuePair":
+                    if( !info.ExpectedType.IsGenericType || info.ExpectedType.GetGenericTypeDefinition() != typeof( KeyValuePair<,> ) )
+                    {
+                        return null;
+                    }
+                    return TryGetDoubleGenericParameter( ref info, typeof( DKeyValuePair<,> ) );
             }
             return null;
         }
 
-        IDeserializationDriver? TryGetListOrStackOrSet( ref DeserializerResolverArg info )
+        IDeserializationDriver? TryGetListOrStack( ref DeserializerResolverArg info )
         {
             if( info.ExpectedType.IsSZArray )
             {
@@ -161,10 +191,6 @@ namespace CK.BinarySerialization
             if( tGenTarget == typeof( List<> ) )
             {
                 tGenD = typeof( DList<> );
-            }
-            else if( tGenTarget == typeof( HashSet<> ) )
-            {
-                tGenD = typeof( DHashSet<> );
             }
             else if( tGenTarget == typeof( Stack<> ) )
             {
@@ -243,7 +269,7 @@ namespace CK.BinarySerialization
             }
         }
 
-        IDeserializationDriver GetDoubleGenericParameter( ref DeserializerResolverArg info, Type tGenD )
+        IDeserializationDriver? TryGetDoubleGenericParameter( ref DeserializerResolverArg info, Type tGenD )
         {
             Debug.Assert( info.ReadInfo.SubTypes.Count == 2 );
             Debug.Assert( tGenD.IsGenericType );
