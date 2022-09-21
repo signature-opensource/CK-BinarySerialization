@@ -20,7 +20,7 @@ namespace CK.BinarySerialization
         Type? _localType;
         Mutable? _mutating;
         ITypeReadInfo[]? _typePath;
-        IDeserializationDriver? _abstractOrConcreteDriver;
+        IDeserializationDriver? _abstractDriver;
         string? _overriddenDriverName;
         bool? _isDirtyInfo;
 
@@ -477,18 +477,11 @@ namespace CK.BinarySerialization
 
         public IDeserializationDriver GetPotentiallyAbstractDriver( Type? expected )
         {
-            if( _abstractOrConcreteDriver == null )
-            { 
-                if( !IsSealed )
-                {
-                    _abstractOrConcreteDriver = _deserializer.Context.GetAbstractDriver( TargetType ?? ResolveLocalType() );
-                }
-                else
-                {
-                    _abstractOrConcreteDriver = GetConcreteDriver( expected );
-                }
+            if( !IsSealed )
+            {
+                return _abstractDriver ??= _deserializer.Context.GetAbstractDriver( TargetType ?? ResolveLocalType() );
             }
-            return _abstractOrConcreteDriver;
+            return GetConcreteDriver( expected );
         }
 
 

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
+using static CK.Testing.MonitorTestHelper;
 
 namespace CK.Core
 {
@@ -67,22 +68,30 @@ namespace CK.Core
                                                                      BinarySerializerContext? serializerContext = null,
                                                                      BinaryDeserializerContext? deserializerContext = null )
         {
-            using( var s = new MemoryStream() )
-            using( var writer = BinarySerializer.Create( s, serializerContext ?? new BinarySerializerContext() ) )
+            try
             {
-                object o1 = BeforeWrite( writer );
-                w( o, writer );
-                AfterWrite( writer, o1 );
-                s.Position = 0;
-                return BinaryDeserializer.Deserialize( s, deserializerContext ?? new BinaryDeserializerContext(),
-                    d =>
-                    {
-                        object? r1 = BeforeRead( d );
-                        T result = r( d );
-                        AfterRead( d, r1 );
-                        return result;
-                    } )
-                    .GetResult();
+                using( var s = new MemoryStream() )
+                using( var writer = BinarySerializer.Create( s, serializerContext ?? new BinarySerializerContext() ) )
+                {
+                    object o1 = BeforeWrite( writer );
+                    w( o, writer );
+                    AfterWrite( writer, o1 );
+                    s.Position = 0;
+                    return BinaryDeserializer.Deserialize( s, deserializerContext ?? new BinaryDeserializerContext(),
+                        d =>
+                        {
+                            object? r1 = BeforeRead( d );
+                            T result = r( d );
+                            AfterRead( d, r1 );
+                            return result;
+                        } )
+                        .GetResult();
+                }
+            }
+            catch( Exception ex )
+            {
+                TestHelper.Monitor.Error( ex );
+                throw;
             }
         }
 
@@ -91,21 +100,29 @@ namespace CK.Core
                                                                      BinarySerializerContext? serializerContext = null,
                                                                      BinaryDeserializerContext? deserializerContext = null )
         {
-            using( var s = new MemoryStream() )
-            using( var writer = BinarySerializer.Create( s, serializerContext ?? new BinarySerializerContext() ) )
+            try
             {
-                object o1 = BeforeWrite( writer );
-                w( writer );
-                AfterWrite( writer, o1 );
-                s.Position = 0;
-                BinaryDeserializer.Deserialize( s, deserializerContext ?? new BinaryDeserializerContext(),
-                    d =>
-                    {
-                        object? r1 = BeforeRead( d );
-                        r( d );
-                        AfterRead( d, r1 );
-                    } )
-                    .ThrowOnInvalidResult();
+                using( var s = new MemoryStream() )
+                using( var writer = BinarySerializer.Create( s, serializerContext ?? new BinarySerializerContext() ) )
+                {
+                    object o1 = BeforeWrite( writer );
+                    w( writer );
+                    AfterWrite( writer, o1 );
+                    s.Position = 0;
+                    BinaryDeserializer.Deserialize( s, deserializerContext ?? new BinaryDeserializerContext(),
+                        d =>
+                        {
+                            object? r1 = BeforeRead( d );
+                            r( d );
+                            AfterRead( d, r1 );
+                        } )
+                        .ThrowOnInvalidResult();
+                }
+            }
+            catch( Exception ex )
+            {
+                TestHelper.Monitor.Error( ex );
+                throw;
             }
         }
 
