@@ -1,11 +1,8 @@
-﻿using NUnit.Framework;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using FluentAssertions;
-using static CK.Testing.MonitorTestHelper;
 using CK.Core;
+using FluentAssertions;
+using NUnit.Framework;
 using System.Linq;
+using static CK.Testing.MonitorTestHelper;
 
 namespace CK.BinarySerialization.Tests
 {

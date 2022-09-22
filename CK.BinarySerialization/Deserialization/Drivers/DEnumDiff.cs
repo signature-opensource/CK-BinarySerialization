@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,7 +8,7 @@ using System.Text;
 
 namespace CK.BinarySerialization.Deserialization
 {
-    class DEnumDiff<T,TLU,TU> : ValueTypeDeserializer<T> 
+    class DEnumDiff<T, TLU, TU> : ValueTypeDeserializer<T>
         where T : struct
         where TLU : struct
         where TU : struct
@@ -24,7 +24,7 @@ namespace CK.BinarySerialization.Deserialization
         protected override T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
         {
             TU u = _underlying( d, readInfo.SubTypes[0] );
-            return (T)Convert.ChangeType( u, typeof(TLU) );
+            return (T)Convert.ChangeType( u, typeof( TLU ) );
         }
     }
 }

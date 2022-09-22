@@ -7,6 +7,8 @@ using FluentAssertions;
 
 namespace CK.BinarySerialization.Tests
 {
+
+
     [TestFixture]
     public class CollectionSerializationTests
     {
@@ -32,6 +34,9 @@ namespace CK.BinarySerialization.Tests
             var a = new List<uint> { 3712, 42 };
             object? backA = TestHelper.SaveAndLoadObject( a );
             backA.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
+
+            var backB = TestHelper.SaveAndLoadObject<IList<uint>>( a );
+            backB.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
 
             a.Clear();
             ((List<uint>)TestHelper.SaveAndLoadObject( a )).Should().BeEmpty();
@@ -97,6 +102,35 @@ namespace CK.BinarySerialization.Tests
             backA.Should().BeEquivalentTo( a );
             a.Clear();
             ((HashSet<uint>)TestHelper.SaveAndLoadObject( a )).Should().BeEmpty();
+        }
+
+
+        [Test]
+        public void HashSet_serialization_with_specific_comparer_that_must_be_serializable_or_KnownObject()
+        {
+            var a = new HashSet<int>( ByTenInt32Equality.Instance ) { -1, 0, 5, 9, 12, 17 };
+            a.Should().HaveCount( 2 );
+
+            // The comparer cannot be serialized.
+            FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( a ) )
+                          .Should().Throw<InvalidOperationException>();
+
+            // We create totally independent contexts here to avoid the Default contexts pollution.
+            var sC = new BinarySerializerContext( new SharedBinarySerializerContext( knownObjects: new SharedSerializerKnownObject() ) );
+            var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext( knownObjects: new SharedDeserializerKnownObject() ) );
+
+            // Since the comparer is a singleton, we can use the KnownObject approach.
+            // One may also develop and register "fake" serialization and a deserialization drivers, or
+            // implement ICKSimpleSerializable (but it's more work).
+            // Using KnownObject is easier for true singletons.
+            sC.Shared.KnownObjects.RegisterKnownObject( ByTenInt32Equality.Instance, "Tests.ByTenEqualityComparer" );
+            dC.Shared.KnownObjects.RegisterKnownKey( "Tests.ByTenEqualityComparer", ByTenInt32Equality.Instance );
+
+            // Now we can serialize our HashSet with its comparer.
+            var backA = TestHelper.SaveAndLoadObject( a, sC, dC );
+            backA.Should().NotBeSameAs( a ).And.BeEquivalentTo( a );
+            backA.Comparer.Should().BeSameAs( ByTenInt32Equality.Instance );
+
         }
 
         [Test]
@@ -262,12 +296,22 @@ namespace CK.BinarySerialization.Tests
             backA.Should().BeEquivalentTo( a );
             FluentActions.Invoking( () => backA.Add( "a", 1 ) ).Should().Throw<ArgumentException>();
 
-            var a2 = new Dictionary<string, string>( StringComparer.InvariantCultureIgnoreCase );
-            a2.Add( "A", "plop" );
+            var a2 = new Dictionary<string, string>( StringComparer.InvariantCultureIgnoreCase )
+            {
+                { "A", "plop" }
+            };
             FluentActions.Invoking( () => a2.Add( "a", "no way" ) ).Should().Throw<ArgumentException>();
             var backA2 = TestHelper.SaveAndLoadObject( a2 );
             backA2.Should().BeEquivalentTo( a2 );
             FluentActions.Invoking( () => backA2.Add( "a", "no way again" ) ).Should().Throw<ArgumentException>();
+        }
+
+        [Test]
+        public void dictionary_of_byte()
+        {
+            var a = new Dictionary<byte, int>() { { 1, 1000 }, { 2, 2000 } };
+            var backA = TestHelper.SaveAndLoadObject( a );
+            backA.Should().BeEquivalentTo( a );
         }
 
 

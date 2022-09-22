@@ -25,23 +25,14 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Initializes a new <see cref="BinaryDeserializerContext"/>.
         /// </summary>
-        /// <param name="shared">The shared context to use.</param>
+        /// <param name="shared">The shared context to use. Defaults to <see cref="BinaryDeserializer.DefaultSharedContext"/>.</param>
         /// <param name="services">Optional base services.</param>
-        public BinaryDeserializerContext( SharedBinaryDeserializerContext shared, IServiceProvider? services )
+        public BinaryDeserializerContext( SharedBinaryDeserializerContext? shared = null, IServiceProvider? services = null )
         {
             _knownObjects = new Dictionary<string, object>();
-            _shared = shared;
+            _shared = shared ?? BinaryDeserializer.DefaultSharedContext;
             _abstractDrivers = new Dictionary<Type, IDeserializationDriver>();
             _services = new SimpleServiceContainer( services );
-        }
-
-        /// <summary>
-        /// Initializes a new <see cref="BinaryDeserializerContext"/> bound to the <see cref="BinaryDeserializer.DefaultSharedContext"/>
-        /// and with empty <see cref="Services"/>.
-        /// </summary>
-        public BinaryDeserializerContext()
-            : this( BinaryDeserializer.DefaultSharedContext, null )
-        {
         }
 
         internal void Acquire( BinaryDeserializerImpl d )
@@ -68,19 +59,11 @@ namespace CK.BinarySerialization
         /// </summary>
         public SimpleServiceContainer Services => _services;
 
-        internal IDeserializationDriver GetAbstractDriver( Type t ) => _abstractDrivers.GetOrSet( t, _shared.GetAbstractDriver );
+        internal IDeserializationDriver GetAbstractDriver( Type t ) => _abstractDrivers.GetOrSet( t, SharedBinaryDeserializerContext.GetAbstractDriver );
 
         internal IDeserializationDriver? TryFindDriver( ref DeserializerResolverArg info )
         {
-            try
-            {
-                return _shared.TryFindDriver( ref info );
-            }
-            catch( System.Reflection.TargetInvocationException ex )
-            {
-                if( ex.InnerException != null ) throw ex.InnerException;
-                else throw;
-            }
+            return _shared.TryFindDriver( ref info );
         }
 
         internal object? GetKnownObject( string instanceKey )

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -10,11 +10,17 @@ namespace CK.BinarySerialization.Serialization
     {
         readonly TypedWriter<T> _item;
 
-        public DStack( Delegate item ) => _item = Unsafe.As<TypedWriter<T>>( item );
+        public DStack( Delegate item, SerializationDriverCacheLevel cache )
+        {
+            _item = Unsafe.As<TypedWriter<T>>( item );
+            CacheLevel = cache;
+        }
 
         public override string DriverName => "Stack";
 
         public override int SerializationVersion => -1;
+
+        public override SerializationDriverCacheLevel CacheLevel { get; }
 
         internal protected override void Write( IBinarySerializer s, in Stack<T> o )
         {

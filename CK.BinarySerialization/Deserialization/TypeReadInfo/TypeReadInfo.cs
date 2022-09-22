@@ -20,7 +20,7 @@ namespace CK.BinarySerialization
         Type? _localType;
         Mutable? _mutating;
         ITypeReadInfo[]? _typePath;
-        IDeserializationDriver? _abstractOrConcreteDriver;
+        IDeserializationDriver? _abstractDriver;
         string? _overriddenDriverName;
         bool? _isDirtyInfo;
 
@@ -431,35 +431,57 @@ namespace CK.BinarySerialization
 
         public bool HasResolvedConcreteDriver => _driver != null;
 
-        public IDeserializationDriver GetConcreteDriver()
+        public IDeserializationDriver GetConcreteDriver( Type? expected )
         {
+            // If we have an expected type, then we must find a driver for it.
+            // But before resolving it, we make sure that our local TargetType (if it exists)
+            // is not the best choice: when expected is compatible with the TargetType, we
+            // simply forget it.
+            // It's useless to take any base type into account (we don't want to handle and
+            // may be cache a IReadOnlyList<int> deserializer: the List<int> is fine).
+            // Another case where we don't want to honor the expectedType is when this expected type
+            // is the locally resolved type: this type is either ourTarget or is being globally
+            // mutated.
+            var ourTarget = TargetType;
+            if( expected != null
+                && ourTarget != null
+                && expected != TryResolveLocalType()
+                && !expected.IsAssignableFrom( ourTarget ) )
+            {
+                var a = new DeserializerResolverArg( this, _deserializer.Context, expected );
+                var driver = _deserializer.Context.TryFindDriver( ref a );
+                if( driver == null )
+                {
+                    Throw.InvalidOperationException( $"Unable to resolve a deserialization driver for '{expected.FullName}' from read info: {ToString()}." );
+                }
+                // We found a driver for the expected type.
+                // We don't cache it: it is an adapter, not the "nominal" one for our target.
+                return driver;
+            }
+            // We have no expected type here. We have no other choice than to find a driver
+            // for our target (and cache it). 
             if( !_driverLookupDone )
             {
                 _driverLookupDone = true;
-                var a = new DeserializerResolverArg( this, _deserializer.Context.Shared );
+                // This will throw if the local type cannot be resolved.
+                if( ourTarget == null ) ourTarget = ResolveLocalType();
+                var a = new DeserializerResolverArg( this, _deserializer.Context, ourTarget );
                 _driver = _deserializer.Context.TryFindDriver( ref a );
             }
             if( _driver == null )
             {
-                throw new InvalidOperationException( $"Unable to resolve deserialization driver for {ToString()}." );
+                Throw.InvalidOperationException( $"Unable to resolve deserialization driver for {ToString()}." );
             }
             return _driver;
         }
 
-        public IDeserializationDriver GetPotentiallyAbstractDriver()
+        public IDeserializationDriver GetPotentiallyAbstractDriver( Type? expected )
         {
-            if( _abstractOrConcreteDriver == null )
-            { 
-                if( !IsSealed )
-                {
-                    _abstractOrConcreteDriver = _deserializer.Context.GetAbstractDriver( TargetType ?? ResolveLocalType() );
-                }
-                else
-                {
-                    _abstractOrConcreteDriver = GetConcreteDriver();
-                }
+            if( !IsSealed )
+            {
+                return _abstractDriver ??= _deserializer.Context.GetAbstractDriver( TargetType ?? ResolveLocalType() );
             }
-            return _abstractOrConcreteDriver;
+            return GetConcreteDriver( expected );
         }
 
 

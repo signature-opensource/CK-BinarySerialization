@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -115,7 +115,7 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Always throws a <see cref="NotSupportedException"/>.
         /// </summary>
-        public IDeserializationDriver GetConcreteDriver()
+        public IDeserializationDriver GetConcreteDriver( Type? expected )
         {
             throw new NotSupportedException( nameof( MissingSlicedTypeReadInfo ) );
         }
@@ -123,7 +123,7 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Always throws a <see cref="NotSupportedException"/>.
         /// </summary>
-        public IDeserializationDriver GetPotentiallyAbstractDriver()
+        public IDeserializationDriver GetPotentiallyAbstractDriver( Type? expected )
         {
             throw new NotSupportedException( nameof( MissingSlicedTypeReadInfo ) );
         }

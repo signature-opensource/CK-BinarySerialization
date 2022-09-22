@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -9,11 +9,17 @@ namespace CK.BinarySerialization.Serialization
     {
         readonly TypedWriter<TItem> _item;
 
-        public DArrayMD( Delegate item ) => _item = Unsafe.As<TypedWriter<TItem>>( item );
+        public DArrayMD( Delegate item, SerializationDriverCacheLevel cache )
+        {
+            _item = Unsafe.As<TypedWriter<TItem>>( item );
+            CacheLevel = cache;
+        }
 
         public override string DriverName => "Array";
 
         public override int SerializationVersion => -1;
+
+        public override SerializationDriverCacheLevel CacheLevel { get; }
 
         internal protected override void Write( IBinarySerializer s, in T o )
         {

@@ -104,7 +104,7 @@ namespace CK.BinarySerialization
         /// Gets the target type into which instances that have been serialized with 
         /// this type information should be deserialized by default.
         /// <para>
-        /// This defaults to the <see cref="TryResolveLocalType()"/>.
+        /// This may be set by hooks or defaults to the <see cref="TryResolveLocalType()"/>.
         /// </para>
         /// </summary>
         /// <remarks>
@@ -155,15 +155,17 @@ namespace CK.BinarySerialization
         /// the serialization process itself.
         /// </para>
         /// </summary>
+        /// <param name="expected">Optional expected type. When null, the read type is based on <see cref="ITypeReadInfo.TargetType"/>.</param>
         /// <returns>The deserialization driver.</returns>
-        IDeserializationDriver GetConcreteDriver();
+        IDeserializationDriver GetConcreteDriver( Type? expected );
 
         /// <summary>
         /// Gets an abstract driver if <see cref="IsSealed"/> is false, otherwise
         /// calls <see cref="GetConcreteDriver"/>.
         /// </summary>
+        /// <param name="expected">Optional expected type. When let to null, the read type is based on <see cref="ITypeReadInfo.TargetType"/>.</param>
         /// <returns>The deserialization driver.</returns>
-        IDeserializationDriver GetPotentiallyAbstractDriver();
+        IDeserializationDriver GetPotentiallyAbstractDriver( Type? expected );
 
     }
 

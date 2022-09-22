@@ -52,7 +52,7 @@ namespace CK.BinarySerialization.Deserialization
     {
         protected override SVersionBound ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
         {
-            return new SVersionBound( d.ReadObject<SVersion>(), d.Reader.ReadEnum<SVersionLock>(), d.Reader.ReadEnum<PackageQuality>() );
+            return new SVersionBound( d.ReadObject<SVersion>(), (SVersionLock)d.Reader.ReadByte(), (PackageQuality)d.Reader.ReadByte() );
         }
     }
 

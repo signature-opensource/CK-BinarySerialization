@@ -1,10 +1,12 @@
-﻿using CK.Core;
+using CK.BinarySerialization.Serialization;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace CK.BinarySerialization
 {
+
     /// <summary>
     /// Serialization driver that knows how to serialize a null or not null instance 
     /// of one or more type.
@@ -46,5 +48,24 @@ namespace CK.BinarySerialization
         /// Gets the non nullable driver.
         /// </summary>
         ISerializationDriver ToNonNullable { get; }
+
+        /// <summary>
+        /// Gets whether this serialization driver can be cached.
+        /// <para>
+        /// The huge majority of serialization drivers can be cached at the <see cref="SharedBinarySerializerContext"/>
+        /// level since they depend on the serialized (concrete) type. However some of them may rely on stable information
+        /// available in the <see cref="BinarySerializerContext.Services"/> (this is the case for IPoco serialization
+        /// that uses the PocoDirectory): these ones must use <see cref="SerializationDriverCacheLevel.Context"/>.
+        /// </para>
+        /// <para>
+        /// If the serialization driver relies on transient/unstable information <see cref="SerializationDriverCacheLevel.Never"/> should
+        /// be used. (This latter case should be quite exceptional.)
+        /// </para>
+        /// <para>
+        /// A serialization driver that relies on other drivers must combine the levels:
+        /// see <see cref="SerializationDriverCacheLevelExtensions.Combine(SerializationDriverCacheLevel, SerializationDriverCacheLevel)"/>.
+        /// </para>
+        /// </summary>
+        SerializationDriverCacheLevel CacheLevel { get; }
     }
 }

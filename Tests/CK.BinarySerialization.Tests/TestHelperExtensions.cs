@@ -1,4 +1,4 @@
-﻿using CK.BinarySerialization;
+using CK.BinarySerialization;
 using CK.Testing;
 using FluentAssertions;
 using System;
@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
+using static CK.Testing.MonitorTestHelper;
 
 namespace CK.Core
 {
@@ -67,53 +68,30 @@ namespace CK.Core
                                                                      BinarySerializerContext? serializerContext = null,
                                                                      BinaryDeserializerContext? deserializerContext = null )
         {
-            using( var s = new MemoryStream() )
-            using( var writer = BinarySerializer.Create( s, serializerContext ?? new BinarySerializerContext() ) )
+            try
             {
-                writer.DebugWriteMode( true );
-
-                var o1 = new object();
-                if( CheckObjectReferences )
+                using( var s = new MemoryStream() )
+                using( var writer = BinarySerializer.Create( s, serializerContext ?? new BinarySerializerContext() ) )
                 {
-                    writer.WriteAny( o1 );
-                }
-
-                writer.DebugWriteSentinel();
-                w( o, writer );
-                writer.DebugWriteSentinel();
-
-                if( CheckObjectReferences )
-                {
-                    writer.WriteAny( o1 );
-                    var o2 = new object();
-                    writer.WriteAny( o2 );
-                    writer.WriteAny( o2 );
-                }
-                s.Position = 0;
-                return BinaryDeserializer.Deserialize( s, deserializerContext ?? new BinaryDeserializerContext(),
-                    d =>
-                    {
-                        d.DebugReadMode();
-
-                        object? r1 = null;
-                        if( CheckObjectReferences )
+                    object o1 = BeforeWrite( writer );
+                    w( o, writer );
+                    AfterWrite( writer, o1 );
+                    s.Position = 0;
+                    return BinaryDeserializer.Deserialize( s, deserializerContext ?? new BinaryDeserializerContext(),
+                        d =>
                         {
-                            r1 = d.ReadAny();
-                        }
-                        d.DebugCheckSentinel();
-                        T result = r( d );
-                        d.DebugCheckSentinel();
-
-                        if( CheckObjectReferences )
-                        {
-                            d.ReadAny().Should().BeSameAs( r1 );
-                            var r2 = d.ReadAny();
-                            r2.Should().BeOfType<object>();
-                            d.ReadAny().Should().BeSameAs( r2 );
-                        }
-                        return result;
-                    } )
-                    .GetResult();
+                            object? r1 = BeforeRead( d );
+                            T result = r( d );
+                            AfterRead( d, r1 );
+                            return result;
+                        } )
+                        .GetResult();
+                }
+            }
+            catch( Exception ex )
+            {
+                TestHelper.Monitor.Error( ex );
+                throw;
             }
         }
 
@@ -122,23 +100,85 @@ namespace CK.Core
                                                                      BinarySerializerContext? serializerContext = null,
                                                                      BinaryDeserializerContext? deserializerContext = null )
         {
-            using( var s = new MemoryStream() )
-            using( var writer = BinarySerializer.Create( s, serializerContext ?? new BinarySerializerContext() ) )
+            try
             {
-                writer.DebugWriteSentinel();
-                w( writer );
-                writer.DebugWriteSentinel();
-                s.Position = 0;
-                BinaryDeserializer.Deserialize( s, deserializerContext ?? new BinaryDeserializerContext(),
-                    d =>
-                    {
-                        d.DebugCheckSentinel();
-                        r( d );
-                        d.DebugCheckSentinel();
-                    } )
-                    .ThrowOnInvalidResult();
+                using( var s = new MemoryStream() )
+                using( var writer = BinarySerializer.Create( s, serializerContext ?? new BinarySerializerContext() ) )
+                {
+                    object o1 = BeforeWrite( writer );
+                    w( writer );
+                    AfterWrite( writer, o1 );
+                    s.Position = 0;
+                    BinaryDeserializer.Deserialize( s, deserializerContext ?? new BinaryDeserializerContext(),
+                        d =>
+                        {
+                            object? r1 = BeforeRead( d );
+                            r( d );
+                            AfterRead( d, r1 );
+                        } )
+                        .ThrowOnInvalidResult();
+                }
+            }
+            catch( Exception ex )
+            {
+                TestHelper.Monitor.Error( ex );
+                throw;
             }
         }
+
+        static object BeforeWrite( IDisposableBinarySerializer writer )
+        {
+            writer.DebugWriteMode( true );
+
+            var o1 = new object();
+            if( CheckObjectReferences )
+            {
+                writer.WriteAny( o1 );
+            }
+
+            writer.DebugWriteSentinel();
+            return o1;
+        }
+
+        static void AfterWrite( IDisposableBinarySerializer writer, object o1 )
+        {
+            writer.DebugWriteSentinel();
+
+            if( CheckObjectReferences )
+            {
+                writer.WriteAny( o1 );
+                var o2 = new object();
+                writer.WriteAny( o2 );
+                writer.WriteAny( o2 );
+            }
+        }
+
+        static object? BeforeRead( IBinaryDeserializer d )
+        {
+            d.DebugReadMode();
+
+            object? r1 = null;
+            if( CheckObjectReferences )
+            {
+                r1 = d.ReadAny();
+            }
+            d.DebugCheckSentinel();
+            return r1;
+        }
+
+        static void AfterRead( IBinaryDeserializer d, object? r1 )
+        {
+            d.DebugCheckSentinel();
+
+            if( CheckObjectReferences )
+            {
+                d.ReadAny().Should().BeSameAs( r1 );
+                var r2 = d.ReadAny();
+                r2.Should().BeOfType<object>();
+                d.ReadAny().Should().BeSameAs( r2 );
+            }
+        }
+
     }
 }
 

@@ -1,6 +1,7 @@
 using CK.Core;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace CK.BinarySerialization
@@ -21,7 +22,7 @@ namespace CK.BinarySerialization
         /// <summary>
         /// Gets the local type.
         /// </summary>
-        public readonly Type TargetType;
+        public readonly Type ExpectedType;
 
         /// <summary>
         /// Gets the driver name.
@@ -29,13 +30,12 @@ namespace CK.BinarySerialization
         public string DriverName => ReadInfo.DriverName!;
 
         /// <summary>
-        /// Gets the shared context. 
-        /// This is used only to detect mismatch of resolution context.
+        /// Gets the deserialization context. 
         /// </summary>
-        public readonly SharedBinaryDeserializerContext Context;
+        public readonly BinaryDeserializerContext Context;
 
         /// <summary>
-        /// True if the <see cref="TargetType"/> is the same as the <see cref="ITypeReadInfo.TryResolveLocalType()"/>
+        /// True if the <see cref="ExpectedType"/> is the same as the <see cref="ITypeReadInfo.TryResolveLocalType()"/>
         /// and <see cref="ITypeReadInfo.IsDirtyInfo"/> is false.
         /// <para>
         /// Whether the resolved driver is eventually cached (<see cref="IDeserializationDriver.IsCached"/>) is up to
@@ -49,24 +49,22 @@ namespace CK.BinarySerialization
         /// </summary>
         /// <param name="info">The type info for which a deserialization driver must be resolved.</param>
         /// <param name="context">The shared context is used only to detect mismatch of resolution context.</param>
-        /// <param name="targetType">Optional target local type. When not null, overrides <see cref="ITypeReadInfo.TargetType"/>.</param>
-        public DeserializerResolverArg( ITypeReadInfo info, SharedBinaryDeserializerContext context, Type? targetType = null )
+        /// <param name="expectedType">
+        /// Type that must be deserialized.
+        /// This should be changed to a NullableTypeTree once to be able to handle generic type mutations.
+        /// </param>
+        internal DeserializerResolverArg( ITypeReadInfo info, BinaryDeserializerContext context, Type expectedType )
         {
-            Throw.CheckNotNullArgument( info );
-            Throw.CheckArgument( "Type must not be nullable.", !info.IsNullable );
-            Throw.CheckArgument( "Must have a driver name.", info.DriverName != null );
-            Throw.CheckNotNullArgument( context );
+            Debug.Assert( info != null);
+            Debug.Assert( !info.IsNullable, "Type must not be nullable." );
+            Debug.Assert( info.DriverName != null, "Must have a driver name." );
+            Debug.Assert( context != null );
+            Debug.Assert( expectedType != null );
+            Debug.Assert( expectedType != info.TargetType || !info.HasResolvedConcreteDriver, "Deserialization driver for TargetType must not be already resolved." );
+            Debug.Assert( expectedType == info.TargetType || info.TargetType == null || !expectedType.IsAssignableFrom( info.TargetType ) );
             ReadInfo = info;
-            TargetType = targetType ?? info.TargetType ?? info.ResolveLocalType();
-            if( TargetType.IsAbstract )
-            {
-                Throw.ArgumentException( nameof( info ), $"Cannot deserialize an abstract type '{TargetType}'." );
-            }
-            if( TargetType == info.TargetType && info.HasResolvedConcreteDriver )
-            {
-                Throw.ArgumentException( nameof( info ), "Deserialization driver must not be already resolved." );
-            }
-            IsPossibleNominalDeserialization = TargetType == info.TryResolveLocalType() && !info.IsDirtyInfo;
+            ExpectedType = expectedType;
+            IsPossibleNominalDeserialization = ExpectedType == info.TryResolveLocalType() && !info.IsDirtyInfo;
             Context = context;
         }
 
