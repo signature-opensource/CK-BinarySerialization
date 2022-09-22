@@ -1,24 +1,19 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net6</TargetFramework>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="..\CK.BinarySerialization.Tests\TestHelperExtensions.cs" Link="TestHelperExtensions.cs" />
   </ItemGroup>
-  
   <ItemGroup>
-    <PackageReference Include="CK.Testing.StObjEngine" Version="20.0.1--0010-develop" />
+    <PackageReference Include="CK.Testing.StObjEngine" Version="21.0.0" />
     <PackageReference Include="NUnit" Version="3.13.3" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.1" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\CK.BinarySerialization.IPoco\CK.BinarySerialization.IPoco.csproj" />
   </ItemGroup>
-
 </Project>
