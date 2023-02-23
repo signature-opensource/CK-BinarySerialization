@@ -6,7 +6,6 @@
   <Class Name="CK.BinarySerialization.BinarySerializerContext">
     <Position X="0.5" Y="4.5" Width="4" />
     <Members>
-      <Field Name="" Hidden="true" />
       <Field Name="_cache" Hidden="true" />
       <Field Name="_inUse" Hidden="true" />
       <Field Name="_knownObjects" Hidden="true" />
@@ -37,7 +36,7 @@
       </Struct>
     </NestedTypes>
     <TypeIdentifier>
-      <HashCode>kAAQAAAAAIQAAAAQAwAAAAAAACAQCEAAEACIABBAAEA=</HashCode>
+      <HashCode>kAAQAAAAAIQAAAAQAwAACAAAACAQCEAAEACIABBAAAA=</HashCode>
       <FileName>Serialization\BinarySerializerContext.cs</FileName>
     </TypeIdentifier>
     <ShowAsAssociation>
@@ -45,7 +44,7 @@
     </ShowAsAssociation>
   </Class>
   <Class Name="CK.BinarySerialization.SharedBinarySerializerContext">
-    <Position X="0.5" Y="10.25" Width="5" />
+    <Position X="0.5" Y="10.5" Width="5" />
     <Members>
       <Field Name="_knownObjects" Hidden="true" />
       <Field Name="_resolvers" Hidden="true" />
