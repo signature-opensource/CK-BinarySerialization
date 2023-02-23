@@ -5,7 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CK.Core" Version="16.1.2--0010-develop" />
-    <PackageReference Include="CSemVer" Version="11.0.0" />
+    <PackageReference Include="CSemVer" Version="11.0.1" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Deserialization\Drivers\DDTuple.tt">
