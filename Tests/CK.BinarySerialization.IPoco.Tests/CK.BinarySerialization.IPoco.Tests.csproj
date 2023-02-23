@@ -8,10 +8,10 @@
     <Compile Include="..\CK.BinarySerialization.Tests\TestHelperExtensions.cs" Link="TestHelperExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CK.Testing.StObjEngine" Version="22.1.1--0005-develop" />
+    <PackageReference Include="CK.Testing.StObjEngine" Version="22.1.1--0009-develop" />
     <PackageReference Include="NUnit" Version="3.13.3" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.3.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\CK.BinarySerialization.IPoco\CK.BinarySerialization.IPoco.csproj" />

@@ -430,7 +430,7 @@ deserializing these objects.
 
 The code above shows the hook registration. The hook has access to a [IMutableTypeReadInfo](CK.BinarySerialization/Deserialization/TypeReadInfo/IMutableTypeReadInfo.cs).
 
-![MutableTypeReadInfo Model](Doc/MutableTypeReadInfoInterface.png)
+![MutableTypeReadInfo Model](Doc/TypeReadInfo.png)
 
 This can be used to map the namespace and/or assembly by setting the assembly name, namespace or, more directly,
 the TargetType that must be used.

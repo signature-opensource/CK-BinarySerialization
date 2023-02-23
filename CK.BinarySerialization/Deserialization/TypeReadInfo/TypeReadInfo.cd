@@ -24,5 +24,12 @@
       <FileName>Deserialization\TypeReadInfo\IMutableTypeReadInfo.cs</FileName>
     </TypeIdentifier>
   </Interface>
+  <Enum Name="CK.BinarySerialization.TypeReadInfoKind">
+    <Position X="6.25" Y="0.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAgIAAAAACgAQAEJCAAAAAAAAAAKAAAAAAAEQEAA=</HashCode>
+      <FileName>Deserialization\TypeReadInfo\TypeReadInfoKind.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
   <Font Name="Segoe UI" Size="9" />
 </ClassDiagram>
