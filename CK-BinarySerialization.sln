@@ -25,6 +25,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Doc", "Doc", "{42FA6687-C89D-4B8F-BB4D-78016526CD0E}"
 	ProjectSection(SolutionItems) = preProject
 		Doc\BinarySerializerInterface.png = Doc\BinarySerializerInterface.png
+		Doc\TypeReadInfo.png = Doc\TypeReadInfo.png
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeCakeBuilder", "CodeCakeBuilder\CodeCakeBuilder.csproj", "{19F23EAD-A2C3-47A2-875D-E5D3E0EFA053}"

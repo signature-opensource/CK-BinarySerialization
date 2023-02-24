@@ -12,8 +12,6 @@ deserialization constructors since constructors are the only clean way to restor
 The third and most important aspect is that serialization must not prevent the code base to evolve. The architecture
 of this library is primarily driven by this concern. 
 
-(This is not yet finalized.)
-
 ## Writing is not Reading
 
 Just like with CQRS, serialization cannot be handled exactly like deserialization. There's always one way to 
@@ -266,7 +264,7 @@ Each sliced serializable type must expose a deserialization constructor, and a `
 (and, if the class is not sealed, a special empty deserialization constructor to be called by specialized types). 
 
 The "Sliced" serialization supports versioned classes specializations: a base class (abstract or simply not sealed)
-can evolve freely without any impact on its potential specialization.
+can evolve freely **without any impact on its potential specializations**.
 
 Below is a typical base class implementation (`IsDestroyed` property is discussed below):
 
@@ -432,7 +430,7 @@ deserializing these objects.
 
 The code above shows the hook registration. The hook has access to a [IMutableTypeReadInfo](CK.BinarySerialization/Deserialization/TypeReadInfo/IMutableTypeReadInfo.cs).
 
-![MutableTypeReadInfo Model](Doc/MutableTypeReadInfoInterface.png)
+![MutableTypeReadInfo Model](Doc/TypeReadInfo.png)
 
 This can be used to map the namespace and/or assembly by setting the assembly name, namespace or, more directly,
 the TargetType that must be used.
