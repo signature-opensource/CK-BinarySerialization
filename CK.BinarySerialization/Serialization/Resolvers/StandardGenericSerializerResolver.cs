@@ -117,7 +117,7 @@ namespace CK.BinarySerialization
             var dItem = context.TryFindPossiblyAbstractDriver( tE );
             if( dItem == null ) return null;
             var tS = tGenD.MakeGenericType( tE );
-            Debug.Assert( t.IsClass, "All single generics are reference type: oblivious rules for now." );
+            Debug.Assert( t.IsClass, "All single generics (list, hashset, stack, queue) are reference type: oblivious rules for now." );
             return ((ISerializationDriver)Activator.CreateInstance( tS, dItem.TypedWriter, dItem.CacheLevel )!).ToNullable;
         }
 

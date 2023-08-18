@@ -2,11 +2,13 @@ using CK.Core;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using System.Collections.Generic;
 using System.ComponentModel;
 using static CK.Testing.StObjEngineTestHelper;
 
 namespace CK.BinarySerialization.Poco.Tests
 {
+    [TestFixture]
     public class SimpleTests
     {
         public interface ISimple : IPoco
@@ -46,6 +48,28 @@ namespace CK.BinarySerialization.Poco.Tests
 
             BinarySerializer.IdempotenceCheck( o1, sC, dC );
             BinarySerializer.IdempotenceCheck( o2, sC, dC );
+        }
+
+        [Test]
+        public void serialization_and_deserialization_of_list()
+        {
+            var c = TestHelper.CreateStObjCollector( typeof( ISimple ),
+                                                     typeof( PocoJsonSerializer ),
+                                                     typeof( PocoDirectory ) );
+            using var s = TestHelper.CreateAutomaticServices( c ).Services;
+
+            var o1 = s.GetRequiredService<PocoDirectory>().Create<ISimple>();
+            var o2 = s.GetRequiredService<PocoDirectory>().Create<ISimple>( o => o.Thing = "Goodbye!" );
+            var list = new List<ISimple>() { o1, o2 };
+
+            // The de/serializer contexts' services must contain the PocoDirectory.
+            var dC = new BinaryDeserializerContext( BinaryDeserializer.DefaultSharedContext, s );
+            var sC = new BinarySerializerContext( BinarySerializer.DefaultSharedContext, s );
+
+            object? backList = TestHelper.SaveAndLoadAny( list, sC, dC );
+            backList.Should().NotBeSameAs( list );
+
+            BinarySerializer.IdempotenceCheck( list, sC, dC );
         }
 
         public interface IOtherSimple : IPoco

@@ -35,7 +35,7 @@ namespace CK.BinarySerialization
             Version = -1;
             SubTypes = Array.Empty<ITypeReadInfo>();
             IsValueType = k == TypeReadInfoKind.ValueType || k == TypeReadInfoKind.GenericValueType || k == TypeReadInfoKind.Enum;
-            IsSealed = k != TypeReadInfoKind.Class && k != TypeReadInfoKind.GenericClass;
+            IsSealed = k != TypeReadInfoKind.Class && k != TypeReadInfoKind.GenericClass && k != TypeReadInfoKind.Interface;
         }
 
         #region Read methods called after instantiation by BinaryDeserializerImpl.ReadTypeInfo().

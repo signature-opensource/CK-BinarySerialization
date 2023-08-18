@@ -170,8 +170,8 @@ namespace CK.BinarySerialization
         }
 
         /// <summary>
-        /// If the type is not sealed (it's necessarily a class) then returns a generic driver that relies
-        /// on the actual runtime type. Otherwise calls <see cref="TryFindDriver(Type)"/>.
+        /// If the type is not sealed (it's necessarily a class or an interface) then returns a
+        /// generic driver that relies on the actual runtime type. Otherwise calls <see cref="TryFindDriver(Type)"/>.
         /// </summary>
         /// <param name="t">The type for which a driver is needed.</param>
         /// <returns>The driver or null.</returns>
@@ -179,7 +179,7 @@ namespace CK.BinarySerialization
         {
             if( !t.IsSealed )
             {
-                Debug.Assert( t.IsClass, "Non sealed is a class." );
+                Debug.Assert( t.IsClass || t.IsInterface, "Non sealed is a class or an interface." );
                 _stats._driverNeverCached++;
                 return Serialization.DAbstract.Instance.ToNullable;
             }
