@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using FluentAssertions;
 using NUnit.Framework;
 using System;
@@ -82,5 +82,124 @@ namespace CK.BinarySerialization.Tests
             v2Town.Stats.Should().Be( t.Stats );
             return v2Town;
         }
+
+
+        public sealed class DeviceEvent : ICKSimpleBinarySerializable
+        {
+            public DeviceEvent()
+            {
+            }
+
+            public DeviceEvent( ICKBinaryReader r )
+            {
+                r.ReadByte();
+            }
+
+            public void Write( ICKBinaryWriter w )
+            {
+                w.Write( (byte)0 );
+            }
+        }
+
+        public readonly struct SimplifiedEvent : ICKSimpleBinarySerializable
+        {
+            public SimplifiedEvent( ICKBinaryReader r )
+            {
+                r.ReadByte();
+            }
+
+            public void Write( ICKBinaryWriter w )
+            {
+                w.Write( (byte)0 );
+            }
+        }
+
+        [SerializationVersion( 0 )]
+        public class Channel<T> : ICKSlicedSerializable
+        {
+            public T? Last;
+
+            public void Add( T t ) => Last = t;
+
+            public Channel()
+            {
+            }
+
+            public Channel( IBinaryDeserializer d, ITypeReadInfo info )
+            {
+                // Instead of using object ReadAnyNullable() (and casting), we use the
+                // typed version: the target type is known and it is up to the deserialzation driver
+                // to handle the binary data.
+                // Here it works because the binary layout is the same for the DeviceEvent and the SimplifiedEvent
+                //(there is only the version byte).
+                Last = d.ReadAnyNullable<T>();
+            }
+
+            public static void Write( IBinarySerializer s, in Channel<T> o )
+            {
+                s.WriteAnyNullable( o.Last );
+            }
+        }
+
+        [SerializationVersion( 0 )]
+        public sealed class Holder : ICKSlicedSerializable
+        {
+            public readonly Channel<DeviceEvent> Events;
+
+            public Holder()
+            {
+                Events = new Channel<DeviceEvent>();
+            }
+
+            public Holder( IBinaryDeserializer d, ITypeReadInfo info )
+            {
+                Events = d.ReadObject<Channel<DeviceEvent>>();
+            }
+
+            public static void Write( IBinarySerializer s, in Holder o )
+            {
+                s.WriteObject( o.Events );
+            }
+        }
+
+        [SerializationVersion( 0 )]
+        public sealed class HolderV2 : ICKSlicedSerializable
+        {
+            public readonly Channel<SimplifiedEvent> Events;
+
+            public HolderV2()
+            {
+                Events = new Channel<SimplifiedEvent>();
+            }
+
+            public HolderV2( IBinaryDeserializer d, ITypeReadInfo info )
+            {
+                Events = d.ReadObject<Channel<SimplifiedEvent>>();
+            }
+
+            public static void Write( IBinarySerializer s, in HolderV2 o )
+            {
+                s.WriteObject( o.Events );
+            }
+        }
+
+        [Test]
+        public void changing_type_with_same_binary_layout()
+        {
+            var t = new Holder();
+            t.Events.Add( new DeviceEvent() );
+            static void SwitchToHolderV2( IMutableTypeReadInfo i )
+            {
+                if( i.WrittenInfo.TypeName == "MutationTests+Holder" )
+                {
+                    i.SetLocalTypeName( "MutationTests+HolderV2" );
+                }
+            }
+            var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
+            dC.Shared.AddDeserializationHook( SwitchToHolderV2 );
+            var t2 = TestHelper.SaveAnyAndLoad<HolderV2>( t, new BinarySerializerContext(), deserializerContext: dC );
+            t.Events.Last.Should().NotBeNull();
+        }
+
     }
 }
