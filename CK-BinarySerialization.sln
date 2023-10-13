@@ -1,12 +1,15 @@
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31919.166
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{A5FD7DA3-11D3-459F-98D5-91778C4DB4BC}"
+	ProjectSection(SolutionItems) = preProject
+	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization", "CK.BinarySerialization\CK.BinarySerialization.csproj", "{31A5034B-1478-4D30-9F46-0157B6CEC1A0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization", "CK.BinarySerialization/CK.BinarySerialization.csproj", "{31A5034B-1478-4D30-9F46-0157B6CEC1A0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization.Tests", "Tests\CK.BinarySerialization.Tests\CK.BinarySerialization.Tests.csproj", "{FD7CB9D0-080E-4649-B8FD-3B801F0596C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization.Tests", "Tests/CK.BinarySerialization.Tests/CK.BinarySerialization.Tests.csproj", "{FD7CB9D0-080E-4649-B8FD-3B801F0596C0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5AF86BF8-AD20-4F0C-B3B1-120CB23FA7CD}"
 	ProjectSection(SolutionItems) = preProject
@@ -16,11 +19,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		NuGet.config = NuGet.config
 		README.md = README.md
 		RepositoryInfo.xml = RepositoryInfo.xml
+		appveyor.yml = appveyor.yml
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization.Sliced", "CK.BinarySerialization.Sliced\CK.BinarySerialization.Sliced.csproj", "{1B5B6799-B3EA-453A-BFE2-94222F994CBC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization.Sliced", "CK.BinarySerialization.Sliced/CK.BinarySerialization.Sliced.csproj", "{1B5B6799-B3EA-453A-BFE2-94222F994CBC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization.Sliced.Tests", "Tests\CK.BinarySerialization.Sliced.Tests\CK.BinarySerialization.Sliced.Tests.csproj", "{0B322956-C8AC-4D51-A25E-5AED319537EC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization.Sliced.Tests", "Tests/CK.BinarySerialization.Sliced.Tests/CK.BinarySerialization.Sliced.Tests.csproj", "{0B322956-C8AC-4D51-A25E-5AED319537EC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Doc", "Doc", "{42FA6687-C89D-4B8F-BB4D-78016526CD0E}"
 	ProjectSection(SolutionItems) = preProject
@@ -28,11 +32,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Doc", "Doc", "{42FA6687-C89
 		Doc\TypeReadInfo.png = Doc\TypeReadInfo.png
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeCakeBuilder", "CodeCakeBuilder\CodeCakeBuilder.csproj", "{19F23EAD-A2C3-47A2-875D-E5D3E0EFA053}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeCakeBuilder", "CodeCakeBuilder/CodeCakeBuilder.csproj", "{19F23EAD-A2C3-47A2-875D-E5D3E0EFA053}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization.IPoco", "CK.BinarySerialization.IPoco\CK.BinarySerialization.IPoco.csproj", "{ED19EF4C-B230-4A16-B093-069A9B426A3C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization.IPoco", "CK.BinarySerialization.IPoco/CK.BinarySerialization.IPoco.csproj", "{ED19EF4C-B230-4A16-B093-069A9B426A3C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization.IPoco.Tests", "Tests\CK.BinarySerialization.IPoco.Tests\CK.BinarySerialization.IPoco.Tests.csproj", "{9B2DAC0A-9901-4B47-949A-08DFF510E817}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.BinarySerialization.IPoco.Tests", "Tests/CK.BinarySerialization.IPoco.Tests/CK.BinarySerialization.IPoco.Tests.csproj", "{9B2DAC0A-9901-4B47-949A-08DFF510E817}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
