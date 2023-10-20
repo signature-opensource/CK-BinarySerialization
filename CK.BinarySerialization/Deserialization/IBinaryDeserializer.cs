@@ -67,17 +67,32 @@ namespace CK.BinarySerialization
         ITypeReadInfo ReadTypeInfo();
 
         /// <summary>
-        /// Reads a non null object or value type previously written by <see cref="IBinarySerializer.WriteAnyNullable(object?)"/>
-        /// or <see cref="IBinarySerializer.WriteAny(object)"/>.
+        /// Reads a non null object or value type. This deserialize the written type since no
+        /// type information is provided. Use <see cref="ReadAnyNullable(){T}()"/> to select the deserialized
+        /// type (and its deserialization driver).
         /// </summary>
         /// <returns>The object or value type (possibly in an intermediate state) or null.</returns>
         object? ReadAnyNullable();
 
         /// <summary>
-        /// Reads a non null object or value type previously written by <see cref="IBinarySerializer.WriteAny(object)"/>.
+        /// Reads a non null object or value type. This deserialize the written type since no
+        /// type information is provided. Use <see cref="ReadAny{T}()"/> to select the deserialized type (and its
+        /// deserialization driver).
         /// </summary>
         /// <returns>The object read, possibly in an intermediate state.</returns>
         object ReadAny();
+
+        /// <summary>
+        /// Reads a nullable object or a value type, providing the deserialized target type.
+        /// </summary>
+        /// <returns>The object or value type (possibly in an intermediate state) or null.</returns>
+        T? ReadAnyNullable<T>();
+
+        /// <summary>
+        /// Reads a non null object or value type, providing the deserialized target type.
+        /// </summary>
+        /// <returns>The object read, possibly in an intermediate state.</returns>
+        T ReadAny<T>();
 
         /// <summary>
         /// Reads a non null object reference written by <see cref="IBinarySerializer.WriteObject{T}(T)"/> 

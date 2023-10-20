@@ -84,6 +84,8 @@ namespace CK.BinarySerialization
 
         public object ReadAny() => ReadAny( null );
 
+        public T ReadAny<T>() => (T)ReadAny( typeof(T) );
+
         object ReadAny( Type? expected )
         {
             var o = ReadAnyNullable( expected );
@@ -124,6 +126,8 @@ namespace CK.BinarySerialization
         }
 
         public object? ReadAnyNullable() => ReadAnyNullable( null );
+
+        public T? ReadAnyNullable<T>() => (T?)ReadAnyNullable( typeof( T ) );
 
         object? ReadAnyNullable( Type? expected )
         {
@@ -190,7 +194,7 @@ namespace CK.BinarySerialization
                     // we know that a second pass is required
                     result = RuntimeHelpers.GetUninitializedObject( d.ResolvedType );
                     Track( result );
-                    if( _deferred == null ) _deferred = new Stack<(IDeserializationDriverInternal D, ITypeReadInfo T, object O)>( 100 );
+                    _deferred ??= new Stack<(IDeserializationDriverInternal D, ITypeReadInfo T, object O)>( 100 );
                     // There's no real need of the result object for the value type but since it's already there and boxed, we can use it.
                     _deferred.Push( (d, info, result) );
                 }
