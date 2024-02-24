@@ -1,15 +1,7 @@
 using CK.Core;
+using CK.Poco.Exc.Json;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Text.Json;
-using static CK.Core.PocoJsonSerializer;
 
 namespace CK.BinarySerialization
 {
@@ -64,7 +56,11 @@ namespace CK.BinarySerialization
                 // We don't write the ["TypeName",{ ... }] envelope since we rely on the rewritten Type
                 // that is the primary interface: the type name is free to change and it the type is
                 // hooked and a new TargetType is set, this MAY work...
-                var m = o.JsonSerialize( withType: false );
+                //
+                // We use the ToStringDefault options: Pascal case and JavaScriptEncoder.UnsafeRelaxedJsonEscaping (faster)
+                // and more importantly the TypeFilterName is "AllSerializable" (whreas the PocoJsonExportOptions.Default
+                // is "AllExchangeable").
+                var m = o.WriteJson( withType: false, PocoJsonExportOptions.ToStringDefault );
                 s.Writer.WriteNonNegativeSmallInt32( m.Length );
                 s.Writer.Write( m.Span );
             }
