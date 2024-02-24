@@ -16,4 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\CK.BinarySerialization.IPoco\CK.BinarySerialization.IPoco.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="%24StObjGen\" />
+  </ItemGroup>
 </Project>
