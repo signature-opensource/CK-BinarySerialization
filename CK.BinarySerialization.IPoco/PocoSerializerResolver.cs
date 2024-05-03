@@ -1,6 +1,7 @@
 using CK.Core;
 using CK.Poco.Exc.Json;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IO;
 using System;
 
 namespace CK.BinarySerialization
@@ -58,11 +59,22 @@ namespace CK.BinarySerialization
                 // hooked and a new TargetType is set, this MAY work...
                 //
                 // We use the ToStringDefault options: Pascal case and JavaScriptEncoder.UnsafeRelaxedJsonEscaping (faster)
-                // and more importantly the TypeFilterName is "AllSerializable" (whreas the PocoJsonExportOptions.Default
+                // and more importantly the TypeFilterName is "AllSerializable" (whereas the PocoJsonExportOptions.Default
                 // is "AllExchangeable").
-                var m = o.WriteJson( withType: false, PocoJsonExportOptions.ToStringDefault );
-                s.Writer.WriteNonNegativeSmallInt32( m.Length );
-                s.Writer.Write( m.Span );
+                using( var m = (RecyclableMemoryStream)Util.RecyclableStreamManager.GetStream() )
+                {
+                    o.WriteJson( m, withType: false, PocoJsonExportOptions.ToStringDefault );
+                    if( m.Position > int.MaxValue/2 )
+                    {
+                        Throw.InvalidOperationException( $"Writing '{typeof(T)}' instance requires '{m.Position}'bytes. This is bigger than the maximal authorized size of int.MaxValue/2 ({int.MaxValue / 2})." );
+                    }
+                    s.Writer.WriteNonNegativeSmallInt32( (int)m.Position );
+                    var bytes = m.GetReadOnlySequence();
+                    foreach( var b in bytes )
+                    {
+                        s.Writer.Write( b.Span );
+                    }
+                }
             }
         }
 
