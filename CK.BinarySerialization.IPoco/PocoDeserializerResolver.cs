@@ -1,16 +1,10 @@
 using CK.Core;
+using CK.Poco.Exc.Json;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Reflection.PortableExecutable;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 
 namespace CK.BinarySerialization
@@ -53,7 +47,7 @@ namespace CK.BinarySerialization
                 try
                 {
                     r.Read( buffer, 0, len );
-                    return _factory.JsonDeserialize( buffer.AsSpan( 0, len ) )!;
+                    return _factory.ReadJson( buffer.AsSpan( 0, len ), PocoJsonImportOptions.ToStringDefault )!;
                 }
                 finally
                 {

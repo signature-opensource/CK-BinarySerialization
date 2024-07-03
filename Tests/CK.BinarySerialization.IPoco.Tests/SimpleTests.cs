@@ -27,7 +27,7 @@ namespace CK.BinarySerialization.Poco.Tests
         public void serialization_and_deserialization()
         {
             var c = TestHelper.CreateStObjCollector( typeof( ISimple ),
-                                                     typeof( PocoJsonSerializer ),
+                                                     typeof( CommonPocoJsonSupport ),
                                                      typeof( PocoDirectory ) );
             using var s = TestHelper.CreateAutomaticServices( c ).Services;
 
@@ -54,7 +54,7 @@ namespace CK.BinarySerialization.Poco.Tests
         public void serialization_and_deserialization_of_list()
         {
             var c = TestHelper.CreateStObjCollector( typeof( ISimple ),
-                                                     typeof( PocoJsonSerializer ),
+                                                     typeof( CommonPocoJsonSupport ),
                                                      typeof( PocoDirectory ) );
             using var s = TestHelper.CreateAutomaticServices( c ).Services;
 
@@ -83,7 +83,7 @@ namespace CK.BinarySerialization.Poco.Tests
         {
             var c = TestHelper.CreateStObjCollector( typeof( IOtherSimple ),
                                                      typeof( ISimpleMore ),
-                                                     typeof( PocoJsonSerializer ),
+                                                     typeof( CommonPocoJsonSupport ),
                                                      typeof( PocoDirectory ) );
             using var s = TestHelper.CreateAutomaticServices( c ).Services;
 
@@ -123,7 +123,7 @@ namespace CK.BinarySerialization.Poco.Tests
         {
             var c = TestHelper.CreateStObjCollector( typeof( IOtherSimple ),
                                                      typeof( ISimpleMore ),
-                                                     typeof( PocoJsonSerializer ),
+                                                     typeof( CommonPocoJsonSupport ),
                                                      typeof( PocoDirectory ) );
             using var s = TestHelper.CreateAutomaticServices( c ).Services;
 
