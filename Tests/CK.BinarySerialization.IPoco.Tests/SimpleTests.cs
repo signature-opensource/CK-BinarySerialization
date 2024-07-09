@@ -1,10 +1,12 @@
 using CK.Core;
+using CK.Setup;
+using CK.Testing;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.ComponentModel;
-using static CK.Testing.StObjEngineTestHelper;
+using static CK.Testing.MonitorTestHelper;
 
 namespace CK.BinarySerialization.Poco.Tests
 {
@@ -26,17 +28,18 @@ namespace CK.BinarySerialization.Poco.Tests
         [Test]
         public void serialization_and_deserialization()
         {
-            var c = TestHelper.CreateStObjCollector( typeof( ISimple ),
-                                                     typeof( CommonPocoJsonSupport ),
-                                                     typeof( PocoDirectory ) );
-            using var s = TestHelper.CreateAutomaticServices( c ).Services;
+            var engineConfiguration = TestHelper.CreateDefaultEngineConfiguration();
+            engineConfiguration.FirstBinPath.Types.Add( typeof( ISimple ),
+                                                        typeof( CommonPocoJsonSupport ),
+                                                        typeof( PocoDirectory ) );
+            using var auto = engineConfiguration.RunSuccessfully().CreateAutomaticServices();
 
-            var o1 = s.GetRequiredService<PocoDirectory>().Create<ISimple>();
-            var o2 = s.GetRequiredService<PocoDirectory>().Create<ISimple>( o => o.Thing = "Goodbye!" );
+            var o1 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimple>();
+            var o2 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimple>( o => o.Thing = "Goodbye!" );
 
             // The de/serializer contexts' services must contain the PocoDirectory.
-            var dC = new BinaryDeserializerContext( BinaryDeserializer.DefaultSharedContext, s );
-            var sC = new BinarySerializerContext( BinarySerializer.DefaultSharedContext, s );
+            var dC = new BinaryDeserializerContext( BinaryDeserializer.DefaultSharedContext, auto.Services );
+            var sC = new BinarySerializerContext( BinarySerializer.DefaultSharedContext, auto.Services );
 
             object? backO1 = TestHelper.SaveAndLoadAny( o1, sC, dC );
             backO1.Should().NotBeSameAs( o1 );
@@ -53,18 +56,19 @@ namespace CK.BinarySerialization.Poco.Tests
         [Test]
         public void serialization_and_deserialization_of_list()
         {
-            var c = TestHelper.CreateStObjCollector( typeof( ISimple ),
-                                                     typeof( CommonPocoJsonSupport ),
-                                                     typeof( PocoDirectory ) );
-            using var s = TestHelper.CreateAutomaticServices( c ).Services;
+            var engineConfiguration = TestHelper.CreateDefaultEngineConfiguration();
+            engineConfiguration.FirstBinPath.Types.Add( typeof( ISimple ),
+                                                        typeof( CommonPocoJsonSupport ),
+                                                        typeof( PocoDirectory ) );
+            using var auto = engineConfiguration.RunSuccessfully().CreateAutomaticServices();
 
-            var o1 = s.GetRequiredService<PocoDirectory>().Create<ISimple>();
-            var o2 = s.GetRequiredService<PocoDirectory>().Create<ISimple>( o => o.Thing = "Goodbye!" );
+            var o1 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimple>();
+            var o2 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimple>( o => o.Thing = "Goodbye!" );
             var list = new List<ISimple>() { o1, o2 };
 
             // The de/serializer contexts' services must contain the PocoDirectory.
-            var dC = new BinaryDeserializerContext( BinaryDeserializer.DefaultSharedContext, s );
-            var sC = new BinarySerializerContext( BinarySerializer.DefaultSharedContext, s );
+            var dC = new BinaryDeserializerContext( BinaryDeserializer.DefaultSharedContext, auto.Services );
+            var sC = new BinarySerializerContext( BinarySerializer.DefaultSharedContext, auto.Services );
 
             object? backList = TestHelper.SaveAndLoadAny( list, sC, dC );
             backList.Should().NotBeSameAs( list );
@@ -81,18 +85,19 @@ namespace CK.BinarySerialization.Poco.Tests
         [Test]
         public void interfaces_are_mapped_to_the_primary()
         {
-            var c = TestHelper.CreateStObjCollector( typeof( IOtherSimple ),
+            var engineConfiguration = TestHelper.CreateDefaultEngineConfiguration();
+            engineConfiguration.FirstBinPath.Types.Add( typeof( IOtherSimple ),
                                                      typeof( ISimpleMore ),
                                                      typeof( CommonPocoJsonSupport ),
                                                      typeof( PocoDirectory ) );
-            using var s = TestHelper.CreateAutomaticServices( c ).Services;
+            using var auto = engineConfiguration.RunSuccessfully().CreateAutomaticServices();
 
-            var o1 = s.GetRequiredService<PocoDirectory>().Create<ISimpleMore>();
-            var o2 = s.GetRequiredService<PocoDirectory>().Create<ISimpleMore>( o => { o.Thing = "Goodbye!"; o.AnotherThing = "Universe!"; } );
+            var o1 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimpleMore>();
+            var o2 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimpleMore>( o => { o.Thing = "Goodbye!"; o.AnotherThing = "Universe!"; } );
 
             // The de/serializer contexts' services must contain the PocoDirectory.
-            var dC = new BinaryDeserializerContext( BinaryDeserializer.DefaultSharedContext, s );
-            var sC = new BinarySerializerContext( BinarySerializer.DefaultSharedContext, s );
+            var dC = new BinaryDeserializerContext( BinaryDeserializer.DefaultSharedContext, auto.Services );
+            var sC = new BinarySerializerContext( BinarySerializer.DefaultSharedContext, auto.Services );
 
             object? backO1 = TestHelper.SaveAndLoadAny( o1, sC, dC );
             backO1.Should().NotBeSameAs( o1 );
@@ -121,17 +126,18 @@ namespace CK.BinarySerialization.Poco.Tests
         [Test]
         public void mutations_work_when_Json_can_be_read_back()
         {
-            var c = TestHelper.CreateStObjCollector( typeof( IOtherSimple ),
+            var engineConfiguration = TestHelper.CreateDefaultEngineConfiguration();
+            engineConfiguration.FirstBinPath.Types.Add( typeof( IOtherSimple ),
                                                      typeof( ISimpleMore ),
                                                      typeof( CommonPocoJsonSupport ),
                                                      typeof( PocoDirectory ) );
-            using var s = TestHelper.CreateAutomaticServices( c ).Services;
+            using var auto = engineConfiguration.RunSuccessfully().CreateAutomaticServices();
 
-            var o1 = s.GetRequiredService<PocoDirectory>().Create<ISimpleMore>( o1 => o1.Thing = "Hop" );
+            var o1 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimpleMore>( o1 => o1.Thing = "Hop" );
 
             // The de/serializer contexts' services must contain the PocoDirectory.
-            var dC = new BinaryDeserializerContext( BinaryDeserializer.DefaultSharedContext, s );
-            var sC = new BinarySerializerContext( BinarySerializer.DefaultSharedContext, s );
+            var dC = new BinaryDeserializerContext( BinaryDeserializer.DefaultSharedContext, auto.Services );
+            var sC = new BinarySerializerContext( BinarySerializer.DefaultSharedContext, auto.Services );
 
             TestHelper.SaveAndLoad( s => s.WriteObject( o1 ), d => d.ReadObject<IOtherSimple>().Should().Match( x => ((IOtherSimple)x).Thing == "Hop" ), sC, dC );
         }
