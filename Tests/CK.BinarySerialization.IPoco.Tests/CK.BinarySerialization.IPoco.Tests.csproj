@@ -7,8 +7,8 @@
     <Compile Include="..\CK.BinarySerialization.Tests\TestHelperExtensions.cs" Link="TestHelperExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CK.Poco.Exc.Json.Engine" Version="0.0.0--04zi8x6-develop" />
-    <PackageReference Include="CK.Testing.StObjEngine" Version="0.0.0--04zi8x6-develop" />
+    <PackageReference Include="CK.Poco.Exc.Json.Engine" Version="0.0.0--04zijuh-develop" />
+    <PackageReference Include="CK.Testing.StObjEngine" Version="0.0.0--04zijuh-develop" />
     <PackageReference Include="CK.Testing.Nunit" Version="0.0.0--04zi8x1-develop" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
