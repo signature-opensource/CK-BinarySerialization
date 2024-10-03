@@ -5,156 +5,155 @@ using CK.Core;
 using static CK.Testing.MonitorTestHelper;
 using FluentAssertions;
 
-namespace CK.BinarySerialization.Tests
+namespace CK.BinarySerialization.Tests;
+
+[TestFixture]
+public class SealedVersionSimpleSerializableTests
 {
-    [TestFixture]
-    public class SealedVersionSimpleSerializableTests
+    [SerializationVersion(1)]
+    readonly struct ValueType : ICKVersionedBinarySerializable
     {
-        [SerializationVersion(1)]
-        readonly struct ValueType : ICKVersionedBinarySerializable
+        public readonly int Power;
+        public readonly string Name;
+        public readonly short? Age;
+
+        public ValueType( int power, string name, short? age )
         {
-            public readonly int Power;
-            public readonly string Name;
-            public readonly short? Age;
+            Power = power;
+            Name = name;
+            Age = age;
+        }
 
-            public ValueType( int power, string name, short? age )
+        public ValueType( ICKBinaryReader r, int version )
+        {
+            Power = r.ReadInt32();
+            Name = r.ReadString();
+            if( version >= 1 )
             {
-                Power = power;
-                Name = name;
-                Age = age;
+                Age = r.ReadNullableInt16();
             }
-
-            public ValueType( ICKBinaryReader r, int version )
+            else
             {
-                Power = r.ReadInt32();
-                Name = r.ReadString();
-                if( version >= 1 )
-                {
-                    Age = r.ReadNullableInt16();
-                }
-                else
-                {
-                    Age = null;
-                }
-            }
-
-            public void WriteData( ICKBinaryWriter w )
-            {
-                w.Write( Power );
-                w.Write( Name ?? "" );
-                w.WriteNullableInt16( Age );
+                Age = null;
             }
         }
 
-        [Test]
-        public void value_type_simple_serializable_with_version()
+        public void WriteData( ICKBinaryWriter w )
         {
-            ValueType v = new ValueType( 31, "Albert", 12 );
-            object? backO = TestHelper.SaveAndLoadAny( v );
-            backO.Should().Be( v );
+            w.Write( Power );
+            w.Write( Name ?? "" );
+            w.WriteNullableInt16( Age );
         }
-
-        [SerializationVersion( 0 )]
-        sealed class SimpleSealed : ICKVersionedBinarySerializable
-        {
-            public int Power { get; set; }
-
-            public SimpleSealed()
-            {
-            }
-
-            public SimpleSealed( ICKBinaryReader r, int version )
-            {
-                Power = r.ReadInt32();
-            }
-
-            public void WriteData( ICKBinaryWriter w )
-            {
-                w.Write( Power );
-            }
-        }
-
-        [Test]
-        public void reference_type_sealed_serializable()
-        {
-            var b = new SimpleSealed() { Power = 3712 };
-            object? backB = TestHelper.SaveAndLoadObject( b );
-            backB.Should().BeEquivalentTo( b );
-        }
-
-        struct MissingVersionValueType : ICKVersionedBinarySerializable
-        {
-            public void WriteData( ICKBinaryWriter w )
-            {
-            }
-        }
-
-        sealed class MissingVersionReferenceType : ICKVersionedBinarySerializable
-        {
-            public void WriteData( ICKBinaryWriter w )
-            {
-            }
-        }
-
-        [Test]
-        public void version_attribute_is_required()
-        {
-            var v = new MissingVersionValueType();
-            FluentActions.Invoking( () => TestHelper.SaveAndLoadAny( v ) )
-                .Should().Throw<InvalidOperationException>()
-                .WithMessage( "*must be decorated with a [SerializationVersion()]*" );
-            
-            var o = new MissingVersionReferenceType();
-            FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( o ) )
-                .Should().Throw<InvalidOperationException>()
-                .WithMessage( "*must be decorated with a [SerializationVersion()]*" );
-        }
-
-        class MissingSealedReferenceType : ICKVersionedBinarySerializable
-        {
-            public void WriteData( ICKBinaryWriter w )
-            {
-            }
-        }
-
-        [Test]
-        public void reference_type_MUST_be_sealed()
-        {
-            var o = new MissingSealedReferenceType();
-            FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( o ) )
-                .Should().Throw<InvalidOperationException>()
-                .WithMessage( "*It must be a sealed class or a value type*" );
-        }
-
-
-        [SerializationVersion(0)]
-        struct MissingCtorValueType : ICKVersionedBinarySerializable
-        {
-            public void WriteData( ICKBinaryWriter w )
-            {
-            }
-        }
-
-        [SerializationVersion( 0 )]
-        sealed class MissingCtorReferenceType : ICKVersionedBinarySerializable
-        {
-            public void WriteData( ICKBinaryWriter w )
-            {
-            }
-        }
-
-        [Test]
-        public void constructor_with_IBinaryReader_and_int_version_is_required()
-        {
-            var v = new MissingCtorValueType();
-            FluentActions.Invoking( () => TestHelper.SaveAndLoadAny( v ) )
-                .Should().Throw<InvalidOperationException>();
-
-            var o = new MissingCtorReferenceType();
-            FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( o ) )
-                .Should().Throw<InvalidOperationException>();
-        }
-
-
     }
+
+    [Test]
+    public void value_type_simple_serializable_with_version()
+    {
+        ValueType v = new ValueType( 31, "Albert", 12 );
+        object? backO = TestHelper.SaveAndLoadAny( v );
+        backO.Should().Be( v );
+    }
+
+    [SerializationVersion( 0 )]
+    sealed class SimpleSealed : ICKVersionedBinarySerializable
+    {
+        public int Power { get; set; }
+
+        public SimpleSealed()
+        {
+        }
+
+        public SimpleSealed( ICKBinaryReader r, int version )
+        {
+            Power = r.ReadInt32();
+        }
+
+        public void WriteData( ICKBinaryWriter w )
+        {
+            w.Write( Power );
+        }
+    }
+
+    [Test]
+    public void reference_type_sealed_serializable()
+    {
+        var b = new SimpleSealed() { Power = 3712 };
+        object? backB = TestHelper.SaveAndLoadObject( b );
+        backB.Should().BeEquivalentTo( b );
+    }
+
+    struct MissingVersionValueType : ICKVersionedBinarySerializable
+    {
+        public void WriteData( ICKBinaryWriter w )
+        {
+        }
+    }
+
+    sealed class MissingVersionReferenceType : ICKVersionedBinarySerializable
+    {
+        public void WriteData( ICKBinaryWriter w )
+        {
+        }
+    }
+
+    [Test]
+    public void version_attribute_is_required()
+    {
+        var v = new MissingVersionValueType();
+        FluentActions.Invoking( () => TestHelper.SaveAndLoadAny( v ) )
+            .Should().Throw<InvalidOperationException>()
+            .WithMessage( "*must be decorated with a [SerializationVersion()]*" );
+        
+        var o = new MissingVersionReferenceType();
+        FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( o ) )
+            .Should().Throw<InvalidOperationException>()
+            .WithMessage( "*must be decorated with a [SerializationVersion()]*" );
+    }
+
+    class MissingSealedReferenceType : ICKVersionedBinarySerializable
+    {
+        public void WriteData( ICKBinaryWriter w )
+        {
+        }
+    }
+
+    [Test]
+    public void reference_type_MUST_be_sealed()
+    {
+        var o = new MissingSealedReferenceType();
+        FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( o ) )
+            .Should().Throw<InvalidOperationException>()
+            .WithMessage( "*It must be a sealed class or a value type*" );
+    }
+
+
+    [SerializationVersion(0)]
+    struct MissingCtorValueType : ICKVersionedBinarySerializable
+    {
+        public void WriteData( ICKBinaryWriter w )
+        {
+        }
+    }
+
+    [SerializationVersion( 0 )]
+    sealed class MissingCtorReferenceType : ICKVersionedBinarySerializable
+    {
+        public void WriteData( ICKBinaryWriter w )
+        {
+        }
+    }
+
+    [Test]
+    public void constructor_with_IBinaryReader_and_int_version_is_required()
+    {
+        var v = new MissingCtorValueType();
+        FluentActions.Invoking( () => TestHelper.SaveAndLoadAny( v ) )
+            .Should().Throw<InvalidOperationException>();
+
+        var o = new MissingCtorReferenceType();
+        FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( o ) )
+            .Should().Throw<InvalidOperationException>();
+    }
+
+
 }

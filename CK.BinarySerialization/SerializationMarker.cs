@@ -2,16 +2,15 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CK.BinarySerialization
+namespace CK.BinarySerialization;
+
+enum SerializationMarker : byte
 {
-    enum SerializationMarker : byte
-    {
-        Null,
-        ObjectData,
-        ObjectRef,
-        Type,
-        DeferredObject,
-        EmptyObject,
-        KnownObject,
-    }
+    Null,
+    ObjectData,
+    ObjectRef,
+    Type,
+    DeferredObject,
+    EmptyObject,
+    KnownObject,
 }

@@ -4,43 +4,42 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using CK.Core;
 
-namespace CK.BinarySerialization.Deserialization
+namespace CK.BinarySerialization.Deserialization;
+
+sealed class DDictionary<TKey,TValue> : ReferenceTypeDeserializer<Dictionary<TKey,TValue>> where TKey : notnull
 {
-    sealed class DDictionary<TKey,TValue> : ReferenceTypeDeserializer<Dictionary<TKey,TValue>> where TKey : notnull
+    readonly TypedReader<TKey> _key;
+    readonly TypedReader<TValue> _value;
+
+    static DDictionary()
     {
-        readonly TypedReader<TKey> _key;
-        readonly TypedReader<TValue> _value;
+        // Before, the AssemblyQualifiedName was used.
+        // This should be removed once.
+        var kOld = typeof( EqualityComparer<TKey> ).AssemblyQualifiedName!;
+        SharedDeserializerKnownObject.Default.RegisterKnownKey( kOld, EqualityComparer<TKey>.Default );
+    }
 
-        static DDictionary()
-        {
-            // Before, the AssemblyQualifiedName was used.
-            // This should be removed once.
-            var kOld = typeof( EqualityComparer<TKey> ).AssemblyQualifiedName!;
-            SharedDeserializerKnownObject.Default.RegisterKnownKey( kOld, EqualityComparer<TKey>.Default );
-        }
+    public DDictionary( IDeserializationDriver k, IDeserializationDriver v )
+        : base( k.IsCached && v.IsCached )
+    {
+        _key = Unsafe.As<TypedReader<TKey>>( k.TypedReader );
+        _value = Unsafe.As<TypedReader<TValue>>( v.TypedReader );
+    }
 
-        public DDictionary( IDeserializationDriver k, IDeserializationDriver v )
-            : base( k.IsCached && v.IsCached )
+    protected override void ReadInstance( ref RefReader r )
+    {
+        Debug.Assert( r.ReadInfo.SubTypes.Count == 2 );
+        int len = r.Reader.ReadNonNegativeSmallInt32();
+        var (d,dict) = r.SetInstance( d =>
         {
-            _key = Unsafe.As<TypedReader<TKey>>( k.TypedReader );
-            _value = Unsafe.As<TypedReader<TValue>>( v.TypedReader );
-        }
-
-        protected override void ReadInstance( ref RefReader r )
+            var comparer = d.ReadNullableObject<IEqualityComparer<TKey>>();
+            return new Dictionary<TKey, TValue>( len, comparer );
+        } );
+        var kInfo = r.ReadInfo.SubTypes[0];
+        var vInfo = r.ReadInfo.SubTypes[1];
+        while( --len >= 0 )
         {
-            Debug.Assert( r.ReadInfo.SubTypes.Count == 2 );
-            int len = r.Reader.ReadNonNegativeSmallInt32();
-            var (d,dict) = r.SetInstance( d =>
-            {
-                var comparer = d.ReadNullableObject<IEqualityComparer<TKey>>();
-                return new Dictionary<TKey, TValue>( len, comparer );
-            } );
-            var kInfo = r.ReadInfo.SubTypes[0];
-            var vInfo = r.ReadInfo.SubTypes[1];
-            while( --len >= 0 )
-            {
-                dict.Add( _key( d, kInfo ), _value( d, vInfo ) );
-            }
+            dict.Add( _key( d, kInfo ), _value( d, vInfo ) );
         }
     }
 }

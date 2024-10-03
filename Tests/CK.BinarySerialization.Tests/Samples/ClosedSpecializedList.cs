@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CK.BinarySerialization.Tests.Samples
+namespace CK.BinarySerialization.Tests.Samples;
+
+class ClosedSpecializedList : List<int>
 {
-    class ClosedSpecializedList : List<int>
-    {
-    }
 }
