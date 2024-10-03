@@ -54,20 +54,23 @@ sealed class DSVersionBound : ValueTypeDeserializer<SVersionBound>
     {
         if( readInfo.Version == 0 )
         {
-            // CSemVer v11.x: PackageQuality had None = 0, CI = 1, Exploratory = 3, etc.
-            var v = d.ReadObject<SVersion>();
-            var l = (SVersionLock)d.Reader.ReadByte();
-            var q = d.Reader.ReadByte() switch {
-                1 => PackageQuality.CI,
-                3 => PackageQuality.Exploratory,
-                7 => PackageQuality.Preview,
-                15 => PackageQuality.ReleaseCandidate,
-                31 => PackageQuality.Stable,
-                _ => PackageQuality.CI
-            };
-            return new SVersionBound( v, l, q );
+            return new SVersionBound( d.ReadObject<SVersion>(), (SVersionLock)d.Reader.ReadByte(), ReadV0Quality( d ) );
         }
         return new SVersionBound( d.ReadObject<SVersion>(), (SVersionLock)d.Reader.ReadByte(), (PackageQuality)d.Reader.ReadByte() );
+    }
+
+    // CSemVer v11.x: PackageQuality had None = 0, CI = 1, Exploratory = 3, etc.
+    internal static PackageQuality ReadV0Quality( IBinaryDeserializer d )
+    {
+        return d.Reader.ReadByte() switch
+        {
+            1 => PackageQuality.CI,
+            3 => PackageQuality.Exploratory,
+            7 => PackageQuality.Preview,
+            15 => PackageQuality.ReleaseCandidate,
+            31 => PackageQuality.Stable,
+            _ => PackageQuality.CI
+        };
     }
 }
 
@@ -86,6 +89,10 @@ sealed class DPackageQualityFilter : ValueTypeDeserializer<PackageQualityFilter>
 {
     protected override PackageQualityFilter ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
     {
+        if( readInfo.Version == 0 )
+        {
+            return new PackageQualityFilter( DSVersionBound.ReadV0Quality( d ), DSVersionBound.ReadV0Quality( d ) );
+        }
         return new PackageQualityFilter( (PackageQuality)d.Reader.ReadByte(), (PackageQuality)d.Reader.ReadByte() );
     }
 }

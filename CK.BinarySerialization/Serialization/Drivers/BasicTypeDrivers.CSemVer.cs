@@ -125,7 +125,7 @@ sealed class DPackageQualityFilter : StaticValueTypeSerializer<PackageQualityFil
 {
     public override string DriverName => "PackageQualityFilter";
 
-    public override int SerializationVersion => 0;
+    public override int SerializationVersion => 1;
 
     public static void Write( IBinarySerializer s, in PackageQualityFilter o )
     {
