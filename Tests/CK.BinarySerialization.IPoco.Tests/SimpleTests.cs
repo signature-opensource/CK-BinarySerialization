@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using static CK.Testing.MonitorTestHelper;
 
 namespace CK.BinarySerialization.Poco.Tests;
@@ -25,13 +26,13 @@ public class SimpleTests
     }
 
     [Test]
-    public void serialization_and_deserialization()
+    public async Task serialization_and_deserialization_Async()
     {
         var engineConfiguration = TestHelper.CreateDefaultEngineConfiguration();
         engineConfiguration.FirstBinPath.Types.Add( typeof( ISimple ),
                                                     typeof( CommonPocoJsonSupport ),
                                                     typeof( PocoDirectory ) );
-        using var auto = engineConfiguration.RunSuccessfully().CreateAutomaticServices();
+        using var auto = (await engineConfiguration.RunSuccessfullyAsync()).CreateAutomaticServices();
 
         var o1 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimple>();
         var o2 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimple>( o => o.Thing = "Goodbye!" );
@@ -53,13 +54,13 @@ public class SimpleTests
     }
 
     [Test]
-    public void serialization_and_deserialization_of_list()
+    public async Task serialization_and_deserialization_of_list_Async()
     {
         var engineConfiguration = TestHelper.CreateDefaultEngineConfiguration();
         engineConfiguration.FirstBinPath.Types.Add( typeof( ISimple ),
                                                     typeof( CommonPocoJsonSupport ),
                                                     typeof( PocoDirectory ) );
-        using var auto = engineConfiguration.RunSuccessfully().CreateAutomaticServices();
+        using var auto = (await engineConfiguration.RunSuccessfullyAsync()).CreateAutomaticServices();
 
         var o1 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimple>();
         var o2 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimple>( o => o.Thing = "Goodbye!" );
@@ -82,14 +83,14 @@ public class SimpleTests
     }
 
     [Test]
-    public void interfaces_are_mapped_to_the_primary()
+    public async Task interfaces_are_mapped_to_the_primary_Async()
     {
         var engineConfiguration = TestHelper.CreateDefaultEngineConfiguration();
         engineConfiguration.FirstBinPath.Types.Add( typeof( IOtherSimple ),
                                                  typeof( ISimpleMore ),
                                                  typeof( CommonPocoJsonSupport ),
                                                  typeof( PocoDirectory ) );
-        using var auto = engineConfiguration.RunSuccessfully().CreateAutomaticServices();
+        using var auto = (await engineConfiguration.RunSuccessfullyAsync()).CreateAutomaticServices();
 
         var o1 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimpleMore>();
         var o2 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimpleMore>( o => { o.Thing = "Goodbye!"; o.AnotherThing = "Universe!"; } );
@@ -123,14 +124,14 @@ public class SimpleTests
     }
 
     [Test]
-    public void mutations_work_when_Json_can_be_read_back()
+    public async Task mutations_work_when_Json_can_be_read_back_Async()
     {
         var engineConfiguration = TestHelper.CreateDefaultEngineConfiguration();
         engineConfiguration.FirstBinPath.Types.Add( typeof( IOtherSimple ),
                                                  typeof( ISimpleMore ),
                                                  typeof( CommonPocoJsonSupport ),
                                                  typeof( PocoDirectory ) );
-        using var auto = engineConfiguration.RunSuccessfully().CreateAutomaticServices();
+        using var auto = (await engineConfiguration.RunSuccessfullyAsync()).CreateAutomaticServices();
 
         var o1 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimpleMore>( o1 => o1.Thing = "Hop" );
 
