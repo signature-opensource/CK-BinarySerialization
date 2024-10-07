@@ -68,7 +68,7 @@ public abstract partial class RewindableStream : IBinaryDeserializer.IStreamInfo
     /// <param name="initial">The initial stream.</param>
     protected RewindableStream( Stream initial )
     {
-        var r = new CKBinaryReader( initial, Encoding.UTF8, leaveOpen : true );
+        var r = new CKBinaryReader( initial, Encoding.UTF8, leaveOpen: true );
         Reader = r;
         SerializerVersion = r.ReadSmallInt32();
         if( IsValid = (SerializerVersion >= 10 && SerializerVersion <= BinarySerializer.SerializerVersion) )
@@ -92,7 +92,7 @@ public abstract partial class RewindableStream : IBinaryDeserializer.IStreamInfo
     {
         Debug.Assert( !SecondPass );
         var second = GetSecondStream( out var skipHeader );
-        var r = new CKBinaryReader( second, Encoding.UTF8, leaveOpen : true );
+        var r = new CKBinaryReader( second, Encoding.UTF8, leaveOpen: true );
         if( skipHeader )
         {
             r.ReadSmallInt32();
@@ -265,7 +265,7 @@ public abstract partial class RewindableStream : IBinaryDeserializer.IStreamInfo
         /// The initial stream is left opened, only closing the 
         /// second one if it has been created.
         /// </summary>
-        public override void Dispose() 
+        public override void Dispose()
         {
             _second?.Dispose();
         }
@@ -298,7 +298,7 @@ public abstract partial class RewindableStream : IBinaryDeserializer.IStreamInfo
         }
         // Take no risk here: if the inner stream is not at its start, we don't consider
         // that the GzipStream could be rewind.
-        if( s is GZipStream g 
+        if( s is GZipStream g
             && g.BaseStream.CanSeek
             && g.BaseStream.Position == 0 )
         {
@@ -326,7 +326,7 @@ public abstract partial class RewindableStream : IBinaryDeserializer.IStreamInfo
         {
             return new GZipOnSeekable( s, s.BaseStream.Position );
         }
-        else 
+        else
         {
             return new RewindableWithFileStream( new HookFileStream( s ) );
         }
@@ -334,10 +334,10 @@ public abstract partial class RewindableStream : IBinaryDeserializer.IStreamInfo
 
     sealed class FactoryBased : RewindableStream
     {
-        readonly Func<bool,Stream> _opener;
+        readonly Func<bool, Stream> _opener;
         Stream? _second;
 
-        public FactoryBased( Func<bool,Stream> opener )
+        public FactoryBased( Func<bool, Stream> opener )
             : base( opener( false ) )
         {
             if( !IsValid )
@@ -346,7 +346,7 @@ public abstract partial class RewindableStream : IBinaryDeserializer.IStreamInfo
             }
             _opener = opener;
         }
-        
+
         public override RewindableStreamKind Kind => RewindableStreamKind.Factory;
 
         protected override Stream GetSecondStream( out bool shouldSkipHeader )
@@ -375,7 +375,7 @@ public abstract partial class RewindableStream : IBinaryDeserializer.IStreamInfo
     /// The boolean parameter is false for the initial stream and true for the second pass.
     /// </param>
     /// <returns>A rewindable stream.</returns>
-    public static RewindableStream FromFactory( Func<bool,Stream> opener )
+    public static RewindableStream FromFactory( Func<bool, Stream> opener )
     {
         Throw.CheckNotNullArgument( opener );
         return new FactoryBased( opener );

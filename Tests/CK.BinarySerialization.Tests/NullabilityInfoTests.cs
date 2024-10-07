@@ -49,7 +49,7 @@ public class NullabilityInfoTests
         }
     }
 
-    public Dictionary<string,int?>? Dictionary { get; set; }
+    public Dictionary<string, int?>? Dictionary { get; set; }
 
     [Test]
     public void nullability_dictionary_key_is_notnull()

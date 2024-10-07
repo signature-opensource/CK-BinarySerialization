@@ -1,4 +1,4 @@
-﻿namespace CK.BinarySerialization;
+namespace CK.BinarySerialization;
 
 /// <summary>
 /// Provides an untyped read of a reference or value type data used by the core untyped ReadAnyNullable.

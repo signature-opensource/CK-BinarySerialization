@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -31,7 +31,7 @@ sealed class DStack<T> : ReferenceTypeDeserializer<Stack<T>>
             {
                 a[i] = _item( d, r.ReadInfo.SubTypes[0] );
             }
-            for( int i = len-1; i >= 0; i-- )
+            for( int i = len - 1; i >= 0; i-- )
             {
                 s.Push( a[i] );
             }

@@ -17,7 +17,7 @@ public class SamplesTests
         object? backO = TestHelper.SaveAndLoadAny( o );
         backO.Should().BeEquivalentTo( o );
 
-        BinarySerializer.IdempotenceCheck( o ); 
+        BinarySerializer.IdempotenceCheck( o );
     }
 
     [Test]
@@ -34,10 +34,10 @@ public class SamplesTests
         object? backT = TestHelper.SaveAndLoadAny( t );
         backT.Should().BeEquivalentTo( t, o => o.IgnoringCyclicReferences() );
 
-        BinarySerializer.IdempotenceCheck( t ); 
+        BinarySerializer.IdempotenceCheck( t );
     }
 
-    [TestCase(30,2000)]
+    [TestCase( 30, 2000 )]
     public void big_town_with_a_lot_of_garages_with_employees_that_have_BestFriends( int nbGarage, int nbEmployees )
     {
         var town = new Samples.Town( "BigOne" );
@@ -83,7 +83,7 @@ public class SamplesTests
         // Alice will be serialized and deserialized as a Destroyed object
         // that the deserialized Albert will still reference her.
         alice.Destroy();
-        
+
         {
             var backT = TestHelper.SaveAndLoadObject( t );
 
@@ -94,7 +94,7 @@ public class SamplesTests
             // Specialized data of destroyed object is not written (and not read back).
             // We, here, serialize the Person's Name (Person is the root of the hierarchy) to be able to identify them.
             eBack.BestFriend!.Name.Should().Be( "Alice" );
-            ( (Samples.Manager)eBack.BestFriend!).Rank.Should().Be( 0, "Rank has NOT been read back." );
+            ((Samples.Manager)eBack.BestFriend!).Rank.Should().Be( 0, "Rank has NOT been read back." );
         }
 
         BinarySerializer.IdempotenceCheck( t );

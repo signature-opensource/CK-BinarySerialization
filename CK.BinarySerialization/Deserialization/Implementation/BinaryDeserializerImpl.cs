@@ -26,10 +26,10 @@ class BinaryDeserializerImpl : IBinaryDeserializer, IDisposable
     string? _lastWriteSentinel;
     string? _lastReadSentinel;
     Stack<string>? _debugContext;
-    
+
     // Special class to struct mutation queue.
     Queue<object>? _deferredValueQueue;
-    
+
     public const string ExceptionPrefixContext = "[WithContext]";
 
     public BinaryDeserializerImpl( RewindableStream s, BinaryDeserializerContext context )
@@ -84,7 +84,7 @@ class BinaryDeserializerImpl : IBinaryDeserializer, IDisposable
 
     public object ReadAny() => ReadAny( null );
 
-    public T ReadAny<T>() => (T)ReadAny( typeof(T) );
+    public T ReadAny<T>() => (T)ReadAny( typeof( T ) );
 
     object ReadAny( Type? expected )
     {
@@ -137,27 +137,27 @@ class BinaryDeserializerImpl : IBinaryDeserializer, IDisposable
             case SerializationMarker.Null: return null;
             case SerializationMarker.Type: return ReadTypeInfo().ResolveLocalType();
             case SerializationMarker.ObjectRef:
-                {
-                    return ReadObjectRef();
-                }
+            {
+                return ReadObjectRef();
+            }
             case SerializationMarker.EmptyObject:
-                {
-                    var o = new object();
-                    _objects.Add( o );
-                    return o;
-                }
+            {
+                var o = new object();
+                _objects.Add( o );
+                return o;
+            }
             case SerializationMarker.KnownObject:
+            {
+                var key = _reader.ReadString()!;
+                object? o = _context.GetKnownObject( key );
+                if( o == null )
                 {
-                    var key = _reader.ReadString()!;
-                    object? o = _context.GetKnownObject( key );
-                    if( o == null )
-                    {
-                        ThrowInvalidDataException( $"Known Object key '{key}' cannot be resolved." );
-                        return null; // never.
-                    }
-                    _objects.Add( o );
-                    return o;
+                    ThrowInvalidDataException( $"Known Object key '{key}' cannot be resolved." );
+                    return null; // never.
                 }
+                _objects.Add( o );
+                return o;
+            }
         }
         if( b != SerializationMarker.DeferredObject && b != SerializationMarker.ObjectData )
         {
@@ -218,7 +218,7 @@ class BinaryDeserializerImpl : IBinaryDeserializer, IDisposable
                 result = d.ReadObjectData( this, info );
                 --_recurseCount;
             }
-            catch( Exception ex ) when (ex is not DeserializationException)
+            catch( Exception ex ) when( ex is not DeserializationException )
             {
                 throw new DeserializationException( $"While reading an '{info}' instance with driver '{d.GetType().ToCSharpName()}'.", ex );
             }
@@ -267,7 +267,7 @@ class BinaryDeserializerImpl : IBinaryDeserializer, IDisposable
                             // Store for the second pass.
                             _deferredValueQueue.Enqueue( vD.ReadRawObjectData( this, s.T ) );
                         }
-                        catch( Exception ex ) when( ex is not DeserializationException)
+                        catch( Exception ex ) when( ex is not DeserializationException )
                         {
                             throw new DeserializationException( $"While reading '{s.T}' instance (that is now a value type) for the first pass with driver '{vD.GetType().ToCSharpName()}'.", ex );
                         }
@@ -293,97 +293,97 @@ class BinaryDeserializerImpl : IBinaryDeserializer, IDisposable
         switch( nMark )
         {
             case (byte)'?':
-                {
-                    var t = new NullableTypeReadInfo();
-                    _types.Add( t );
-                    t.Init( ReadTypeInfo() );
-                    return t;
-                }
+            {
+                var t = new NullableTypeReadInfo();
+                _types.Add( t );
+                t.Init( ReadTypeInfo() );
+                return t;
+            }
             case (byte)'E':
-                {
-                    var t = new TypeReadInfo( this, TypeReadInfoKind.Enum );
-                    _types.Add( t );
-                    t.ReadEnum();
-                    t.ReadNames( _reader );
-                    return t;
-                }
+            {
+                var t = new TypeReadInfo( this, TypeReadInfoKind.Enum );
+                _types.Add( t );
+                t.ReadEnum();
+                t.ReadNames( _reader );
+                return t;
+            }
             case (byte)'a':
             case (byte)'A':
-                {
-                    var t = new TypeReadInfo( this, nMark == (byte)'A' ? TypeReadInfoKind.OpenArray : TypeReadInfoKind.Array );
-                    _types.Add( t );
-                    t.ReadArray();
-                    return t;
-                }
+            {
+                var t = new TypeReadInfo( this, nMark == (byte)'A' ? TypeReadInfoKind.OpenArray : TypeReadInfoKind.Array );
+                _types.Add( t );
+                t.ReadArray();
+                return t;
+            }
             case (byte)'O':
-                {
-                    TypeReadInfo t = new TypeReadInfo( this, TypeReadInfoKind.OpenGeneric );
-                    _types.Add( t );
-                    t.ReadNames( _reader );
-                    t.ReadBaseType();
-                    return t;
-                }
+            {
+                TypeReadInfo t = new TypeReadInfo( this, TypeReadInfoKind.OpenGeneric );
+                _types.Add( t );
+                t.ReadNames( _reader );
+                t.ReadBaseType();
+                return t;
+            }
             case (byte)'v':
             case (byte)'c':
             case (byte)'s':
             case (byte)'i':
+            {
+                var k = nMark switch
                 {
-                    var k = nMark switch
-                    {
-                        (byte)'v' => TypeReadInfoKind.ValueType,
-                        (byte)'c' => TypeReadInfoKind.Class,
-                        (byte)'s' => TypeReadInfoKind.SealedClass,
-                        (byte)'i' => TypeReadInfoKind.Interface,
-                        _ => throw new NotSupportedException()
-                    };
-                    var t = new TypeReadInfo( this, k );
-                    _types.Add( t );
-                    t.ReadNames( _reader );
-                    if( k != TypeReadInfoKind.ValueType ) t.ReadBaseType();
-                    return t;
-                }
+                    (byte)'v' => TypeReadInfoKind.ValueType,
+                    (byte)'c' => TypeReadInfoKind.Class,
+                    (byte)'s' => TypeReadInfoKind.SealedClass,
+                    (byte)'i' => TypeReadInfoKind.Interface,
+                    _ => throw new NotSupportedException()
+                };
+                var t = new TypeReadInfo( this, k );
+                _types.Add( t );
+                t.ReadNames( _reader );
+                if( k != TypeReadInfoKind.ValueType ) t.ReadBaseType();
+                return t;
+            }
             case (byte)'V':
             case (byte)'C':
             case (byte)'S':
             case (byte)'I':
+            {
+                var k = nMark switch
                 {
-                    var k = nMark switch
-                    {
-                        (byte)'V' => TypeReadInfoKind.GenericValueType,
-                        (byte)'C' => TypeReadInfoKind.GenericClass,
-                        (byte)'S' => TypeReadInfoKind.GenericSealedClass,
-                        (byte)'I' => TypeReadInfoKind.GenericInterface,
-                        _ => throw new NotSupportedException()
-                    };
-                    TypeReadInfo t = new TypeReadInfo( this, k );
-                    var args = _reader.ReadNonNegativeSmallInt32();
-                    _types.Add( t );
-                    if( args != 0 ) t.ReadGenericParameters( args );
-                    t.ReadNames( _reader );
-                    if( k != TypeReadInfoKind.GenericValueType ) t.ReadBaseType();
-                    return t;
-                }
+                    (byte)'V' => TypeReadInfoKind.GenericValueType,
+                    (byte)'C' => TypeReadInfoKind.GenericClass,
+                    (byte)'S' => TypeReadInfoKind.GenericSealedClass,
+                    (byte)'I' => TypeReadInfoKind.GenericInterface,
+                    _ => throw new NotSupportedException()
+                };
+                TypeReadInfo t = new TypeReadInfo( this, k );
+                var args = _reader.ReadNonNegativeSmallInt32();
+                _types.Add( t );
+                if( args != 0 ) t.ReadGenericParameters( args );
+                t.ReadNames( _reader );
+                if( k != TypeReadInfoKind.GenericValueType ) t.ReadBaseType();
+                return t;
+            }
             case (byte)'R':
-                {
-                    var t = new TypeReadInfo( this, TypeReadInfoKind.Ref );
-                    _types.Add( t );
-                    t.ReadRefOrPointerInfo();
-                    return t;
-                }
+            {
+                var t = new TypeReadInfo( this, TypeReadInfoKind.Ref );
+                _types.Add( t );
+                t.ReadRefOrPointerInfo();
+                return t;
+            }
             case (byte)'P':
-                {
-                    var t = new TypeReadInfo( this, TypeReadInfoKind.Pointer );
-                    _types.Add( t );
-                    t.ReadRefOrPointerInfo();
-                    return t;
-                }
+            {
+                var t = new TypeReadInfo( this, TypeReadInfoKind.Pointer );
+                _types.Add( t );
+                t.ReadRefOrPointerInfo();
+                return t;
+            }
             default: throw new NotSupportedException();
         }
     }
 
-    public T ReadObject<T>() where T : class => (T)ReadAny( typeof(T) );
+    public T ReadObject<T>() where T : class => (T)ReadAny( typeof( T ) );
 
-    public T? ReadNullableObject<T>() where T : class => (T?)ReadAnyNullable( typeof(T) );
+    public T? ReadNullableObject<T>() where T : class => (T?)ReadAnyNullable( typeof( T ) );
 
     public T ReadValue<T>() where T : struct
     {
@@ -413,7 +413,7 @@ class BinaryDeserializerImpl : IBinaryDeserializer, IDisposable
             ThrowInvalidDataException( $"Unexpected '{b}' marker while reading non nullable '{typeof( T )}'." );
         }
         var info = ReadTypeInfo();
-        var d = (IValueTypeNonNullableDeserializationDriver<T>)info.GetConcreteDriver( typeof(T) );
+        var d = (IValueTypeNonNullableDeserializationDriver<T>)info.GetConcreteDriver( typeof( T ) );
         return d.ReadInstance( this, info );
     }
 

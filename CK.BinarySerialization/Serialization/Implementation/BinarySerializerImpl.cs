@@ -20,7 +20,7 @@ class BinarySerializerImpl : IDisposableBinarySerializer
 
     int _debugModeCounter;
     int _debugSentinel;
-    
+
     public BinarySerializerImpl( ICKBinaryWriter writer, BinarySerializerContext context )
     {
         (_context = context).Acquire();
@@ -336,7 +336,7 @@ class BinarySerializerImpl : IDisposableBinarySerializer
             }
         }
         var driver = (ISerializationDriverInternal)_context.FindDriver( t ).ToNonNullable;
-        if( _recurseCount > _context.MaxRecursionDepth 
+        if( _recurseCount > _context.MaxRecursionDepth
             && isClass
             && driver is ISerializationDriverAllowDeferredRead )
         {

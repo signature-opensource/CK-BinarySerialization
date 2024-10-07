@@ -1,11 +1,11 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace CK.BinarySerialization.Tests.SamplesV2;
 
-[SerializationVersion(0)]
+[SerializationVersion( 0 )]
 public class Person : ICKSlicedSerializable, IDestroyable
 {
     public Person( Town town )

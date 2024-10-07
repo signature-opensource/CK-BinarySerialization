@@ -6,7 +6,7 @@ using CK.Core;
 
 namespace CK.BinarySerialization.Deserialization;
 
-sealed class DDictionary<TKey,TValue> : ReferenceTypeDeserializer<Dictionary<TKey,TValue>> where TKey : notnull
+sealed class DDictionary<TKey, TValue> : ReferenceTypeDeserializer<Dictionary<TKey, TValue>> where TKey : notnull
 {
     readonly TypedReader<TKey> _key;
     readonly TypedReader<TValue> _value;
@@ -30,7 +30,7 @@ sealed class DDictionary<TKey,TValue> : ReferenceTypeDeserializer<Dictionary<TKe
     {
         Debug.Assert( r.ReadInfo.SubTypes.Count == 2 );
         int len = r.Reader.ReadNonNegativeSmallInt32();
-        var (d,dict) = r.SetInstance( d =>
+        var (d, dict) = r.SetInstance( d =>
         {
             var comparer = d.ReadNullableObject<IEqualityComparer<TKey>>();
             return new Dictionary<TKey, TValue>( len, comparer );

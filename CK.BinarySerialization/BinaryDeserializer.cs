@@ -42,7 +42,7 @@ public static class BinaryDeserializer
         /// Gets the information related to the stream (and whether a second pass was needed).
         /// </summary>
         public IBinaryDeserializer.IStreamInfo StreamInfo => _s;
-                    
+
         /// <summary>
         /// Gets whether the deserialization is successful.
         /// </summary>
@@ -253,7 +253,7 @@ public static class BinaryDeserializer
     /// <param name="context">The context to use.</param>
     /// <param name="deserializer">The deserializer action.</param>
     /// <returns>A result with a true <see cref="Result.IsValid"/> or that has captured errors.</returns>
-    public static Result Deserialize( Func<bool,Stream> opener, BinaryDeserializerContext context, Action<IBinaryDeserializer> deserializer )
+    public static Result Deserialize( Func<bool, Stream> opener, BinaryDeserializerContext context, Action<IBinaryDeserializer> deserializer )
     {
         return Deserialize( RewindableStream.FromFactory( opener ), context, deserializer );
     }
@@ -277,7 +277,7 @@ public static class BinaryDeserializer
     /// <param name="context">The context to use.</param>
     /// <param name="deserializer">The deserializer function.</param>
     /// <returns>A result with a true <see cref="Result.IsValid"/> and a non default <see cref="Result{T}.GetResult()"/>or  that has captured errors.</returns>
-    public static Result<T> Deserialize<T>( Func<bool,Stream> opener, BinaryDeserializerContext context, Func<IBinaryDeserializer, T> deserializer )
+    public static Result<T> Deserialize<T>( Func<bool, Stream> opener, BinaryDeserializerContext context, Func<IBinaryDeserializer, T> deserializer )
     {
         return Deserialize( RewindableStream.FromFactory( opener ), context, deserializer );
     }

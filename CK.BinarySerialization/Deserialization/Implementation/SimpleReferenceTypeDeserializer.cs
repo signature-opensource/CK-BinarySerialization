@@ -52,7 +52,7 @@ public abstract class SimpleReferenceTypeDeserializer<T> : ReferenceTypeDeserial
     /// <summary>
     /// Must read a non null instance from the binary reader.
     /// </summary>
-   /// <param name="r">The binary reader.</param>
+    /// <param name="r">The binary reader.</param>
     /// <param name="readInfo">The read type info.</param>
     /// <returns>The new instance.</returns>
     protected abstract T ReadInstance( ICKBinaryReader r, ITypeReadInfo readInfo );

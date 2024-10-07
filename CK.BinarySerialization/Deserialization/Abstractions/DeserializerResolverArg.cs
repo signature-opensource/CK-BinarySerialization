@@ -55,7 +55,7 @@ public readonly ref struct DeserializerResolverArg
     /// </param>
     internal DeserializerResolverArg( ITypeReadInfo info, BinaryDeserializerContext context, Type expectedType )
     {
-        Debug.Assert( info != null);
+        Debug.Assert( info != null );
         Debug.Assert( !info.IsNullable, "Type must not be nullable." );
         Debug.Assert( info.DriverName != null, "Must have a driver name." );
         Debug.Assert( context != null );

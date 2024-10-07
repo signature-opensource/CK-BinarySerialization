@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,7 +8,7 @@ namespace CK.BinarySerialization.Tests.Samples;
 /// <summary>
 /// Car has no object reference: it can be a <see cref="ICKVersionedBinarySerializable"/>.
 /// </summary>
-[SerializationVersion(0)]
+[SerializationVersion( 0 )]
 public sealed class Car : ICKSlicedSerializable
 {
     public Car( string model, DateTime buildDate )

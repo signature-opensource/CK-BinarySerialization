@@ -262,7 +262,7 @@ public sealed class SharedBinarySerializerContext : ISerializerResolver
     {
         Throw.CheckNotNullArgument( t );
         bool done = false;
-        if( _typedDrivers.AddOrUpdate( t, (ISerializationDriver?)null, (t, existing) => existing ) == null )
+        if( _typedDrivers.AddOrUpdate( t, (ISerializationDriver?)null, ( t, existing ) => existing ) == null )
         {
             done = true;
             if( t.IsValueType )

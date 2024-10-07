@@ -65,7 +65,7 @@ public sealed class StandardGenericDeserializerResolver : IDeserializerResolver
     /// Initializes a new <see cref="StandardGenericDeserializerResolver"/>.
     /// </summary>
     /// <param name="context">The bound shared context. Used only to detect mismatch of resolution context.</param>
-    public StandardGenericDeserializerResolver( SharedBinaryDeserializerContext context ) 
+    public StandardGenericDeserializerResolver( SharedBinaryDeserializerContext context )
     {
         _cache = new ConcurrentDictionary<object, IDeserializationDriver>();
         _context = context;
@@ -83,68 +83,68 @@ public sealed class StandardGenericDeserializerResolver : IDeserializerResolver
         switch( info.DriverName )
         {
             case "Enum":
+            {
+                Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Enum && info.ReadInfo.SubTypes.Count == 1 );
+
+                if( !info.ExpectedType.IsEnum )
                 {
-                    Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Enum && info.ReadInfo.SubTypes.Count == 1 );
-
-                    if( !info.ExpectedType.IsEnum )
+                    var target = BasicTypesDeserializerResolver.IsBasicallyConvertible( info.ExpectedType );
+                    if( target == TypeCode.Empty )
                     {
-                        var target = BasicTypesDeserializerResolver.IsBasicallyConvertible( info.ExpectedType );
-                        if( target == TypeCode.Empty )
-                        {
-                            return null;
-                        }
-                        var underlying = info.ReadInfo.SubTypes[0].GetConcreteDriver( null );
-                        var tV = typeof( DChangeBasicType<,> ).MakeGenericType( info.ExpectedType, underlying.ResolvedType );
-                        return (IDeserializationDriver)Activator.CreateInstance( tV, underlying.TypedReader, target )!;
+                        return null;
                     }
-
-                    // We cache only if no type adaptation is required and IsPossibleNominalDeserialization.
-                    var uD = info.ReadInfo.SubTypes[0].GetConcreteDriver( null );
-                    if( info.IsPossibleNominalDeserialization && info.ExpectedType.GetEnumUnderlyingType() == uD.ResolvedType )
-                    {
-                        return _cache.GetOrAdd( info.ExpectedType, CreateNominalEnum, uD );
-                    }
-
-                    var tDiff = typeof( DEnumDiff<,,> )
-                                .MakeGenericType( info.ExpectedType, info.ExpectedType.GetEnumUnderlyingType(), uD.ResolvedType );
-                    return (IDeserializationDriver)Activator.CreateInstance( tDiff, uD.TypedReader )!;
+                    var underlying = info.ReadInfo.SubTypes[0].GetConcreteDriver( null );
+                    var tV = typeof( DChangeBasicType<,> ).MakeGenericType( info.ExpectedType, underlying.ResolvedType );
+                    return (IDeserializationDriver)Activator.CreateInstance( tV, underlying.TypedReader, target )!;
                 }
+
+                // We cache only if no type adaptation is required and IsPossibleNominalDeserialization.
+                var uD = info.ReadInfo.SubTypes[0].GetConcreteDriver( null );
+                if( info.IsPossibleNominalDeserialization && info.ExpectedType.GetEnumUnderlyingType() == uD.ResolvedType )
+                {
+                    return _cache.GetOrAdd( info.ExpectedType, CreateNominalEnum, uD );
+                }
+
+                var tDiff = typeof( DEnumDiff<,,> )
+                            .MakeGenericType( info.ExpectedType, info.ExpectedType.GetEnumUnderlyingType(), uD.ResolvedType );
+                return (IDeserializationDriver)Activator.CreateInstance( tDiff, uD.TypedReader )!;
+            }
             case "ValueTuple":
-                {
-                    return TryGetTuple( ref info, true );
-                }
+            {
+                return TryGetTuple( ref info, true );
+            }
             case "Tuple":
-                {
-                    return TryGetTuple( ref info, false );
-                }
+            {
+                return TryGetTuple( ref info, false );
+            }
             case "Array":
+            {
+                Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Array );
+                Debug.Assert( info.ReadInfo.SubTypes.Count == 1 );
+                // Fast path
+                if( info.ExpectedType.IsArray )
                 {
-                    Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Array );
-                    Debug.Assert( info.ReadInfo.SubTypes.Count == 1 );
-                    // Fast path
-                    if( info.ExpectedType.IsArray )
-                    {
-                        var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver( info.ExpectedType.GetElementType() );
-                        return item.IsCached
-                                ? _cache.GetOrAdd( (item, info.ReadInfo.ArrayRank), CreateCachedArray )
-                                : CreateArray( item, info.ReadInfo.ArrayRank );
-                    }
-                    if( info.ReadInfo.ArrayRank == 1 && info.ExpectedType.IsGenericType )
-                    {
-                        var eDef = info.ExpectedType.GetGenericTypeDefinition();
-                        if( eDef == typeof( List<> ) )
-                        {
-                            return GetSingleGenericParameter( ref info, typeof( DList<> ) );
-                        }
-                        if( eDef == typeof( Stack<> ) )
-                        {
-                            return GetSingleGenericParameter( ref info, typeof( DStack<> ) );
-                        }
-                    }
-                    return null;
+                    var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver( info.ExpectedType.GetElementType() );
+                    return item.IsCached
+                            ? _cache.GetOrAdd( (item, info.ReadInfo.ArrayRank), CreateCachedArray )
+                            : CreateArray( item, info.ReadInfo.ArrayRank );
                 }
+                if( info.ReadInfo.ArrayRank == 1 && info.ExpectedType.IsGenericType )
+                {
+                    var eDef = info.ExpectedType.GetGenericTypeDefinition();
+                    if( eDef == typeof( List<> ) )
+                    {
+                        return GetSingleGenericParameter( ref info, typeof( DList<> ) );
+                    }
+                    if( eDef == typeof( Stack<> ) )
+                    {
+                        return GetSingleGenericParameter( ref info, typeof( DStack<> ) );
+                    }
+                }
+                return null;
+            }
             case "Dictionary":
-                if( !info.ExpectedType.IsGenericType || info.ExpectedType.GetGenericTypeDefinition() != typeof(Dictionary<,>) )
+                if( !info.ExpectedType.IsGenericType || info.ExpectedType.GetGenericTypeDefinition() != typeof( Dictionary<,> ) )
                 {
                     return null;
                 }
@@ -153,19 +153,19 @@ public sealed class StandardGenericDeserializerResolver : IDeserializerResolver
             case "Stack":
                 return TryGetListOrStack( ref info );
             case "Set":
-                {
-                    if( !info.ExpectedType.IsGenericType ) return null;
-                    Type tGenTarget = info.ExpectedType.GetGenericTypeDefinition();
-                    if( tGenTarget != typeof( HashSet<> ) ) return null;
-                    return GetSingleGenericParameter( ref info, typeof( DHashSet<> ) );
-                }
+            {
+                if( !info.ExpectedType.IsGenericType ) return null;
+                Type tGenTarget = info.ExpectedType.GetGenericTypeDefinition();
+                if( tGenTarget != typeof( HashSet<> ) ) return null;
+                return GetSingleGenericParameter( ref info, typeof( DHashSet<> ) );
+            }
             case "Queue":
-                {
-                    if( !info.ExpectedType.IsGenericType ) return null;
-                    Type tGenTarget = info.ExpectedType.GetGenericTypeDefinition();
-                    if( tGenTarget != typeof( Queue<> ) ) return null;
-                    return GetSingleGenericParameter( ref info, typeof( DQueue<> ) );
-                }
+            {
+                if( !info.ExpectedType.IsGenericType ) return null;
+                Type tGenTarget = info.ExpectedType.GetGenericTypeDefinition();
+                if( tGenTarget != typeof( Queue<> ) ) return null;
+                return GetSingleGenericParameter( ref info, typeof( DQueue<> ) );
+            }
             case "KeyValuePair":
                 if( !info.ExpectedType.IsGenericType || info.ExpectedType.GetGenericTypeDefinition() != typeof( KeyValuePair<,> ) )
                 {
@@ -217,7 +217,7 @@ public sealed class StandardGenericDeserializerResolver : IDeserializerResolver
             tA[i] = d;
         }
         var key = new TupleKey( tA, isValueTuple );
-        return isCached 
+        return isCached
                 ? _cache.GetOrAdd( key, CreateCached )
                 : CreateTuple( tA, isValueTuple, false );
 
@@ -226,7 +226,7 @@ public sealed class StandardGenericDeserializerResolver : IDeserializerResolver
             var k = (TupleKey)key;
             return CreateTuple( k.Drivers, k.IsValueTuple, true );
         }
-        
+
         static IDeserializationDriver CreateTuple( IDeserializationDriver[] drivers, bool isValueTuple, bool isCached )
         {
             var types = drivers.Select( d => d.ResolvedType ).ToArray();
@@ -286,7 +286,7 @@ public sealed class StandardGenericDeserializerResolver : IDeserializerResolver
             var (item1, item2, tGenD) = ((IDeserializationDriver, IDeserializationDriver, Type))key;
             return Create( item1, item2, tGenD );
         }
-        
+
         static IDeserializationDriver Create( IDeserializationDriver item1, IDeserializationDriver item2, Type tGenD )
         {
             var tS = tGenD.MakeGenericType( item1.ResolvedType, item2.ResolvedType );

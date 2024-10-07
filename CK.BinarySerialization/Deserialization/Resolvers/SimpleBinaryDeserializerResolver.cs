@@ -238,7 +238,7 @@ public sealed class SimpleBinaryDeserializerResolver : IDeserializerResolver
             return (IDeserializationDriver)Activator.CreateInstance( tV, ctor, true )!;
         }
         var tR = typeof( VersionedBinaryDeserializableDriverR<> ).MakeGenericType( t );
-        return (IDeserializationDriver)Activator.CreateInstance( tR , ctor, true )!;
+        return (IDeserializationDriver)Activator.CreateInstance( tR, ctor, true )!;
     }
 
 }

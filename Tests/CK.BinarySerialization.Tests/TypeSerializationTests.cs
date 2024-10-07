@@ -10,9 +10,9 @@ namespace CK.BinarySerialization.Tests;
 [TestFixture]
 public class TypeSerializationTests
 {
-    class TypeHolder<T> 
+    class TypeHolder<T>
     {
-        public class NestedGenTypeHolder<T1,T2> : TypeHolder<T2> { }
+        public class NestedGenTypeHolder<T1, T2> : TypeHolder<T2> { }
     }
     class SpecTypeHolder<T> : TypeHolder<T> { }
 
@@ -56,7 +56,7 @@ public class TypeSerializationTests
         typeof( II<> ),
     };
 
-    [TestCaseSource(nameof(SerializationTypes))]
+    [TestCaseSource( nameof( SerializationTypes ) )]
     public void Type_serialization( Type t )
     {
         Type backRW = TestHelper.SaveAndLoad( t, ( type, w ) => w.WriteTypeInfo( type ), r => r.ReadTypeInfo().ResolveLocalType() );
@@ -79,7 +79,7 @@ public class TypeSerializationTests
     {
         var gT = typeof( OpenArrayHolder<> ).GetField( "A" )!.FieldType;
         Type backRW = TestHelper.SaveAndLoad( gT, ( type, w ) => w.WriteTypeInfo( type ), r => r.ReadTypeInfo().ResolveLocalType() );
-        backRW.Should().BeSameAs( typeof(Array) );
+        backRW.Should().BeSameAs( typeof( Array ) );
     }
 
     class L : List<List<L>>
@@ -115,7 +115,7 @@ public class TypeSerializationTests
                 // int
                 info = r.ReadTypeInfo();
                 info.IsNullable.Should().BeFalse();
-                info.ResolveLocalType().Should().BeSameAs( typeof(int) );
+                info.ResolveLocalType().Should().BeSameAs( typeof( int ) );
                 // int, nullable = true
                 info = r.ReadTypeInfo();
                 info.IsNullable.Should().BeTrue();
@@ -152,9 +152,9 @@ public class TypeSerializationTests
 
     class A { }
 
-    class B<T1,T2> : A { }
+    class B<T1, T2> : A { }
 
-    class CS : B<string,II> { }
+    class CS : B<string, II> { }
 
     [Test]
     public void generic_base_with_interface()

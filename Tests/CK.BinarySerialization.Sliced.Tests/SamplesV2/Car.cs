@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -10,7 +10,7 @@ namespace CK.BinarySerialization.Tests.SamplesV2;
 /// And we also decide to make it immutable since setters was not used.
 /// And finally to use a readonly struct for it.
 /// </summary>
-[SerializationVersion(0)]
+[SerializationVersion( 0 )]
 public readonly struct Car : ICKVersionedBinarySerializable
 {
     public Car( string model, DateTime buildDate )

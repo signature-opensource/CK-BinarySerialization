@@ -25,7 +25,7 @@ readonly struct NullableTypeRoot : IEquatable<NullableTypeRoot>
                 IsNullable = nullable ?? true;
             }
             else
-            { 
+            {
                 Type = t;
                 IsNullable = nullable ?? false;
             }

@@ -19,7 +19,7 @@ public partial class SimpleSerializableTests
 
     class LikeSerializerImpl : ILikeSerializer
     {
-        public int Count { get; set; }  
+        public int Count { get; set; }
     }
 
     delegate void UWriter( ILikeSerializer s, in object o );
@@ -128,7 +128,7 @@ public partial class SimpleSerializableTests
         var b = new SimpleBase() { Power = 3712 };
         object? backB = TestHelper.SaveAndLoadObject( b );
         backB.Should().BeEquivalentTo( b );
-        
+
         var d = new SimpleDerived() { Power = 3712, Name = "Albert" };
         object? backD = TestHelper.SaveAndLoadObject( d );
         backD.Should().BeEquivalentTo( d );

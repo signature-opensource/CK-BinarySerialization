@@ -90,7 +90,7 @@ public abstract class StaticValueTypeSerializer<T> : ISerializationDriverInterna
 
     static TypedWriter<T> GetTypedWriter( Type writerHost )
     {
-        MethodInfo? writer = SharedBinarySerializerContext.GetStaticWriter( writerHost, typeof(T) );
+        MethodInfo? writer = SharedBinarySerializerContext.GetStaticWriter( writerHost, typeof( T ) );
         return (TypedWriter<T>)writer.CreateDelegate( typeof( TypedWriter<T> ) );
     }
 

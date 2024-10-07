@@ -31,7 +31,7 @@ public sealed class BasicTypesDeserializerResolver : IDeserializerResolver
         {
             { "string", new Deserialization.DString() },
             { "byte[]", new Deserialization.DByteArray() },
-            
+
             { "bool", new Deserialization.DBool() },
             { "int", new Deserialization.DInt32() },
             { "uint", new Deserialization.DUInt32() },

@@ -72,7 +72,7 @@ public class CollectionSerializationTests
     [Test]
     public void nullable_Tuple_type_List_serialization()
     {
-        var a = new List<Tuple<int, string?>?> { Tuple.Create(3, (string?)null), null, Tuple.Create( 4, (string?)"four") };
+        var a = new List<Tuple<int, string?>?> { Tuple.Create( 3, (string?)null ), null, Tuple.Create( 4, (string?)"four" ) };
         object? backA = TestHelper.SaveAndLoadObject( a );
         backA.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
     }
@@ -284,7 +284,7 @@ public class CollectionSerializationTests
         object? backA = TestHelper.SaveAndLoadObject( a );
         backA.Should().BeEquivalentTo( a );
     }
-    
+
 
     [Test]
     public void dictionary_comparer_support_OrdinalIgnoreCase_and_InvariantCultureIgnoreCase()

@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using CK.Core;
 using FluentAssertions;
 using static CK.Testing.MonitorTestHelper;
@@ -8,7 +8,7 @@ namespace CK.BinarySerialization.Tests;
 [TestFixture]
 public class ValueTypeSupportTests
 {
-    [SerializationVersion(3712)]
+    [SerializationVersion( 3712 )]
     struct Simple : ICKSlicedSerializable
     {
         public int One;

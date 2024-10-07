@@ -51,7 +51,7 @@ public sealed class StandardGenericSerializerResolver : ISerializerResolver
                 {
                     return TryCreateTuple( context, t, true );
                 }
-                if( tGen.Name.StartsWith( "Tuple`") )
+                if( tGen.Name.StartsWith( "Tuple`" ) )
                 {
                     return TryCreateTuple( context, t, false );
                 }
@@ -106,8 +106,8 @@ public sealed class StandardGenericSerializerResolver : ISerializerResolver
     {
         var tU = Enum.GetUnderlyingType( t );
         var dU = context.TryFindDriver( tU );
-        if( dU == null ) return null;   
-        var tS = typeof( Serialization.DEnum<,>).MakeGenericType( t, tU );
+        if( dU == null ) return null;
+        var tS = typeof( Serialization.DEnum<,> ).MakeGenericType( t, tU );
         return (ISerializationDriver)Activator.CreateInstance( tS, dU.TypedWriter )!;
     }
 
@@ -135,7 +135,7 @@ public sealed class StandardGenericSerializerResolver : ISerializerResolver
         var dItem2 = context.TryFindPossiblyAbstractDriver( tE2 );
         if( dItem2 == null ) return null;
         var tS = tGenD.MakeGenericType( tE1, tE2 );
-        
+
         var d = (ISerializationDriver)Activator.CreateInstance( tS, dItem1.TypedWriter, dItem2.TypedWriter, dItem1.CacheLevel.Combine( dItem2.CacheLevel ) )!;
         return isValue ? d : d.ToNullable;
     }
@@ -148,7 +148,7 @@ public sealed class StandardGenericSerializerResolver : ISerializerResolver
         for( int i = 0; i < parameters.Length; i++ )
         {
             var d = context.TryFindPossiblyAbstractDriver( parameters[i] );
-            if( d == null ) return null;    
+            if( d == null ) return null;
             p[i] = d.UntypedWriter;
             cache = cache.Combine( d.CacheLevel );
         }

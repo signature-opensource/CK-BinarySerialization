@@ -1,11 +1,11 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace CK.BinarySerialization.Tests.Samples;
 
-[SerializationVersion(0)]
+[SerializationVersion( 0 )]
 public class Employee : Person
 {
     public Employee( Garage g )
@@ -16,12 +16,12 @@ public class Employee : Person
     }
 
     public int EmployeeNumber { get; set; }
-    
+
     public Garage Garage { get; }
 
     public Employee? BestFriend { get; set; }
 
-    public Car? CurrentCar { get; set; }    
+    public Car? CurrentCar { get; set; }
 
     #region Serialization
 

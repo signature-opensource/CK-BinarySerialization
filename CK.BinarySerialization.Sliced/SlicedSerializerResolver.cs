@@ -31,7 +31,7 @@ public sealed class SlicedSerializerResolver : ISerializerResolver
     /// </remarks>
     public ISerializationDriver? TryFindDriver( BinarySerializerContext context, Type t )
     {
-        if( t.ContainsGenericParameters || !typeof(ICKSlicedSerializable).IsAssignableFrom( t ) ) return null;
+        if( t.ContainsGenericParameters || !typeof( ICKSlicedSerializable ).IsAssignableFrom( t ) ) return null;
         return Create( t );
     }
 
@@ -74,7 +74,7 @@ public sealed class SlicedSerializerResolver : ISerializerResolver
         {
             try
             {
-                var p = new object[] { s, o };  
+                var p = new object[] { s, o };
                 _writers[0].Invoke( null, p );
                 if( _writers.Count > 1 && (!_isDestroyable || !((IDestroyable)o).IsDestroyed) )
                 {
@@ -100,7 +100,7 @@ public sealed class SlicedSerializerResolver : ISerializerResolver
             return (ISerializationDriver)Activator.CreateInstance( tV, version )!;
         }
         List<MethodInfo> writers = new();
-        GetWritersTopDown( t, writers, typeof(IDestroyable).IsAssignableFrom( t ) );
+        GetWritersTopDown( t, writers, typeof( IDestroyable ).IsAssignableFrom( t ) );
         var tR = typeof( SlicedReferenceTypeSerializableDriver<> ).MakeGenericType( t );
         return ((ISerializationDriver)Activator.CreateInstance( tR, version, writers, typeof( IDestroyable ).IsAssignableFrom( t ) )!).ToNullable;
     }

@@ -45,7 +45,7 @@ static class TestHelperExtensions
                                                                        BinarySerializerContext? serializerContext = null,
                                                                        BinaryDeserializerContext? deserializerContext = null )
     {
-        return SaveAndLoad( @this, o, (x,w) => w.WriteAnyNullable( o ), r => r.ReadAnyNullable(), serializerContext, deserializerContext )!;
+        return SaveAndLoad( @this, o, ( x, w ) => w.WriteAnyNullable( o ), r => r.ReadAnyNullable(), serializerContext, deserializerContext )!;
     }
 
     [return: NotNullIfNotNull( nameof( o ) )]

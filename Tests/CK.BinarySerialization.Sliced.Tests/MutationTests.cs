@@ -22,7 +22,7 @@ public class MutationTests
         // The Car that was a Sliced sealed class is now a Versioned readonly struct.
         static void SetNewLocalType( IMutableTypeReadInfo i )
         {
-            if( i.WrittenInfo.TypeName== "Car" )
+            if( i.WrittenInfo.TypeName == "Car" )
             {
                 i.SetTargetType( typeof( SamplesV2.Car ) );
             }

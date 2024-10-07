@@ -42,7 +42,7 @@ sealed class NullableTypeReadInfo : ITypeReadInfo
                 else
                 {
                     _typePath = (ITypeReadInfo[])((ITypeReadInfo[])_nonNull.TypePath).Clone();
-                    _typePath[_typePath.Length-1] = this;
+                    _typePath[_typePath.Length - 1] = this;
                 }
             }
             return _typePath;

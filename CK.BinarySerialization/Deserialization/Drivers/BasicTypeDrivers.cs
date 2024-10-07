@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -15,7 +15,7 @@ sealed class DString : SimpleReferenceTypeDeserializer<string>
 sealed class DByteArray : SimpleReferenceTypeDeserializer<byte[]>
 {
     public DByteArray() : base( true ) { }
-    
+
     protected override byte[] ReadInstance( ICKBinaryReader r, ITypeReadInfo readInfo ) => r.ReadBytes( r.ReadNonNegativeSmallInt32() );
 }
 

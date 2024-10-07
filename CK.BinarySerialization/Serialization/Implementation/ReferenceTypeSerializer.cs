@@ -65,7 +65,7 @@ public abstract class ReferenceTypeSerializer<T> : ISerializationDriverInternal 
         if( Unsafe.As<BinarySerializerImpl>( s ).TrackObject( o ) )
         {
             s.Writer.Write( (byte)SerializationMarker.ObjectData );
-            Write( s, o );  
+            Write( s, o );
         }
     }
 

@@ -6,7 +6,7 @@ using System.Text;
 
 namespace CK.BinarySerialization.Serialization;
 
-sealed class DDictionary<TKey,TValue> : ReferenceTypeSerializer<Dictionary<TKey,TValue>> where TKey : notnull
+sealed class DDictionary<TKey, TValue> : ReferenceTypeSerializer<Dictionary<TKey, TValue>> where TKey : notnull
 {
     readonly TypedWriter<TKey> _key;
     readonly TypedWriter<TValue> _value;

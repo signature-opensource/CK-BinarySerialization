@@ -45,7 +45,7 @@ public interface IDeserializationDriver
     /// Gets the nullable driver.
     /// </summary>
     IDeserializationDriver ToNullable { get; }
-    
+
     /// <summary>
     /// Gets the non nullable driver.
     /// </summary>

@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using CK.Core;
@@ -10,7 +10,7 @@ namespace CK.BinarySerialization.Tests;
 [TestFixture]
 public class SealedVersionSimpleSerializableTests
 {
-    [SerializationVersion(1)]
+    [SerializationVersion( 1 )]
     readonly struct ValueType : ICKVersionedBinarySerializable
     {
         public readonly int Power;
@@ -103,7 +103,7 @@ public class SealedVersionSimpleSerializableTests
         FluentActions.Invoking( () => TestHelper.SaveAndLoadAny( v ) )
             .Should().Throw<InvalidOperationException>()
             .WithMessage( "*must be decorated with a [SerializationVersion()]*" );
-        
+
         var o = new MissingVersionReferenceType();
         FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( o ) )
             .Should().Throw<InvalidOperationException>()
@@ -127,7 +127,7 @@ public class SealedVersionSimpleSerializableTests
     }
 
 
-    [SerializationVersion(0)]
+    [SerializationVersion( 0 )]
     struct MissingCtorValueType : ICKVersionedBinarySerializable
     {
         public void WriteData( ICKBinaryWriter w )

@@ -1,4 +1,4 @@
-﻿
+
 namespace CK.BinarySerialization;
 
 /// <summary>

@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -99,12 +99,12 @@ public sealed partial class Town : ICKSlicedSerializable
     {
         _persons.Add( e );
     }
-    
+
     internal void OnDestroying( Person e )
     {
         _persons.Remove( e );
     }
-    
+
     internal void OnNewGarage( Garage g )
     {
         _garages.Add( g );

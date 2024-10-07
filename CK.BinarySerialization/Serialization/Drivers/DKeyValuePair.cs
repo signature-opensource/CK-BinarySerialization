@@ -5,7 +5,7 @@ using System.Text;
 
 namespace CK.BinarySerialization.Serialization;
 
-sealed class DKeyValuePair<TKey,TValue> : ValueTypeSerializer<KeyValuePair<TKey,TValue>>
+sealed class DKeyValuePair<TKey, TValue> : ValueTypeSerializer<KeyValuePair<TKey, TValue>>
 {
     readonly TypedWriter<TKey> _key;
     readonly TypedWriter<TValue> _value;

@@ -39,7 +39,7 @@ public abstract class ValueTypeDeserializerWithRef<T> : IValueTypeDeserializerWi
 
         public Delegate TypedReader => _reader;
 
-        public bool IsCached => false;  
+        public bool IsCached => false;
 
         IDeserializationDriver IDeserializationDriver.ToNullable => this;
 
@@ -51,8 +51,8 @@ public abstract class ValueTypeDeserializerWithRef<T> : IValueTypeDeserializerWi
             SerializationMarker b = (SerializationMarker)d.Reader.ReadByte();
             if( b != SerializationMarker.Null )
             {
-                return readInfo.IsValueType 
-                        ? _deserializer.ReadInstance( d, readInfo.ToNonNullable ) 
+                return readInfo.IsValueType
+                        ? _deserializer.ReadInstance( d, readInfo.ToNonNullable )
                         : _deserializer.ReadRefOrInstance( d, readInfo.ToNonNullable, b );
             }
             return default;

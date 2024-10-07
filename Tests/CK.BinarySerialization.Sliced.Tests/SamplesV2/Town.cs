@@ -1,4 +1,4 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -67,8 +67,8 @@ public sealed partial class Town : ICKSlicedSerializable
 
         public override string ToString()
         {
-            return $"PersonCount: {PersonCount}, PurePersonCount: {PurePersonCount}, GarageCount: {GarageCount}, " + 
-                   $"CarCount: {CarCount}, CarUnderReparationCount: {CarUnderReparationCount}, UnownedCarCount: {UnownedCarCount}, " + 
+            return $"PersonCount: {PersonCount}, PurePersonCount: {PurePersonCount}, GarageCount: {GarageCount}, " +
+                   $"CarCount: {CarCount}, CarUnderReparationCount: {CarUnderReparationCount}, UnownedCarCount: {UnownedCarCount}, " +
                    $"CustomerCount: {CustomerCount}, EmployeeCount: {EmployeeCount}, PureEmployeeCount: {PureEmployeeCount}, ManagerCount: {ManagerCount}";
         }
 
@@ -99,12 +99,12 @@ public sealed partial class Town : ICKSlicedSerializable
     {
         _persons.Add( e );
     }
-    
+
     internal void OnDestroying( Person e )
     {
         _persons.Remove( e );
     }
-    
+
     internal void OnNewGarage( Garage g )
     {
         _garages.Add( g );

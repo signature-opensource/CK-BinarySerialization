@@ -124,7 +124,7 @@ public static class BinarySerializer
         /// Contains the exception otherwise.
         /// </summary>
         public Exception? Error { get; }
-        
+
         /// <summary>
         /// Gets whether there is no <see cref="Error"/>.
         /// </summary>
@@ -166,8 +166,8 @@ public static class BinarySerializer
         using var w = Create( s, serializerContext );
         w.WriteAny( o );
         s.Position = 0;
-        return BinaryDeserializer.Deserialize( RewindableStream.FromStream( s ), 
-                                               deserializerContext ?? new BinaryDeserializerContext(), 
+        return BinaryDeserializer.Deserialize( RewindableStream.FromStream( s ),
+                                               deserializerContext ?? new BinaryDeserializerContext(),
                                                d => (T)d.ReadAny() )
                                  .GetResult();
     }
@@ -182,9 +182,9 @@ public static class BinarySerializer
     /// <param name="deserializerContext">Optional deserializer context.</param>
     /// <param name="throwOnFailure">False to log silently fail and return false.</param>
     /// <returns>The result.</returns>
-    public static IdempotenceCheckResult IdempotenceCheck( object o, 
+    public static IdempotenceCheckResult IdempotenceCheck( object o,
                                                            BinarySerializerContext? serializerContext = null,
-                                                           BinaryDeserializerContext? deserializerContext = null, 
+                                                           BinaryDeserializerContext? deserializerContext = null,
                                                            bool throwOnFailure = true )
     {
         Exception? error = null;

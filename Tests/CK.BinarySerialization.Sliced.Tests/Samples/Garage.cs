@@ -1,11 +1,11 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace CK.BinarySerialization.Tests.Samples;
 
-[SerializationVersion(0)]
+[SerializationVersion( 0 )]
 public sealed class Garage : ICKSlicedSerializable
 {
     readonly List<Employee> _employees;
@@ -34,7 +34,7 @@ public sealed class Garage : ICKSlicedSerializable
         d.DebugCheckSentinel();
         _employees = d.ReadObject<List<Employee>>();
         Town = d.ReadObject<Town>();
-        Quality = d.ReadValue<GarageQuality>(); 
+        Quality = d.ReadValue<GarageQuality>();
     }
 
     public static void Write( IBinarySerializer s, in Garage o )

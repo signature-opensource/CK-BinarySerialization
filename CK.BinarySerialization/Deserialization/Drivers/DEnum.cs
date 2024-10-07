@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,8 +8,8 @@ using System.Text;
 
 namespace CK.BinarySerialization.Deserialization;
 
-class DEnum<T,TU> : ValueTypeDeserializer<T> 
-    where T : struct, Enum 
+class DEnum<T, TU> : ValueTypeDeserializer<T>
+    where T : struct, Enum
     where TU : struct
 {
     readonly TypedReader<TU> _underlying;

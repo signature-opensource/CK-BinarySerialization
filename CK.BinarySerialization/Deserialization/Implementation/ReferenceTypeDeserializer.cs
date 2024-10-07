@@ -85,7 +85,7 @@ public abstract class ReferenceTypeDeserializer<T> : ReferenceTypeDeserializerBa
         /// allowed to read some simple data from the deserializer.
         /// </param>
         /// <returns>The deserializer to use to read the object's content and the instantiated object.</returns>
-        public (IBinaryDeserializer d, T o) SetInstance( Func<IBinaryDeserializer,T> headerReader )
+        public (IBinaryDeserializer d, T o) SetInstance( Func<IBinaryDeserializer, T> headerReader )
         {
             Throw.CheckNotNullArgument( headerReader );
             Throw.CheckState( "Result already set.", Instance == null );

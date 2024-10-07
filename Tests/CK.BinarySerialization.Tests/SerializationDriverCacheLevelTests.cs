@@ -56,7 +56,7 @@ public class SerializationDriverCacheLevelTests
     {
         public ISerializationDriver? TryFindDriver( BinarySerializerContext context, Type t )
         {
-            if( t == typeof(Thing) )
+            if( t == typeof( Thing ) )
             {
                 return new ThingSerializer( WriterCacheLevel );
             }

@@ -1,11 +1,11 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace CK.BinarySerialization.Tests.Samples;
 
-[SerializationVersion(0)]
+[SerializationVersion( 0 )]
 public sealed class Customer : Person
 {
     public Customer( Town town )

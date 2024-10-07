@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -10,7 +10,7 @@ sealed class DArray<T> : ReferenceTypeDeserializer<T[]>
 {
     readonly TypedReader<T> _item;
 
-    public DArray( IDeserializationDriver item ) 
+    public DArray( IDeserializationDriver item )
         : base( item.IsCached )
     {
         _item = Unsafe.As<TypedReader<T>>( item.TypedReader );

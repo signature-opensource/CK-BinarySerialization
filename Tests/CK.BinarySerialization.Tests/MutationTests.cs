@@ -54,7 +54,7 @@ public partial class MutationTests
 
         public ThingSealedClass( ICKBinaryReader r, int version )
         {
-            version.Should().Be( 42 );  
+            version.Should().Be( 42 );
             Name = r.ReadString();
         }
 
@@ -145,7 +145,7 @@ public partial class MutationTests
 
     // The ICKVersionedBinarySerializable can start at 0 (as usual).
     // But it is simpler and more readable to set it to the next version.
-    [SerializationVersion(5)]
+    [SerializationVersion( 5 )]
     sealed class AnotherThingButClassAndVersioned : ICKVersionedBinarySerializable
     {
         public readonly string Name;
@@ -207,7 +207,7 @@ public partial class MutationTests
 
         var t = new AnotherThingStructSimple( "Spi" );
         BinarySerializer.IdempotenceCheck( t );
-        
+
         object backT = TestHelper.SaveAndLoadAny( t, deserializerContext: dC );
         var tC = (AnotherThingButClassAndVersioned)backT;
         tC.Name.Should().Be( t.Name );
@@ -215,7 +215,7 @@ public partial class MutationTests
 
         var tA = new AnotherThingStructSimple[] { new AnotherThingStructSimple( "n°1" ), new AnotherThingStructSimple( "n°2" ) };
         BinarySerializer.IdempotenceCheck( tA );
-        
+
         object backA = TestHelper.SaveAndLoadAny( tA, deserializerContext: dC );
         var tAC = (AnotherThingButClassAndVersioned?[])backA;
         tAC.Length.Should().Be( 2 );

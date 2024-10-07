@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -14,5 +14,5 @@ public class Sliced
     /// </summary>
     public static readonly Sliced Instance = new Sliced();
 
-    Sliced() {}
+    Sliced() { }
 }

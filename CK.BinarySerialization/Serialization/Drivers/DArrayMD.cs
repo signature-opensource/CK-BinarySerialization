@@ -5,7 +5,7 @@ using System.Text;
 
 namespace CK.BinarySerialization.Serialization;
 
-sealed class DArrayMD<T,TItem> : ReferenceTypeSerializer<T> where T : class
+sealed class DArrayMD<T, TItem> : ReferenceTypeSerializer<T> where T : class
 {
     readonly TypedWriter<TItem> _item;
 
@@ -23,7 +23,7 @@ sealed class DArrayMD<T,TItem> : ReferenceTypeSerializer<T> where T : class
 
     internal protected override void Write( IBinarySerializer s, in T o )
     {
-        Array a = Unsafe.As<Array>(o);
+        Array a = Unsafe.As<Array>( o );
         // Rank is in the TypeReadInfo. No need to write it here.
         bool isEmpty = false;
         var lengths = new int[a.Rank];
@@ -45,5 +45,5 @@ sealed class DArrayMD<T,TItem> : ReferenceTypeSerializer<T> where T : class
             }
         }
     }
-    
+
 }

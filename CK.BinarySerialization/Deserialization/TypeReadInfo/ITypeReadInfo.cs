@@ -17,7 +17,7 @@ public interface ITypeReadInfo
     /// a <see cref="Nullable{T}"/> if this is a nullable value type. 
     /// </summary>
     bool IsNullable { get; }
-    
+
     /// <summary>
     /// Gets the non nullable type info. This object if <see cref="IsNullable"/> is false.
     /// </summary>
@@ -39,7 +39,7 @@ public interface ITypeReadInfo
     /// Gets whether this type is sealed: ValueTypes and sealed classes are sealed.
     /// </summary>
     bool IsSealed { get; }
-    
+
     /// <summary>
     /// Gets whether this <see cref="TryResolveLocalType()"/> is null or
     /// some of the fundamental type aspect has changed between the written type and the local 
@@ -94,7 +94,7 @@ public interface ITypeReadInfo
     /// For generic type, it is suffixed with a backtick and the number of generic parameters.
     /// </summary>
     string TypeName { get; }
-    
+
     /// <summary>
     /// Gets the namespace of the type.
     /// </summary>

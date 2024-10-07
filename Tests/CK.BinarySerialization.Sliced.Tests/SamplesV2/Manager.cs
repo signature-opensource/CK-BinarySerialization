@@ -5,7 +5,7 @@ using System.Text;
 
 namespace CK.BinarySerialization.Tests.SamplesV2;
 
-[SerializationVersion(0)]
+[SerializationVersion( 0 )]
 public sealed class Manager : Employee
 {
     public Manager( Garage g )

@@ -14,14 +14,14 @@ sealed class DSVersion : SimpleReferenceTypeDeserializer<SVersion>
         if( b == 1 ) return SVersion.ZeroVersion;
         if( b == 2 ) return SVersion.LastVersion;
         string? parsed = (b & 4) != 0 ? r.ReadString() : null;
-        if( (b&8) != 0 )
+        if( (b & 8) != 0 )
         {
             return SVersion.Create( r.ReadNonNegativeSmallInt32(),
                                     r.ReadNonNegativeSmallInt32(),
                                     r.ReadNonNegativeSmallInt32(),
                                     (b & 16) != 0 ? r.ReadString() : null,
                                     (b & 32) != 0 ? r.ReadString() : null,
-                                    handleCSVersion: false, 
+                                    handleCSVersion: false,
                                     checkBuildMetaDataSyntax: false,
                                     parsed );
         }

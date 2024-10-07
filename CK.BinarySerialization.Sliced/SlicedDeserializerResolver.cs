@@ -86,7 +86,7 @@ public sealed class SlicedDeserializerResolver : IDeserializerResolver
         readonly ConstructorInfo _ctor;
 
         public SlicedDeserializerDriverRMonoCtor( ConstructorInfo ctor )
-            :  base( true )
+            : base( true )
         {
             _ctor = ctor;
         }
@@ -191,7 +191,7 @@ public sealed class SlicedDeserializerResolver : IDeserializerResolver
             {
                 // No: it has been written as a Sliced but this has changed.
                 //     Let's try the Versioned and Simple deserialization constructor.
-                return SimpleBinaryDeserializerResolver.TryGetOrCreateVersionedDriver( ref info ) 
+                return SimpleBinaryDeserializerResolver.TryGetOrCreateVersionedDriver( ref info )
                         ?? SimpleBinaryDeserializerResolver.TryGetOrCreateSimpleDriver( ref info );
             }
             // We are on a Sliced deserialization.
@@ -206,7 +206,7 @@ public sealed class SlicedDeserializerResolver : IDeserializerResolver
             }
             // Looking for mono constructor: the base type (that may be Object) is not a ICKSlicedSerializable.
             var b = info.ExpectedType.BaseType;
-            Debug.Assert( b != null );  
+            Debug.Assert( b != null );
             if( !typeof( ICKSlicedSerializable ).IsAssignableFrom( b ) )
             {
                 return SharedBinaryDeserializerContext.PureLocalTypeDependentDrivers.GetOrAdd( info.ExpectedType, CreateCachedMonoConstructorDriver );

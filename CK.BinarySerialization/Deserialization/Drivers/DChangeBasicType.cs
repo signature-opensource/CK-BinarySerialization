@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace CK.BinarySerialization.Deserialization;
 
-sealed class DChangeBasicType<T,TRead> : ValueTypeDeserializer<T> 
+sealed class DChangeBasicType<T, TRead> : ValueTypeDeserializer<T>
     where T : struct
     where TRead : struct
 {

@@ -21,7 +21,7 @@ public class CSemVerSerializationTests
     public void valid_SVersion( string text )
     {
         var v = SVersion.Parse( text, handleCSVersion: false, checkBuildMetaDataSyntax: false );
-        v.ParsedText.Should().Be( text );   
+        v.ParsedText.Should().Be( text );
 
         var backV = TestHelper.SaveAndLoadObject( v );
         backV.Should().Be( v );
@@ -37,7 +37,7 @@ public class CSemVerSerializationTests
     public void invalid_SVersion( string text )
     {
         var v = SVersion.TryParse( text, handleCSVersion: false, checkBuildMetaDataSyntax: false );
-        v.ParsedText.Should().Be( text );   
+        v.ParsedText.Should().Be( text );
         v.IsValid.Should().BeFalse();
 
         var backV = TestHelper.SaveAndLoadObject( v );

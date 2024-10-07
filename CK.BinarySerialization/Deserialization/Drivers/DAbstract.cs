@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -35,7 +35,7 @@ sealed class DAbstract<T> : IDeserializationDriver where T : class
 
     public DAbstract()
     {
-        ResolvedType = typeof(T);
+        ResolvedType = typeof( T );
         TypedReader = (TypedReader<T?>)ReadInstance;
         _nullable = new DAbstractNullable( this );
     }

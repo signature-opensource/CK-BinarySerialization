@@ -219,7 +219,7 @@ sealed class TypeReadInfo : ITypeReadInfo
     public bool IsNullable => false;
 
     public bool IsValueType { get; }
-    
+
     public ITypeReadInfo ToNonNullable => this;
 
     public string TypeNamespace { get; private set; }
@@ -236,8 +236,8 @@ sealed class TypeReadInfo : ITypeReadInfo
 
     public IReadOnlyList<ITypeReadInfo> SubTypes { get; private set; }
 
-    public IReadOnlyList<ITypeReadInfo> TypePath 
-    { 
+    public IReadOnlyList<ITypeReadInfo> TypePath
+    {
         get
         {
             if( _typePath == null )
@@ -337,7 +337,7 @@ sealed class TypeReadInfo : ITypeReadInfo
             try
             {
                 Type t;
-                if( Kind == TypeReadInfoKind.GenericValueType 
+                if( Kind == TypeReadInfoKind.GenericValueType
                     || Kind == TypeReadInfoKind.GenericSealedClass
                     || Kind == TypeReadInfoKind.GenericClass
                     || Kind == TypeReadInfoKind.GenericInterface )
@@ -391,7 +391,7 @@ sealed class TypeReadInfo : ITypeReadInfo
                                   || Kind == TypeReadInfoKind.GenericValueType
                                   || Kind == TypeReadInfoKind.GenericClass
                                   || Kind == TypeReadInfoKind.GenericSealedClass
-                                  || Kind == TypeReadInfoKind.Enum 
+                                  || Kind == TypeReadInfoKind.Enum
                                   || Kind == TypeReadInfoKind.OpenGeneric );
                     _localType = CreateTypeFromNames();
                 }
@@ -487,10 +487,10 @@ sealed class TypeReadInfo : ITypeReadInfo
 
     public override string ToString()
     {
-        var gen = Kind != TypeReadInfoKind.Array 
-                  && Kind != TypeReadInfoKind.Enum 
-                  && Kind != TypeReadInfoKind.Ref 
-                  && Kind != TypeReadInfoKind.Pointer 
+        var gen = Kind != TypeReadInfoKind.Array
+                  && Kind != TypeReadInfoKind.Enum
+                  && Kind != TypeReadInfoKind.Ref
+                  && Kind != TypeReadInfoKind.Pointer
                   && SubTypes.Count > 0
                     ? '<' + SubTypes.Select( p => p.ToString()! ).Concatenate() + '>'
                     : "";

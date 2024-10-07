@@ -159,10 +159,10 @@ public partial class MutationTests
     [Test]
     public void Dictionary_with_numeric_key_with_default_comparer_can_mutate()
     {
-        var dic = new Dictionary<sbyte,short> { { 1, 2 }, { 127, -3 }, { -53, 500 } };
+        var dic = new Dictionary<sbyte, short> { { 1, 2 }, { 127, -3 }, { -53, 500 } };
 
         FluentActions.Invoking( () =>
-            TestHelper.SaveAndLoad( s => s.WriteObject( dic ), d => d.ReadObject<Dictionary<int,sbyte>>() )
+            TestHelper.SaveAndLoad( s => s.WriteObject( dic ), d => d.ReadObject<Dictionary<int, sbyte>>() )
             ).Should()
              .Throw<DeserializationException>()
              .WithInnerException<OverflowException>();
@@ -177,7 +177,7 @@ public partial class MutationTests
     [Test]
     public void Dictionary_with_numeric_key_CANNOT_mutate_if_Comparer_is_not_the_default_one()
     {
-        var dic = new Dictionary<int,string>( ByTenInt32Equality.Instance ) { { 1, "One" }, { 10, "Two" } };
+        var dic = new Dictionary<int, string>( ByTenInt32Equality.Instance ) { { 1, "One" }, { 10, "Two" } };
 
         var sC = new BinarySerializerContext( new SharedBinarySerializerContext( knownObjects: new SharedSerializerKnownObject() ) );
         var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext( knownObjects: new SharedDeserializerKnownObject() ) );

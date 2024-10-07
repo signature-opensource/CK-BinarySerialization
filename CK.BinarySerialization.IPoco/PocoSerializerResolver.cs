@@ -64,9 +64,9 @@ public sealed class PocoSerializerResolver : ISerializerResolver
             using( var m = (RecyclableMemoryStream)Util.RecyclableStreamManager.GetStream() )
             {
                 o.WriteJson( m, withType: false, PocoJsonExportOptions.ToStringDefault );
-                if( m.Position > int.MaxValue/2 )
+                if( m.Position > int.MaxValue / 2 )
                 {
-                    Throw.InvalidOperationException( $"Writing '{typeof(T)}' instance requires '{m.Position}'bytes. This is bigger than the maximal authorized size of int.MaxValue/2 ({int.MaxValue / 2})." );
+                    Throw.InvalidOperationException( $"Writing '{typeof( T )}' instance requires '{m.Position}'bytes. This is bigger than the maximal authorized size of int.MaxValue/2 ({int.MaxValue / 2})." );
                 }
                 s.Writer.WriteNonNegativeSmallInt32( (int)m.Position );
                 var bytes = m.GetReadOnlySequence();

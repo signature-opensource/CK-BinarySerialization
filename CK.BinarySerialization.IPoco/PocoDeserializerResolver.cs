@@ -28,7 +28,7 @@ public sealed class PocoDeserializerResolver : IDeserializerResolver
     PocoDeserializerResolver() { }
 
     static PocoDirectory? _winner;
-    static readonly ConcurrentDictionary<Type,IDeserializationDriver?> _winnerDrivers = new ConcurrentDictionary<Type, IDeserializationDriver?>();
+    static readonly ConcurrentDictionary<Type, IDeserializationDriver?> _winnerDrivers = new ConcurrentDictionary<Type, IDeserializationDriver?>();
 
     sealed class PocoDeserializerDriver<T> : SimpleReferenceTypeDeserializer<T> where T : class, IPoco
     {
