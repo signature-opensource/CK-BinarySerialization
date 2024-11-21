@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using CK.Core;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,72 +8,71 @@ using System.IO;
 using System.IO.Compression;
 using System;
 
-namespace CK.BinarySerialization.Tests
+namespace CK.BinarySerialization.Tests;
+
+
+[TestFixture]
+public class GZipSerializationTests
 {
-
-    [TestFixture]
-    public class GZipSerializationTests
+    [TestCase( "FromFactory" )]
+    [TestCase( "FromStream" )]
+    [TestCase( "FromGZipStream" )]
+    public void using_gzip_compression( string rewindableKind )
     {
-        [TestCase( "FromFactory" )]
-        [TestCase( "FromStream" )]
-        [TestCase( "FromGZipStream" )]
-        public void using_gzip_compression( string rewindableKind )
+        var t = Samples.Town.CreateTown( 2 );
+        using var memory = new MemoryStream();
+
+        // Using MaxRecursionDepth set to 0 to be sure to have a second pass (thanks to, at least, the Town.CityCar).
+        using( var g = new GZipStream( memory, CompressionMode.Compress, leaveOpen: true ) )
+        using( var s = BinarySerializer.Create( g, new BinarySerializerContext() { MaxRecursionDepth = 0 } ) )
         {
-            var t = Samples.Town.CreateTown( 2 );
-            using var memory = new MemoryStream();
+            s.WriteObject( t );
+        }
+        memory.Position = 0;
 
-            // Using MaxRecursionDepth set to 0 to be sure to have a second pass (thanks to, at least, the Town.CityCar).
-            using( var g = new GZipStream( memory, CompressionMode.Compress, leaveOpen: true ) )
-            using( var s = BinarySerializer.Create( g, new BinarySerializerContext() { MaxRecursionDepth = 0 } ) )
+        GZipStream? toDispose = null;
+
+        RewindableStream rewindable;
+        if( rewindableKind == "FromFactory" )
+        {
+            rewindable = RewindableStream.FromFactory( secondPass =>
             {
-                s.WriteObject( t );
+                if( secondPass ) memory.Position = 0;
+                return new GZipStream( memory, CompressionMode.Decompress, leaveOpen: true );
+            } );
+        }
+        else
+        {
+            var g = toDispose = new GZipStream( memory, CompressionMode.Decompress );
+            if( rewindableKind == "FromStream" )
+            {
+                rewindable = RewindableStream.FromStream( g );
             }
-            memory.Position = 0;
-
-            GZipStream? toDispose = null;
-
-            RewindableStream rewindable;
-            if( rewindableKind == "FromFactory" )
+            else if( rewindableKind == "FromGZipStream" )
             {
-                rewindable = RewindableStream.FromFactory( secondPass =>
-                {
-                    if( secondPass ) memory.Position = 0;
-                    return new GZipStream( memory, CompressionMode.Decompress, leaveOpen: true );
-                } );
+                rewindable = RewindableStream.FromGZipStream( g );
             }
             else
             {
-                var g = toDispose = new GZipStream( memory, CompressionMode.Decompress );
-                if( rewindableKind == "FromStream" )
-                {
-                    rewindable = RewindableStream.FromStream( g );
-                }
-                else if( rewindableKind == "FromGZipStream" )
-                {
-                    rewindable = RewindableStream.FromGZipStream( g );
-                }
-                else
-                {
-                    throw new ArgumentException();
-                }
+                throw new ArgumentException();
             }
-
-            BinaryDeserializer.Result<SamplesV2.Town>? result;
-            // SamplesV2: class Car (ICKSlicedSerializable) becomes a struct (ICKVersionedBinarySerializable).
-            static void SwitchToV2( IMutableTypeReadInfo i )
-            {
-                if( i.WrittenInfo.TypeNamespace == "CK.BinarySerialization.Tests.Samples" )
-                {
-                    i.SetLocalTypeNamespace( "CK.BinarySerialization.Tests.SamplesV2" );
-                }
-            }
-            var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
-            dC.Shared.AddDeserializationHook( SwitchToV2 );
-            result = BinaryDeserializer.Deserialize( rewindable, dC, d => d.ReadObject<SamplesV2.Town>() );
-            result.IsValid.Should().BeTrue();
-            result.StreamInfo.SecondPass.Should().BeTrue();
-            result.GetResult().Stats.Should().Be( t.Stats );
         }
 
+        BinaryDeserializer.Result<SamplesV2.Town>? result;
+        // SamplesV2: class Car (ICKSlicedSerializable) becomes a struct (ICKVersionedBinarySerializable).
+        static void SwitchToV2( IMutableTypeReadInfo i )
+        {
+            if( i.WrittenInfo.TypeNamespace == "CK.BinarySerialization.Tests.Samples" )
+            {
+                i.SetLocalTypeNamespace( "CK.BinarySerialization.Tests.SamplesV2" );
+            }
+        }
+        var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
+        dC.Shared.AddDeserializationHook( SwitchToV2 );
+        result = BinaryDeserializer.Deserialize( rewindable, dC, d => d.ReadObject<SamplesV2.Town>() );
+        result.IsValid.Should().BeTrue();
+        result.StreamInfo.SecondPass.Should().BeTrue();
+        result.GetResult().Stats.Should().Be( t.Stats );
     }
+
 }

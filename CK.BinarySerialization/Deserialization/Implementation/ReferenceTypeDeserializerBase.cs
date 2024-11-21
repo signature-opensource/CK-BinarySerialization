@@ -1,92 +1,91 @@
-﻿using CK.Core;
+using CK.Core;
 using System;
 using System.Runtime.CompilerServices;
 
-namespace CK.BinarySerialization
+namespace CK.BinarySerialization;
+
+/// <summary>
+/// Base reference deserializer for <see cref="ReferenceTypeDeserializer{T}"/> and <see cref="SimpleReferenceTypeDeserializer{T}"/>.
+/// </summary>
+/// <typeparam name="T">The type to deserialize.</typeparam>
+public abstract class ReferenceTypeDeserializerBase<T> : IDeserializationDriverInternal where T : class
 {
-    /// <summary>
-    /// Base reference deserializer for <see cref="ReferenceTypeDeserializer{T}"/> and <see cref="SimpleReferenceTypeDeserializer{T}"/>.
-    /// </summary>
-    /// <typeparam name="T">The type to deserialize.</typeparam>
-    public abstract class ReferenceTypeDeserializerBase<T> : IDeserializationDriverInternal where T : class
+    class NullableAdapter : IDeserializationDriver
     {
-        class NullableAdapter : IDeserializationDriver
+        readonly ReferenceTypeDeserializerBase<T> _deserializer;
+        readonly TypedReader<T?> _reader;
+
+        public NullableAdapter( ReferenceTypeDeserializerBase<T> deserializer )
         {
-            readonly ReferenceTypeDeserializerBase<T> _deserializer;
-            readonly TypedReader<T?> _reader;
-
-            public NullableAdapter( ReferenceTypeDeserializerBase<T> deserializer )
-            {
-                _deserializer = deserializer;
-                _reader = ReadInstance;
-            }
-
-            public Type ResolvedType => _deserializer.ResolvedType;
-
-            public Delegate TypedReader => _reader;
-
-            public bool IsCached => _deserializer.IsCached;
-
-            IDeserializationDriver IDeserializationDriver.ToNullable => this;
-
-            IDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
-
-            public T? ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
-            {
-                var b = d.Reader.ReadByte();
-                if( b != (byte)SerializationMarker.Null )
-                {
-                    return _deserializer.ReadRefOrInstance( d, readInfo, b );
-                }
-                return default;
-            }
-
+            _deserializer = deserializer;
+            _reader = ReadInstance;
         }
 
-        readonly NullableAdapter _null;
-        readonly TypedReader<T> _reader;
+        public Type ResolvedType => _deserializer.ResolvedType;
 
-        private protected ReferenceTypeDeserializerBase( bool isCached )
-        {
-            _null = new NullableAdapter( this );
-            _reader = ReadRefOrInstance;
-            IsCached = isCached;
-        }
-
-        T ReadRefOrInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
-        {
-            var b = readInfo.IsValueType ? (byte)SerializationMarker.ObjectData : d.Reader.ReadByte();
-            return ReadRefOrInstance( d, readInfo, b );
-        }
-
-        T ReadRefOrInstance( IBinaryDeserializer d, ITypeReadInfo readInfo, byte b )
-        {
-            if( b == (byte)SerializationMarker.ObjectRef ) return (T)Unsafe.As<BinaryDeserializerImpl>( d ).ReadObjectRef();
-            return ReadInstance( d, readInfo );
-        }
-
-        /// <summary>
-        /// Must read a non null instance from the deserializer.
-        /// </summary>
-        /// <param name="d">The deserializer.</param>
-        /// <param name="readInfo">The read type info.</param>
-        /// <returns>The new instance.</returns>
-        protected abstract T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo );
-
-        /// <inheritdoc />
-        public Type ResolvedType => typeof( T );
-
-        /// <inheritdoc />
         public Delegate TypedReader => _reader;
 
-        /// <inheritdoc />
-        public bool IsCached { get; }
+        public bool IsCached => _deserializer.IsCached;
 
-        IDeserializationDriver IDeserializationDriver.ToNullable => _null;
+        IDeserializationDriver IDeserializationDriver.ToNullable => this;
 
-        IDeserializationDriver IDeserializationDriver.ToNonNullable => this;
+        IDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
 
-        object IDeserializationDriverInternal.ReadObjectData( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
+        public T? ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
+        {
+            var b = d.Reader.ReadByte();
+            if( b != (byte)SerializationMarker.Null )
+            {
+                return _deserializer.ReadRefOrInstance( d, readInfo, b );
+            }
+            return default;
+        }
 
     }
+
+    readonly NullableAdapter _null;
+    readonly TypedReader<T> _reader;
+
+    private protected ReferenceTypeDeserializerBase( bool isCached )
+    {
+        _null = new NullableAdapter( this );
+        _reader = ReadRefOrInstance;
+        IsCached = isCached;
+    }
+
+    T ReadRefOrInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
+    {
+        var b = readInfo.IsValueType ? (byte)SerializationMarker.ObjectData : d.Reader.ReadByte();
+        return ReadRefOrInstance( d, readInfo, b );
+    }
+
+    T ReadRefOrInstance( IBinaryDeserializer d, ITypeReadInfo readInfo, byte b )
+    {
+        if( b == (byte)SerializationMarker.ObjectRef ) return (T)Unsafe.As<BinaryDeserializerImpl>( d ).ReadObjectRef();
+        return ReadInstance( d, readInfo );
+    }
+
+    /// <summary>
+    /// Must read a non null instance from the deserializer.
+    /// </summary>
+    /// <param name="d">The deserializer.</param>
+    /// <param name="readInfo">The read type info.</param>
+    /// <returns>The new instance.</returns>
+    protected abstract T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo );
+
+    /// <inheritdoc />
+    public Type ResolvedType => typeof( T );
+
+    /// <inheritdoc />
+    public Delegate TypedReader => _reader;
+
+    /// <inheritdoc />
+    public bool IsCached { get; }
+
+    IDeserializationDriver IDeserializationDriver.ToNullable => _null;
+
+    IDeserializationDriver IDeserializationDriver.ToNonNullable => this;
+
+    object IDeserializationDriverInternal.ReadObjectData( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
+
 }
