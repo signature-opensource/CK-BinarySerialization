@@ -32,7 +32,7 @@ public class SimpleTests
         engineConfiguration.FirstBinPath.Types.Add( typeof( ISimple ),
                                                     typeof( CommonPocoJsonSupport ),
                                                     typeof( PocoDirectory ) );
-        using var auto = (await engineConfiguration.RunSuccessfullyAsync()).CreateAutomaticServices();
+        await using var auto = (await engineConfiguration.RunSuccessfullyAsync()).CreateAutomaticServices();
 
         var o1 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimple>();
         var o2 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimple>( o => o.Thing = "Goodbye!" );
@@ -60,7 +60,7 @@ public class SimpleTests
         engineConfiguration.FirstBinPath.Types.Add( typeof( ISimple ),
                                                     typeof( CommonPocoJsonSupport ),
                                                     typeof( PocoDirectory ) );
-        using var auto = (await engineConfiguration.RunSuccessfullyAsync()).CreateAutomaticServices();
+        await using var auto = (await engineConfiguration.RunSuccessfullyAsync()).CreateAutomaticServices();
 
         var o1 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimple>();
         var o2 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimple>( o => o.Thing = "Goodbye!" );
@@ -90,7 +90,7 @@ public class SimpleTests
                                                  typeof( ISimpleMore ),
                                                  typeof( CommonPocoJsonSupport ),
                                                  typeof( PocoDirectory ) );
-        using var auto = (await engineConfiguration.RunSuccessfullyAsync()).CreateAutomaticServices();
+        await using var auto = (await engineConfiguration.RunSuccessfullyAsync()).CreateAutomaticServices();
 
         var o1 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimpleMore>();
         var o2 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimpleMore>( o => { o.Thing = "Goodbye!"; o.AnotherThing = "Universe!"; } );
@@ -131,7 +131,7 @@ public class SimpleTests
                                                  typeof( ISimpleMore ),
                                                  typeof( CommonPocoJsonSupport ),
                                                  typeof( PocoDirectory ) );
-        using var auto = (await engineConfiguration.RunSuccessfullyAsync()).CreateAutomaticServices();
+        await using var auto = (await engineConfiguration.RunSuccessfullyAsync()).CreateAutomaticServices();
 
         var o1 = auto.Services.GetRequiredService<PocoDirectory>().Create<ISimpleMore>( o1 => o1.Thing = "Hop" );
 
