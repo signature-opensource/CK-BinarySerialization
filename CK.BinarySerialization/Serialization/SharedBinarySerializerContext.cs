@@ -135,9 +135,9 @@ public sealed class SharedBinarySerializerContext : ISerializerResolver
 
         Delegate ISerializationDriver.TypedWriter => throw new NotSupportedException();
 
-        ISerializationDriver ISerializationDriver.ToNullable => throw new NotSupportedException();
+        ISerializationDriver ISerializationDriver.Nullable => throw new NotSupportedException();
 
-        ISerializationDriver ISerializationDriver.ToNonNullable => throw new NotSupportedException();
+        ISerializationDriver ISerializationDriver.NonNullable => throw new NotSupportedException();
     }
 
     /// <inheritdoc />
@@ -235,7 +235,7 @@ public sealed class SharedBinarySerializerContext : ISerializerResolver
         Throw.CheckNotNullArgument( t );
         Throw.CheckNotNullArgument( driver );
         Throw.CheckArgument( driver.CacheLevel == SerializationDriverCacheLevel.SharedContext );
-        driver = driver.ToNonNullable;
+        driver = driver.NonNullable;
         bool done = false;
         if( _typedDrivers.TryAdd( t, driver ) )
         {
@@ -244,7 +244,7 @@ public sealed class SharedBinarySerializerContext : ISerializerResolver
             {
                 if( Nullable.GetUnderlyingType( t ) != null ) Throw.ArgumentException( nameof( t ), $"Type '{t}' must not be a nullable value type." );
                 t = typeof( Nullable<> ).MakeGenericType( t );
-                done = _typedDrivers.TryAdd( t, driver.ToNullable );
+                done = _typedDrivers.TryAdd( t, driver.Nullable );
             }
         }
         if( !done ) Throw.InvalidOperationException( $"A serialization driver for type '{t}' is already registered." );

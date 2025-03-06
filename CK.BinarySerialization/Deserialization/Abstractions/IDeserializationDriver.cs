@@ -44,10 +44,10 @@ public interface IDeserializationDriver
     /// <summary>
     /// Gets the nullable driver.
     /// </summary>
-    IDeserializationDriver ToNullable { get; }
+    IDeserializationDriver Nullable { get; }
 
     /// <summary>
     /// Gets the non nullable driver.
     /// </summary>
-    IDeserializationDriver ToNonNullable { get; }
+    IDeserializationDriver NonNullable { get; }
 }

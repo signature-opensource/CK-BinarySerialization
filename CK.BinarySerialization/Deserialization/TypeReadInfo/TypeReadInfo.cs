@@ -145,7 +145,7 @@ sealed class TypeReadInfo : ITypeReadInfo
 
         string IMutableTypeReadInfo.IWrittenInfo.TypeNamespace => _typeNamespace;
 
-        public IDeserializationDriver? CurentDriver => _info._driver;
+        public IDeserializationDriver? CurrentDriver => _info._driver;
 
         public void SetDriver( IDeserializationDriver driver )
         {
@@ -163,7 +163,7 @@ sealed class TypeReadInfo : ITypeReadInfo
             _info._overriddenDriverName = driverName != _info.OriginalDriverName ? driverName : null;
         }
 
-        public Type? CurentTargetType => _info._targetType;
+        public Type? CurrentTargetType => _info._targetType;
 
         public void SetTargetType( Type t )
         {
@@ -172,7 +172,7 @@ sealed class TypeReadInfo : ITypeReadInfo
             _info._targetType = t;
         }
 
-        public string CurentTypeNamespace => _info.TypeNamespace;
+        public string CurrentTypeNamespace => _info.TypeNamespace;
 
         public void SetLocalTypeNamespace( string typeNamespace )
         {
@@ -181,7 +181,7 @@ sealed class TypeReadInfo : ITypeReadInfo
             _info.TypeNamespace = typeNamespace;
         }
 
-        public string CurentAssemblyName => _info.AssemblyName;
+        public string CurrentAssemblyName => _info.AssemblyName;
 
         public void SetLocalTypeAssemblyName( string assemblyName )
         {
@@ -190,7 +190,7 @@ sealed class TypeReadInfo : ITypeReadInfo
             _info.AssemblyName = assemblyName;
         }
 
-        public string CurentTypeName => _info.TypeName;
+        public string CurrentTypeName => _info.TypeName;
 
         public void SetLocalTypeName( string typeName )
         {
@@ -220,7 +220,7 @@ sealed class TypeReadInfo : ITypeReadInfo
 
     public bool IsValueType { get; }
 
-    public ITypeReadInfo ToNonNullable => this;
+    public ITypeReadInfo NonNullable => this;
 
     public string TypeNamespace { get; private set; }
 
@@ -483,7 +483,6 @@ sealed class TypeReadInfo : ITypeReadInfo
         }
         return GetConcreteDriver( expected );
     }
-
 
     public override string ToString()
     {

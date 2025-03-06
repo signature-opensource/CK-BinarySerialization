@@ -31,9 +31,9 @@ public abstract class ValueTypeSerializer<T> : ISerializationDriverInternal wher
 
         public int SerializationVersion => _serializer.SerializationVersion;
 
-        public ISerializationDriver ToNullable => this;
+        public ISerializationDriver Nullable => this;
 
-        public ISerializationDriver ToNonNullable => _serializer;
+        public ISerializationDriver NonNullable => _serializer;
 
         public SerializationDriverCacheLevel CacheLevel => _serializer.CacheLevel;
 
@@ -56,6 +56,7 @@ public abstract class ValueTypeSerializer<T> : ISerializationDriverInternal wher
 
     readonly ValueTypeNullable _nullable;
     readonly TypedWriter<T> _tWriter;
+    readonly UntypedWriter _uWriter;
 
     /// <summary>
     /// Initializes this serializer.
@@ -64,7 +65,10 @@ public abstract class ValueTypeSerializer<T> : ISerializationDriverInternal wher
     {
         _nullable = new ValueTypeNullable( this );
         _tWriter = Write;
+        _uWriter = WriteUntyped;
     }
+
+    void WriteUntyped( IBinarySerializer s, in object o ) => Write( s, (T)o );
 
     /// <summary>
     /// Must write the instance data.
@@ -74,7 +78,7 @@ public abstract class ValueTypeSerializer<T> : ISerializationDriverInternal wher
     internal protected abstract void Write( IBinarySerializer s, in T o );
 
     /// <inheritdoc />
-    public Delegate UntypedWriter => _tWriter;
+    public Delegate UntypedWriter => _uWriter;
 
     /// <inheritdoc />
     public Delegate TypedWriter => _tWriter;
@@ -82,10 +86,10 @@ public abstract class ValueTypeSerializer<T> : ISerializationDriverInternal wher
     void ISerializationDriverInternal.WriteObjectData( IBinarySerializer s, in object o ) => Write( s, (T)o );
 
     /// <inheritdoc />
-    public ISerializationDriver ToNullable => _nullable;
+    public ISerializationDriver Nullable => _nullable;
 
     /// <inheritdoc />
-    public ISerializationDriver ToNonNullable => this;
+    public ISerializationDriver NonNullable => this;
 
     /// <inheritdoc />
     public abstract string DriverName { get; }
@@ -97,5 +101,6 @@ public abstract class ValueTypeSerializer<T> : ISerializationDriverInternal wher
     /// Defaults to <see cref="SerializationDriverCacheLevel.SharedContext"/>.
     /// </summary>
     public virtual SerializationDriverCacheLevel CacheLevel => SerializationDriverCacheLevel.SharedContext;
+
 
 }

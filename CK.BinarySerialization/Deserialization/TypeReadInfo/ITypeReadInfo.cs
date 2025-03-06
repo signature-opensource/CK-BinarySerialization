@@ -21,7 +21,7 @@ public interface ITypeReadInfo
     /// <summary>
     /// Gets the non nullable type info. This object if <see cref="IsNullable"/> is false.
     /// </summary>
-    ITypeReadInfo ToNonNullable { get; }
+    ITypeReadInfo NonNullable { get; }
 
     /// <summary>
     /// Gets the kind of this type.
@@ -107,9 +107,6 @@ public interface ITypeReadInfo
     /// This may be set by hooks or defaults to the <see cref="TryResolveLocalType()"/>.
     /// </para>
     /// </summary>
-    /// <remarks>
-    /// This will be a NullableTypeTree once.
-    /// </remarks>
     Type? TargetType { get; }
 
     /// <summary>
@@ -119,18 +116,12 @@ public interface ITypeReadInfo
     /// </para>
     /// </summary>
     /// <returns>The local type if it can be resolved, null otherwise.</returns>
-    /// <remarks>
-    /// This will be a NullableTypeTree once.
-    /// </remarks>
     Type? TryResolveLocalType();
 
     /// <summary>
     /// Resolves the local type or throws a <see cref="TypeLoadException"/>.
     /// </summary>
     /// <returns>The local type.</returns>
-    /// <remarks>
-    /// This will be a NullableTypeTree once.
-    /// </remarks>
     Type ResolveLocalType();
 
     /// <summary>
@@ -155,7 +146,7 @@ public interface ITypeReadInfo
     /// the serialization process itself.
     /// </para>
     /// </summary>
-    /// <param name="expected">Optional expected type. When null, the read type is based on <see cref="ITypeReadInfo.TargetType"/>.</param>
+    /// <param name="expected">Optional expected type. When null, the read type is based on <see cref="TargetType"/>.</param>
     /// <returns>The deserialization driver.</returns>
     IDeserializationDriver GetConcreteDriver( Type? expected );
 
@@ -163,7 +154,7 @@ public interface ITypeReadInfo
     /// Gets an abstract driver if <see cref="IsSealed"/> is false, otherwise
     /// calls <see cref="GetConcreteDriver"/>.
     /// </summary>
-    /// <param name="expected">Optional expected type. When let to null, the read type is based on <see cref="ITypeReadInfo.TargetType"/>.</param>
+    /// <param name="expected">Optional expected type. When let to null, the read type is based on <see cref="TargetType"/>.</param>
     /// <returns>The deserialization driver.</returns>
     IDeserializationDriver GetPotentiallyAbstractDriver( Type? expected );
 

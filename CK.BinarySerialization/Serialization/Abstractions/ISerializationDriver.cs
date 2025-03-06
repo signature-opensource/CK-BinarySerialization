@@ -42,12 +42,12 @@ public interface ISerializationDriver
     /// <summary>
     /// Gets the nullable driver.
     /// </summary>
-    ISerializationDriver ToNullable { get; }
+    ISerializationDriver Nullable { get; }
 
     /// <summary>
     /// Gets the non nullable driver.
     /// </summary>
-    ISerializationDriver ToNonNullable { get; }
+    ISerializationDriver NonNullable { get; }
 
     /// <summary>
     /// Gets whether this serialization driver can be cached.

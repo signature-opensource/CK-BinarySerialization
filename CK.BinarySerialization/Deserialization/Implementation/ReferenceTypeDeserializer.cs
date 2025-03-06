@@ -41,6 +41,16 @@ public abstract class ReferenceTypeDeserializer<T> : ReferenceTypeDeserializerBa
     /// </summary>
     public ref struct RefReader
     {
+        internal T? Instance;
+        readonly BinaryDeserializerImpl _d;
+
+        internal RefReader( BinaryDeserializerImpl d, ITypeReadInfo i )
+        {
+            _d = d;
+            ReadInfo = i;
+            Reader = d.Reader;
+            Instance = null;
+        }
         /// <summary>
         /// Gets the basic reader than can be used any time, typically 
         /// before calling <see cref="SetInstance(T)"/> to read data required to 
@@ -52,6 +62,12 @@ public abstract class ReferenceTypeDeserializer<T> : ReferenceTypeDeserializerBa
         /// Gets the type read information.
         /// </summary>
         public readonly ITypeReadInfo ReadInfo;
+
+        /// <summary>
+        /// Gets the deserializer that should be used only to deserialize
+        /// with NO reference back to the instance being deserialized.
+        /// </summary>
+        public IBinaryDeserializer DangerousDeserializer => _d;
 
         /// <summary>
         /// Sets the unitialized instance and returns the deserializer to use
@@ -98,16 +114,6 @@ public abstract class ReferenceTypeDeserializer<T> : ReferenceTypeDeserializerBa
             Instance = headerReader( _d );
             return (_d.PostTrack( idx, Instance ), Instance);
         }
-
-        internal RefReader( BinaryDeserializerImpl d, ITypeReadInfo i )
-        {
-            _d = d;
-            ReadInfo = i;
-            Reader = d.Reader;
-            Instance = null;
-        }
-        internal T? Instance;
-        readonly BinaryDeserializerImpl _d;
     }
 
     /// <summary>

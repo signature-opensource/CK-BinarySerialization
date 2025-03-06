@@ -3,6 +3,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using static CK.Testing.MonitorTestHelper;
@@ -198,6 +199,25 @@ public partial class MutationTests
         TestHelper.SaveAndLoad(
             s => s.WriteObject( a ),
             d => d.ReadObject<List<int>>().Should().BeOfType<List<int>>().And.BeEquivalentTo( a ) );
+    }
+
+    [Test]
+    public void ImmutableArray_can_mutate_to_Array()
+    {
+        // The opposite is currently not true...
+        ImmutableArray<int> a = [1, 2, 3];
+        TestHelper.SaveAndLoad(
+            s => s.WriteValue( a ),
+            d => d.ReadObject<int[]>().Should().BeOfType<int[]>().And.BeEquivalentTo( a ) );
+    }
+
+    [Test]
+    public void ImmutableArray_int_can_mutate_to_ImmutableArray_long()
+    {
+        ImmutableArray<int> a = [1, 2, 3];
+        TestHelper.SaveAndLoad(
+            s => s.WriteValue( a ),
+            d => d.ReadValue<ImmutableArray<long>>().Should().BeOfType<ImmutableArray<long>>().And.BeEquivalentTo( a ) );
     }
 
     [Test]

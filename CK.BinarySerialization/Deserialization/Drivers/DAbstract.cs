@@ -24,9 +24,9 @@ sealed class DAbstract<T> : IDeserializationDriver where T : class
 
         public bool IsCached => true;
 
-        public IDeserializationDriver ToNullable => this;
+        public IDeserializationDriver Nullable => this;
 
-        public IDeserializationDriver ToNonNullable => _d;
+        public IDeserializationDriver NonNullable => _d;
 
         static T? ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => d.ReadNullableObject<T>();
     }
@@ -46,9 +46,9 @@ sealed class DAbstract<T> : IDeserializationDriver where T : class
 
     public bool IsCached => true;
 
-    public IDeserializationDriver ToNullable => _nullable;
+    public IDeserializationDriver Nullable => _nullable;
 
-    public IDeserializationDriver ToNonNullable => this;
+    public IDeserializationDriver NonNullable => this;
 
     static T ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => d.ReadObject<T>();
 

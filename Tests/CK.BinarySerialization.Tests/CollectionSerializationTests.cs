@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using CK.Core;
 using static CK.Testing.MonitorTestHelper;
 using FluentAssertions;
+using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 
 namespace CK.BinarySerialization.Tests;
 
@@ -18,6 +20,39 @@ public class CollectionSerializationTests
         int[] a = new int[] { 3712, 42 };
         object? backA = TestHelper.SaveAndLoadObject( a );
         backA.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
+    }
+
+    [Test]
+    public void ImmutableArray_serialization()
+    {
+        ImmutableArray<int> a = [3712, 42];
+        var backA = TestHelper.SaveAndLoadValue( a );
+        backA.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
+    }
+
+    [Test]
+    public void ImmutableArray_default_serialization()
+    {
+        ImmutableArray<int> a = default;
+        a.IsDefault.Should().BeTrue();
+        var backA = TestHelper.SaveAndLoadValue( a );
+        backA.IsDefault.Should().BeTrue();
+    }
+
+    [Test]
+    public void ImmutableArray_preserves_the_inner_array_reference()
+    {
+        // This is imortant to preserve the == on the ImmutableArray semantics
+        // that is bound to its inner array! (But one should not use == operator
+        // on ImmutableArray).
+        string[] inner = ["some", "values"];
+        ImmutableArray<string> a1 = ImmutableCollectionsMarshal.AsImmutableArray( inner );
+        ImmutableArray<string> a2 = ImmutableCollectionsMarshal.AsImmutableArray( inner );
+
+        var backBoth = TestHelper.SaveAndLoadValue( (a1, a2) );
+        var bInner1 = ImmutableCollectionsMarshal.AsArray( backBoth.a1 );
+        var bInner2 = ImmutableCollectionsMarshal.AsArray( backBoth.a2 );
+        bInner1.Should().BeSameAs( bInner2 );
     }
 
     [Test]
@@ -50,7 +85,7 @@ public class CollectionSerializationTests
         backA.Should().BeEquivalentTo( a, o => o.WithStrictOrdering() );
 
         a.Clear();
-        ((List<uint?>)TestHelper.SaveAndLoadObject( a )).Should().BeEmpty();
+        TestHelper.SaveAndLoadObject( a ).Should().BeEmpty();
     }
 
     [Test]

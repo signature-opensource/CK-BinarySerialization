@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace CK.BinarySerialization;
 
 
-class BinarySerializerImpl : IDisposableBinarySerializer
+sealed class BinarySerializerImpl : IDisposableBinarySerializer
 {
     readonly ICKBinaryWriter _writer;
     // Waiting for NullableTypeTree: the bool is for notNullable reference type which is 
@@ -99,7 +99,7 @@ class BinarySerializerImpl : IDisposableBinarySerializer
         if( driver == null && !driverLookupDone )
         {
             driver = _context.TryFindDriver( t );
-            if( driver != null ) driver = nT.IsNullable ? driver.ToNullable : driver.ToNonNullable;
+            if( driver != null ) driver = nT.IsNullable ? driver.Nullable : driver.NonNullable;
         }
         RegisterAndWriteIndex( nT, driver );
         // We don't write nullable types, we just emit a '?' and then the 
@@ -107,7 +107,7 @@ class BinarySerializerImpl : IDisposableBinarySerializer
         if( nT.IsNullable )
         {
             _writer.Write( (byte)'?' );
-            WriteTypeInfo( nT.ToNonNullable(), driver?.ToNonNullable, true );
+            WriteTypeInfo( nT.ToNonNullable(), driver?.NonNullable, true );
             return true;
         }
         // Now we only write the non nullable info after a byte
@@ -335,7 +335,7 @@ class BinarySerializerImpl : IDisposableBinarySerializer
                 return true;
             }
         }
-        var driver = (ISerializationDriverInternal)_context.FindDriver( t ).ToNonNullable;
+        var driver = (ISerializationDriverInternal)_context.FindDriver( t ).NonNullable;
         if( _recurseCount > _context.MaxRecursionDepth
             && isClass
             && driver is ISerializationDriverAllowDeferredRead )

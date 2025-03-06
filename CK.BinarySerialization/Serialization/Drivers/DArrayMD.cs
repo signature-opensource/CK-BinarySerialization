@@ -7,22 +7,22 @@ namespace CK.BinarySerialization.Serialization;
 
 sealed class DArrayMD<T, TItem> : ReferenceTypeSerializer<T> where T : class
 {
-    readonly TypedWriter<TItem> _item;
+    readonly ISerializationDriver _item;
 
-    public DArrayMD( Delegate item, SerializationDriverCacheLevel cache )
+    public DArrayMD( ISerializationDriver item )
     {
-        _item = Unsafe.As<TypedWriter<TItem>>( item );
-        CacheLevel = cache;
+        _item = item;
     }
 
     public override string DriverName => "Array";
 
     public override int SerializationVersion => -1;
 
-    public override SerializationDriverCacheLevel CacheLevel { get; }
+    public override SerializationDriverCacheLevel CacheLevel => _item.CacheLevel;
 
     internal protected override void Write( IBinarySerializer s, in T o )
     {
+        var item = Unsafe.As<TypedWriter<TItem>>( _item.TypedWriter );
         Array a = Unsafe.As<Array>( o );
         // Rank is in the TypeReadInfo. No need to write it here.
         bool isEmpty = false;
@@ -41,7 +41,7 @@ sealed class DArrayMD<T, TItem> : ReferenceTypeSerializer<T> where T : class
             while( BinarySerializerImpl.NextInArray( coords, lengths ) )
             {
                 var i = (TItem)a.GetValue( coords )!;
-                _item( s, in i );
+                item( s, in i );
             }
         }
     }

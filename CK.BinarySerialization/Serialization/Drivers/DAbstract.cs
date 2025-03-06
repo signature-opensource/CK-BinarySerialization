@@ -44,9 +44,9 @@ sealed class DAbstract : ISerializationDriver
         Unsafe.As<BinarySerializerImpl>( s ).DoWriteObject( o );
     }
 
-    public ISerializationDriver ToNullable => NullableInstance;
+    public ISerializationDriver Nullable => NullableInstance;
 
-    public ISerializationDriver ToNonNullable => Instance;
+    public ISerializationDriver NonNullable => Instance;
 
     /// <summary>
     /// Somehow irrelevant since this driver (and its nullable) are true singletons. 

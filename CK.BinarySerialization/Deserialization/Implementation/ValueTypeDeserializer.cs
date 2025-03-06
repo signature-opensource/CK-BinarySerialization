@@ -41,16 +41,16 @@ public abstract class ValueTypeDeserializer<T> : IDeserializationDriverInternal,
 
         public bool IsCached => _deserializer.IsCached;
 
-        IDeserializationDriver IDeserializationDriver.ToNullable => this;
+        IDeserializationDriver IDeserializationDriver.Nullable => this;
 
-        IDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
+        IDeserializationDriver IDeserializationDriver.NonNullable => _deserializer;
 
         public T? ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
         {
             Debug.Assert( readInfo.IsNullable );
             if( d.Reader.ReadBoolean() )
             {
-                return _deserializer.ReadInstance( d, readInfo.ToNonNullable );
+                return _deserializer.ReadInstance( d, readInfo.NonNullable );
             }
             return default;
         }
@@ -107,9 +107,9 @@ public abstract class ValueTypeDeserializer<T> : IDeserializationDriverInternal,
     /// <inheritdoc />
     public IValueTypeNonNullableDeserializationDriver<T> ToNonNullable => this;
 
-    IDeserializationDriver IDeserializationDriver.ToNullable => _null;
+    IDeserializationDriver IDeserializationDriver.Nullable => _null;
 
-    IDeserializationDriver IDeserializationDriver.ToNonNullable => this;
+    IDeserializationDriver IDeserializationDriver.NonNullable => this;
 
     T IValueTypeNonNullableDeserializationDriver<T>.ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 

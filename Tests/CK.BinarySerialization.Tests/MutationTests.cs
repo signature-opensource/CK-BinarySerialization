@@ -64,7 +64,6 @@ public partial class MutationTests
         }
     }
 
-
     [Test]
     public void from_struct_to_sealed_class_using_ICKVersionedBinarySerializable()
     {

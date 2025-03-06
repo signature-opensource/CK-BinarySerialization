@@ -88,7 +88,7 @@ public interface IMutableTypeReadInfo
     /// <summary>
     /// Gets the current driver (set by <see cref="SetDriver(IDeserializationDriver)"/>).
     /// </summary>
-    IDeserializationDriver? CurentDriver { get; }
+    IDeserializationDriver? CurrentDriver { get; }
 
     /// <summary>
     /// Gets the current driver name (set by <see cref="SetDriverName(string)"/>).
@@ -98,22 +98,22 @@ public interface IMutableTypeReadInfo
     /// <summary>
     /// Gets the current target type (set by <see cref="SetTargetType(Type)"/>).
     /// </summary>
-    Type? CurentTargetType { get; }
+    Type? CurrentTargetType { get; }
 
     /// <summary>
     /// Gets the <see cref="IWrittenInfo.AssemblyName"/> or the one set by <see cref="SetLocalTypeAssemblyName(string)"/>.
     /// </summary>
-    string CurentAssemblyName { get; }
+    string CurrentAssemblyName { get; }
 
     /// <summary>
     /// Gets the <see cref="IWrittenInfo.TypeNamespace"/> or the one set by <see cref="SetLocalTypeNamespace(string)"/>.
     /// </summary>
-    string CurentTypeNamespace { get; }
+    string CurrentTypeNamespace { get; }
 
     /// <summary>
     /// Gets the <see cref="IWrittenInfo.TypeName"/> or the one set by <see cref="SetLocalTypeName(string)"/>.
     /// </summary>
-    string CurentTypeName { get; }
+    string CurrentTypeName { get; }
 
     /// <summary>
     /// Sets the local type that will be resolved.

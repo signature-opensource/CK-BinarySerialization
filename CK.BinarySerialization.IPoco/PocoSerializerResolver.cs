@@ -32,7 +32,7 @@ public sealed class PocoSerializerResolver : ISerializerResolver
         var f = context.Services.GetRequiredService<PocoDirectory>().Find( t );
         if( f == null ) return null;
         var tR = typeof( PocoSerializableDriver<> ).MakeGenericType( t );
-        return ((ISerializationDriver)Activator.CreateInstance( tR, f )!).ToNullable;
+        return ((ISerializationDriver)Activator.CreateInstance( tR, f )!).Nullable;
     }
 
     sealed class PocoSerializableDriver<T> : ReferenceTypeSerializer<T>, ISerializationDriverTypeRewriter where T : class, IPoco
@@ -61,12 +61,12 @@ public sealed class PocoSerializerResolver : ISerializerResolver
             // We use the ToStringDefault options: Pascal case and JavaScriptEncoder.UnsafeRelaxedJsonEscaping (faster)
             // and more importantly the TypeFilterName is "AllSerializable" (whereas the PocoJsonExportOptions.Default
             // is "AllExchangeable").
-            using( var m = (RecyclableMemoryStream)Util.RecyclableStreamManager.GetStream() )
+            using( var m = Util.RecyclableStreamManager.GetStream() )
             {
                 o.WriteJson( m, withType: false, PocoJsonExportOptions.ToStringDefault );
                 if( m.Position > int.MaxValue / 2 )
                 {
-                    Throw.InvalidOperationException( $"Writing '{typeof( T )}' instance requires '{m.Position}'bytes. This is bigger than the maximal authorized size of int.MaxValue/2 ({int.MaxValue / 2})." );
+                    Throw.InvalidOperationException( $"Writing '{typeof( T )}' instance requires {m.Position} bytes. This is bigger than the maximal authorized size of int.MaxValue/2 ({int.MaxValue / 2})." );
                 }
                 s.Writer.WriteNonNegativeSmallInt32( (int)m.Position );
                 var bytes = m.GetReadOnlySequence();

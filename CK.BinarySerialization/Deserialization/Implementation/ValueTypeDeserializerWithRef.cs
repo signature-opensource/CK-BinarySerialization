@@ -41,9 +41,9 @@ public abstract class ValueTypeDeserializerWithRef<T> : IValueTypeDeserializerWi
 
         public bool IsCached => false;
 
-        IDeserializationDriver IDeserializationDriver.ToNullable => this;
+        IDeserializationDriver IDeserializationDriver.Nullable => this;
 
-        IDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
+        IDeserializationDriver IDeserializationDriver.NonNullable => _deserializer;
 
         public T? ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
         {
@@ -52,8 +52,8 @@ public abstract class ValueTypeDeserializerWithRef<T> : IValueTypeDeserializerWi
             if( b != SerializationMarker.Null )
             {
                 return readInfo.IsValueType
-                        ? _deserializer.ReadInstance( d, readInfo.ToNonNullable )
-                        : _deserializer.ReadRefOrInstance( d, readInfo.ToNonNullable, b );
+                        ? _deserializer.ReadInstance( d, readInfo.NonNullable )
+                        : _deserializer.ReadRefOrInstance( d, readInfo.NonNullable, b );
             }
             return default;
         }
@@ -116,9 +116,9 @@ public abstract class ValueTypeDeserializerWithRef<T> : IValueTypeDeserializerWi
     /// <inheritdoc />
     public bool IsCached => false;
 
-    IDeserializationDriver IDeserializationDriver.ToNullable => _null;
+    IDeserializationDriver IDeserializationDriver.Nullable => _null;
 
-    IDeserializationDriver IDeserializationDriver.ToNonNullable => this;
+    IDeserializationDriver IDeserializationDriver.NonNullable => this;
 
     T IValueTypeNonNullableDeserializationDriver<T>.ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstanceAndTrack( d, readInfo );
 

@@ -172,15 +172,15 @@ public sealed class SharedBinaryDeserializerContext : IDeserializerResolver
     /// <param name="driver">The driver to register.</param>
     public void AddDeserializerDriver( IDeserializationDriver driver )
     {
-        var n = driver.ToNullable.ResolvedType;
+        var n = driver.Nullable.ResolvedType;
         bool done = false;
-        if( _localTypedDrivers.TryAdd( n, driver.ToNullable ) )
+        if( _localTypedDrivers.TryAdd( n, driver.Nullable ) )
         {
             done = true;
-            var nn = driver.ToNonNullable.ResolvedType;
+            var nn = driver.NonNullable.ResolvedType;
             if( nn != n )
             {
-                done = _localTypedDrivers.TryAdd( nn, driver.ToNonNullable );
+                done = _localTypedDrivers.TryAdd( nn, driver.NonNullable );
                 n = nn;
             }
         }
