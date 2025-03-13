@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using CK.Core;
 using static CK.Testing.MonitorTestHelper;
-using FluentAssertions;
+using Shouldly;
 using System.Diagnostics;
 using System.Linq;
 using System.Collections;
@@ -91,20 +91,20 @@ public class SerializationDriverCacheLevelTests
         ICanChange = "First";
 
         var back = TestHelper.SaveAndLoadObject( thing, sC, dC );
-        back.FromWriter.Should().StartWith( "Written by 'First'." );
+        back.FromWriter.ShouldStartWith( "Written by 'First'." );
 
         ICanChange = "Second";
         var back2 = TestHelper.SaveAndLoadObject( thing, sC, dC );
-        back2.FromWriter.Should().StartWith( "Written by 'Second'." );
+        back2.FromWriter.ShouldStartWith( "Written by 'Second'." );
 
         // Not that this test works because the StandardGenericSerializerResolver propagates the_Never
         // cache level to the containers it handles: here the ValuTuple`2 serialization driver is also
         // never cached.
         ICanChange = "Even in the same session!";
         var back3 = TestHelper.SaveAndLoadValue( (thing, new Thing()), sC, dC );
-        back3.Item1.FromWriter.Should().StartWith( "Written by 'Even in the same session!'." );
-        back3.Item2.FromWriter.Should().StartWith( "Written by 'Even in the same session!'." );
-        back3.Item2.FromWriter.Should().NotBe( back3.Item1.FromWriter );
+        back3.Item1.FromWriter.ShouldStartWith( "Written by 'Even in the same session!'." );
+        back3.Item2.FromWriter.ShouldStartWith( "Written by 'Even in the same session!'." );
+        back3.Item2.FromWriter.ShouldNotBe( back3.Item1.FromWriter );
     }
 
     [Test]
@@ -125,24 +125,24 @@ public class SerializationDriverCacheLevelTests
         // sC1 will keep the "First".
         ICanChange = "First";
         var back1 = TestHelper.SaveAndLoadObject( thing, sC1, dC );
-        back1.FromWriter.Should().StartWith( "Written by 'First'." );
+        back1.FromWriter.ShouldStartWith( "Written by 'First'." );
 
         // sC2 will keep the "Second".
         ICanChange = "Second";
         var back2 = TestHelper.SaveAndLoadObject( thing, sC2, dC );
-        back2.FromWriter.Should().StartWith( "Written by 'Second'." );
+        back2.FromWriter.ShouldStartWith( "Written by 'Second'." );
 
         ICanChange = "Will be First or Second... not me :(";
         var back1Bis = TestHelper.SaveAndLoadObject( thing, sC1, dC );
-        back1Bis.FromWriter.Should().StartWith( "Written by 'First'." );
+        back1Bis.FromWriter.ShouldStartWith( "Written by 'First'." );
 
         var back2Bis = TestHelper.SaveAndLoadObject( thing, sC2, dC );
-        back2Bis.FromWriter.Should().StartWith( "Written by 'Second'." );
+        back2Bis.FromWriter.ShouldStartWith( "Written by 'Second'." );
 
         ICanChange = "Of course, on a new Context, I'll be here!";
         var sC3 = new BinarySerializerContext( sharedContext );
         var back3 = TestHelper.SaveAndLoadObject( thing, sC3, dC );
-        back3.FromWriter.Should().StartWith( "Written by 'Of course, on a new Context, I'll be here!'." );
+        back3.FromWriter.ShouldStartWith( "Written by 'Of course, on a new Context, I'll be here!'." );
     }
 
     [Test]
@@ -163,55 +163,55 @@ public class SerializationDriverCacheLevelTests
             ICanChange = "First";
             var container = new List<Thing> { thing };
             var back = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back[0].FromWriter.Should().StartWith( "Written by 'First'." );
+            back[0].FromWriter.ShouldStartWith( "Written by 'First'." );
 
             ICanChange = "Second";
             var back2 = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back2[0].FromWriter.Should().StartWith( "Written by 'Second'." );
+            back2[0].FromWriter.ShouldStartWith( "Written by 'Second'." );
         }
         // Array
         {
             ICanChange = "First";
             var container = new Thing[] { thing };
             var back = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back[0].FromWriter.Should().StartWith( "Written by 'First'." );
+            back[0].FromWriter.ShouldStartWith( "Written by 'First'." );
 
             ICanChange = "Second";
             var back2 = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back2[0].FromWriter.Should().StartWith( "Written by 'Second'." );
+            back2[0].FromWriter.ShouldStartWith( "Written by 'Second'." );
         }
         // Dictionary
         {
             ICanChange = "First";
             var container = new Dictionary<string, Thing> { { "a", thing } };
             var back = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back["a"].FromWriter.Should().StartWith( "Written by 'First'." );
+            back["a"].FromWriter.ShouldStartWith( "Written by 'First'." );
 
             ICanChange = "Second";
             var back2 = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back2["a"].FromWriter.Should().StartWith( "Written by 'Second'." );
+            back2["a"].FromWriter.ShouldStartWith( "Written by 'Second'." );
         }
         // KeyValuePair<shared,never>
         {
             ICanChange = "First";
             var container = new KeyValuePair<string, Thing>( "a", thing );
             var back = TestHelper.SaveAndLoadValue( container, sC, dC );
-            back.Value.FromWriter.Should().StartWith( "Written by 'First'." );
+            back.Value.FromWriter.ShouldStartWith( "Written by 'First'." );
 
             ICanChange = "Second";
             var back2 = TestHelper.SaveAndLoadValue( container, sC, dC );
-            back2.Value.FromWriter.Should().StartWith( "Written by 'Second'." );
+            back2.Value.FromWriter.ShouldStartWith( "Written by 'Second'." );
         }
         // KeyValuePair<never,share>
         {
             ICanChange = "First";
             var container = new KeyValuePair<Thing, string>( thing, "a" );
             var back = TestHelper.SaveAndLoadValue( container, sC, dC );
-            back.Key.FromWriter.Should().StartWith( "Written by 'First'." );
+            back.Key.FromWriter.ShouldStartWith( "Written by 'First'." );
 
             ICanChange = "Second";
             var back2 = TestHelper.SaveAndLoadValue( container, sC, dC );
-            back2.Key.FromWriter.Should().StartWith( "Written by 'Second'." );
+            back2.Key.FromWriter.ShouldStartWith( "Written by 'Second'." );
         }
         // Queue<>
         {
@@ -219,11 +219,11 @@ public class SerializationDriverCacheLevelTests
             var container = new Queue<Thing>();
             container.Enqueue( thing );
             var back = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back.Single().FromWriter.Should().StartWith( "Written by 'First'." );
+            back.Single().FromWriter.ShouldStartWith( "Written by 'First'." );
 
             ICanChange = "Second";
             var back2 = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back2.Single().FromWriter.Should().StartWith( "Written by 'Second'." );
+            back2.Single().FromWriter.ShouldStartWith( "Written by 'Second'." );
         }
         // Stack<>
         {
@@ -231,77 +231,77 @@ public class SerializationDriverCacheLevelTests
             var container = new Stack<Thing>();
             container.Push( thing );
             var back = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back.Single().FromWriter.Should().StartWith( "Written by 'First'." );
+            back.Single().FromWriter.ShouldStartWith( "Written by 'First'." );
 
             ICanChange = "Second";
             var back2 = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back2.Single().FromWriter.Should().StartWith( "Written by 'Second'." );
+            back2.Single().FromWriter.ShouldStartWith( "Written by 'Second'." );
         }
         // Tuple<never>
         {
             ICanChange = "First";
             var container = new Tuple<Thing>( thing );
             var back = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back.Item1.FromWriter.Should().StartWith( "Written by 'First'." );
+            back.Item1.FromWriter.ShouldStartWith( "Written by 'First'." );
 
             ICanChange = "Second";
             var back2 = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back2.Item1.FromWriter.Should().StartWith( "Written by 'Second'." );
+            back2.Item1.FromWriter.ShouldStartWith( "Written by 'Second'." );
         }
         // Tuple<shared,never>
         {
             ICanChange = "First";
             var container = new Tuple<string, Thing>( "x", thing );
             var back = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back.Item2.FromWriter.Should().StartWith( "Written by 'First'." );
+            back.Item2.FromWriter.ShouldStartWith( "Written by 'First'." );
 
             ICanChange = "Second";
             var back2 = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back2.Item2.FromWriter.Should().StartWith( "Written by 'Second'." );
+            back2.Item2.FromWriter.ShouldStartWith( "Written by 'Second'." );
         }
         // Tuple<shared,never,shared,shared>
         {
             ICanChange = "First";
             var container = new Tuple<string, Thing, int, string>( "x", thing, 3, "Hop" );
             var back = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back.Item2.FromWriter.Should().StartWith( "Written by 'First'." );
+            back.Item2.FromWriter.ShouldStartWith( "Written by 'First'." );
 
             ICanChange = "Second";
             var back2 = TestHelper.SaveAndLoadObject( container, sC, dC );
-            back2.Item2.FromWriter.Should().StartWith( "Written by 'Second'." );
+            back2.Item2.FromWriter.ShouldStartWith( "Written by 'Second'." );
         }
         // ValueTuple<never>
         {
             ICanChange = "First";
             var container = new ValueTuple<Thing>( thing );
             var back = TestHelper.SaveAndLoadValue( container, sC, dC );
-            back.Item1.FromWriter.Should().StartWith( "Written by 'First'." );
+            back.Item1.FromWriter.ShouldStartWith( "Written by 'First'." );
 
             ICanChange = "Second";
             var back2 = TestHelper.SaveAndLoadValue( container, sC, dC );
-            back2.Item1.FromWriter.Should().StartWith( "Written by 'Second'." );
+            back2.Item1.FromWriter.ShouldStartWith( "Written by 'Second'." );
         }
         // ValueTuple<shared,never>
         {
             ICanChange = "First";
             var container = new ValueTuple<string, Thing>( "x", thing );
             var back = TestHelper.SaveAndLoadValue( container, sC, dC );
-            back.Item2.FromWriter.Should().StartWith( "Written by 'First'." );
+            back.Item2.FromWriter.ShouldStartWith( "Written by 'First'." );
 
             ICanChange = "Second";
             var back2 = TestHelper.SaveAndLoadValue( container, sC, dC );
-            back2.Item2.FromWriter.Should().StartWith( "Written by 'Second'." );
+            back2.Item2.FromWriter.ShouldStartWith( "Written by 'Second'." );
         }
         // ValueTuple<shared,never,shared,shared>
         {
             ICanChange = "First";
             var container = new ValueTuple<string, Thing, int, string>( "x", thing, 3, "Hop" );
             var back = TestHelper.SaveAndLoadValue( container, sC, dC );
-            back.Item2.FromWriter.Should().StartWith( "Written by 'First'." );
+            back.Item2.FromWriter.ShouldStartWith( "Written by 'First'." );
 
             ICanChange = "Second";
             var back2 = TestHelper.SaveAndLoadValue( container, sC, dC );
-            back2.Item2.FromWriter.Should().StartWith( "Written by 'Second'." );
+            back2.Item2.FromWriter.ShouldStartWith( "Written by 'Second'." );
         }
     }
 

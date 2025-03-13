@@ -1,5 +1,5 @@
 using CK.Core;
-using FluentAssertions;
+using Shouldly;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -18,20 +18,17 @@ public partial class MutationTests
     {
         var set = new HashSet<int> { 1, 2, 3 };
 
-        FluentActions.Invoking( () =>
+        Util.Invokable( () =>
             TestHelper.SaveAndLoad( s => s.WriteObject( set ), d => d.ReadObject<List<int>>() )
-        ).Should()
-         .Throw<InvalidOperationException>();
+        ).ShouldThrow<InvalidOperationException>();
 
-        FluentActions.Invoking( () =>
+        Util.Invokable( () =>
             TestHelper.SaveAndLoad( s => s.WriteObject( set ), d => d.ReadObject<int[]>() )
-        ).Should()
-         .Throw<InvalidOperationException>();
+        ).ShouldThrow<InvalidOperationException>();
 
-        FluentActions.Invoking( () =>
+        Util.Invokable( () =>
             TestHelper.SaveAndLoad( s => s.WriteObject( set ), d => d.ReadObject<Stack<int>>() )
-        ).Should()
-         .Throw<InvalidOperationException>();
+        ).ShouldThrow<InvalidOperationException>();
     }
 
     [Test]
@@ -42,20 +39,17 @@ public partial class MutationTests
         q.Enqueue( 2 );
         q.Enqueue( 3 );
 
-        FluentActions.Invoking( () =>
+        Util.Invokable( () =>
             TestHelper.SaveAndLoad( s => s.WriteObject( q ), d => d.ReadObject<List<int>>() )
-        ).Should()
-         .Throw<InvalidOperationException>();
+        ).ShouldThrow<InvalidOperationException>();
 
-        FluentActions.Invoking( () =>
+        Util.Invokable( () =>
             TestHelper.SaveAndLoad( s => s.WriteObject( q ), d => d.ReadObject<int[]>() )
-        ).Should()
-         .Throw<InvalidOperationException>();
+        ).ShouldThrow<InvalidOperationException>();
 
-        FluentActions.Invoking( () =>
+        Util.Invokable( () =>
             TestHelper.SaveAndLoad( s => s.WriteObject( q ), d => d.ReadObject<Stack<int>>() )
-        ).Should()
-         .Throw<InvalidOperationException>();
+        ).ShouldThrow<InvalidOperationException>();
     }
 
     [Test]
@@ -68,11 +62,10 @@ public partial class MutationTests
         sC.Shared.KnownObjects.RegisterKnownObject( ByTenInt32Equality.Instance, "Tests.ByTenEqualityComparer" );
         dC.Shared.KnownObjects.RegisterKnownKey( "Tests.ByTenEqualityComparer", ByTenInt32Equality.Instance );
 
-        FluentActions.Invoking( () =>
+        Util.Invokable( () =>
             TestHelper.SaveAndLoad( s => s.WriteObject( set ), d => d.ReadObject<HashSet<long>>(), sC, dC )
-        ).Should()
-         .Throw<DeserializationException>()
-         .WithInnerException<InvalidCastException>();
+        ).ShouldThrow<DeserializationException>()
+         .InnerException.ShouldBeOfType<InvalidCastException>();
     }
 
     [Test]
@@ -81,7 +74,7 @@ public partial class MutationTests
         var set = new HashSet<int>() { 1, 2, 3 };
         TestHelper.SaveAndLoad(
             s => s.WriteObject( set ),
-            d => d.ReadObject<HashSet<long>>().Should().BeOfType<HashSet<long>>().And.BeEquivalentTo( set ) );
+            d => d.ReadObject<HashSet<long>>().ShouldBeOfType<HashSet<long>>().ShouldBe( set.Select( i => (long)i ), ignoreOrder: true ) );
     }
 
     [Test]
@@ -90,7 +83,7 @@ public partial class MutationTests
         var list = new int[] { 1, 2, 3 };
         TestHelper.SaveAndLoad(
             s => s.WriteObject( list ),
-            d => d.ReadObject<long[]>().Should().BeOfType<long[]>().And.BeEquivalentTo( list ) );
+            d => d.ReadObject<long[]>().ShouldBeOfType<long[]>().ShouldBe( list.Select( i => (long)i ) ) );
     }
 
     [Test]
@@ -98,16 +91,15 @@ public partial class MutationTests
     {
         var list = new int[] { 1, 256, 3 };
 
-        FluentActions.Invoking( () =>
+        Util.Invokable( () =>
             TestHelper.SaveAndLoad( s => s.WriteObject( list ), d => d.ReadObject<byte[]>() )
-            ).Should()
-             .Throw<DeserializationException>()
-             .WithInnerException<OverflowException>();
+            ).ShouldThrow<DeserializationException>()
+             .InnerException.ShouldBeOfType<OverflowException>();
 
         list[1] = 255;
         TestHelper.SaveAndLoad(
             s => s.WriteObject( list ),
-            d => d.ReadObject<byte[]>().Should().BeOfType<byte[]>().And.BeEquivalentTo( list ) );
+            d => d.ReadObject<byte[]>().ShouldBeOfType<byte[]>().ShouldBe( list.Select( i => (byte)i ) ) );
     }
 
     [Test]
@@ -116,7 +108,7 @@ public partial class MutationTests
         var list = new List<int> { 1, 2, 3 };
         TestHelper.SaveAndLoad(
             s => s.WriteObject( list ),
-            d => d.ReadObject<List<long>>().Should().BeOfType<List<long>>().And.BeEquivalentTo( list ) );
+            d => d.ReadObject<List<long>>().ShouldBeOfType<List<long>>().ShouldBe(list.Select(i => (long)i)) );
     }
 
     [Test]
@@ -125,7 +117,7 @@ public partial class MutationTests
         var list = new List<int> { 1, 2, 3 };
         TestHelper.SaveAndLoad(
             s => s.WriteObject( list ),
-            d => d.ReadObject<long[]>().Should().BeOfType<long[]>().And.BeEquivalentTo( list ) );
+            d => d.ReadObject<long[]>().ShouldBeOfType<long[]>().ShouldBe(list.Select(i => (long)i)) );
     }
 
     [Test]
@@ -137,7 +129,7 @@ public partial class MutationTests
         set.Push( 3 );
         TestHelper.SaveAndLoad(
             s => s.WriteObject( set ),
-            d => d.ReadObject<long[]>().Should().BeOfType<long[]>().And.BeEquivalentTo( set ) );
+            d => d.ReadObject<long[]>().ShouldBeOfType<long[]>().ShouldBe(set.Select(i => (long)i)) );
     }
 
     [Test]
@@ -145,16 +137,15 @@ public partial class MutationTests
     {
         var list = new List<int> { 1, 256, 3 };
 
-        FluentActions.Invoking( () =>
+        Util.Invokable( () =>
             TestHelper.SaveAndLoad( s => s.WriteObject( list ), d => d.ReadObject<byte[]>() )
-            ).Should()
-             .Throw<DeserializationException>()
-             .WithInnerException<OverflowException>();
+            ).ShouldThrow<DeserializationException>()
+             .InnerException.ShouldBeOfType<OverflowException>();
 
         list[1] = 255;
         TestHelper.SaveAndLoad(
             s => s.WriteObject( list ),
-            d => d.ReadObject<byte[]>().Should().BeOfType<byte[]>().And.BeEquivalentTo( list ) );
+            d => d.ReadObject<byte[]>().ShouldBeOfType<byte[]>().ShouldBe(list.Select(i => (byte)i)) );
     }
 
     [Test]
@@ -162,17 +153,16 @@ public partial class MutationTests
     {
         var dic = new Dictionary<sbyte, short> { { 1, 2 }, { 127, -3 }, { -53, 500 } };
 
-        FluentActions.Invoking( () =>
+        Util.Invokable( () =>
             TestHelper.SaveAndLoad( s => s.WriteObject( dic ), d => d.ReadObject<Dictionary<int, sbyte>>() )
-            ).Should()
-             .Throw<DeserializationException>()
-             .WithInnerException<OverflowException>();
+            ).ShouldThrow<DeserializationException>()
+             .InnerException.ShouldBeOfType<OverflowException>();
 
         TestHelper.SaveAndLoad(
             s => s.WriteObject( dic ),
             d => d.ReadObject<Dictionary<int, double>>()
-                    .Should().BeOfType<Dictionary<int, double>>()
-                             .And.Match( x => x[1] == 2.0 && x[127] == -3.0 && x[-53] == 500.0 ) );
+                    .ShouldBeOfType<Dictionary<int, double>>()
+                             .ShouldBe( x => x[1] == 2.0 && x[127] == -3.0 && x[-53] == 500.0 ) );
     }
 
     [Test]
@@ -185,11 +175,10 @@ public partial class MutationTests
         sC.Shared.KnownObjects.RegisterKnownObject( ByTenInt32Equality.Instance, "Tests.ByTenEqualityComparer" );
         dC.Shared.KnownObjects.RegisterKnownKey( "Tests.ByTenEqualityComparer", ByTenInt32Equality.Instance );
 
-        FluentActions.Invoking( () =>
+        Util.Invokable( () =>
             TestHelper.SaveAndLoad( s => s.WriteObject( dic ), d => d.ReadObject<Dictionary<long, string>>(), sC, dC )
-        ).Should()
-         .Throw<DeserializationException>()
-         .WithInnerException<InvalidCastException>();
+        ).ShouldThrow<DeserializationException>()
+         .InnerException.ShouldBeOfType<InvalidCastException>();
     }
 
     [Test]
@@ -198,7 +187,7 @@ public partial class MutationTests
         var a = new int[] { 1, 2, 3 };
         TestHelper.SaveAndLoad(
             s => s.WriteObject( a ),
-            d => d.ReadObject<List<int>>().Should().BeOfType<List<int>>().And.BeEquivalentTo( a ) );
+            d => d.ReadObject<List<int>>().ShouldBeOfType<List<int>>().ShouldBe( a ) );
     }
 
     [Test]
@@ -208,7 +197,7 @@ public partial class MutationTests
         ImmutableArray<int> a = [1, 2, 3];
         TestHelper.SaveAndLoad(
             s => s.WriteValue( a ),
-            d => d.ReadObject<int[]>().Should().BeOfType<int[]>().And.BeEquivalentTo( a ) );
+            d => d.ReadObject<int[]>().ShouldBeOfType<int[]>().ShouldBe( a ) );
     }
 
     [Test]
@@ -217,7 +206,7 @@ public partial class MutationTests
         ImmutableArray<int> a = [1, 2, 3];
         TestHelper.SaveAndLoad(
             s => s.WriteValue( a ),
-            d => d.ReadValue<ImmutableArray<long>>().Should().BeOfType<ImmutableArray<long>>().And.BeEquivalentTo( a ) );
+            d => d.ReadValue<ImmutableArray<long>>().ShouldBeOfType<ImmutableArray<long>>().ShouldBe( a.Select( i => (long)i ) ) );
     }
 
     [Test]
@@ -226,7 +215,7 @@ public partial class MutationTests
         var a = new int[] { 1, 2, 3 };
         TestHelper.SaveAndLoad(
             s => s.WriteObject( a ),
-            d => d.ReadObject<Stack<int>>().Should().BeOfType<Stack<int>>().And.BeEquivalentTo( a ) );
+            d => d.ReadObject<Stack<int>>().ShouldBeOfType<Stack<int>>().ShouldBe( a ) );
     }
 
 

@@ -3,7 +3,7 @@ using CK.Core;
 using System.Collections;
 using System.Collections.Generic;
 using static CK.Testing.MonitorTestHelper;
-using FluentAssertions;
+using Shouldly;
 
 namespace CK.BinarySerialization.Tests;
 
@@ -47,6 +47,6 @@ public class ExternalGenericSerializationTests
         var o = new OList<int>() { 45, 12, 3712 };
 
         var backO = TestHelper.SaveAndLoadObject( o );
-        backO.Should().BeEquivalentTo( o );
+        backO.ShouldBe( o );
     }
 }

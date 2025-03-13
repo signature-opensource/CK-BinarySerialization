@@ -3,7 +3,7 @@ using CK.Core;
 using System.Collections;
 using System.Collections.Generic;
 using static CK.Testing.MonitorTestHelper;
-using FluentAssertions;
+using Shouldly;
 using System.IO;
 using System.IO.Compression;
 using System;
@@ -70,9 +70,9 @@ public class GZipSerializationTests
         var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
         dC.Shared.AddDeserializationHook( SwitchToV2 );
         result = BinaryDeserializer.Deserialize( rewindable, dC, d => d.ReadObject<SamplesV2.Town>() );
-        result.IsValid.Should().BeTrue();
-        result.StreamInfo.SecondPass.Should().BeTrue();
-        result.GetResult().Stats.Should().Be( t.Stats );
+        result.IsValid.ShouldBeTrue();
+        result.StreamInfo.SecondPass.ShouldBeTrue();
+        result.GetResult().Stats.Equals( t.Stats ).ShouldBeTrue();
     }
 
 }

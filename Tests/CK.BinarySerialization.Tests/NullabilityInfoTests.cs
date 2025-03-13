@@ -1,4 +1,4 @@
-using FluentAssertions;
+using Shouldly;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -20,9 +20,9 @@ public class NullabilityInfoTests
     {
         var c = new NullabilityInfoContext();
         var n = c.Create( typeof( NullabilityInfoTests ).GetProperty( nameof( NullableValueType ) )! );
-        n.ReadState.Should().Be( NullabilityState.Nullable );
-        n.WriteState.Should().Be( NullabilityState.Nullable );
-        n.Type.Should().Be( typeof( Nullable<int> ) );
+        n.ReadState.ShouldBe( NullabilityState.Nullable );
+        n.WriteState.ShouldBe( NullabilityState.Nullable );
+        n.Type.ShouldBe( typeof( Nullable<int> ) );
     }
 
     [DisallowNull]
@@ -37,15 +37,15 @@ public class NullabilityInfoTests
         var c = new NullabilityInfoContext();
         {
             var n = c.Create( typeof( NullabilityInfoTests ).GetProperty( nameof( NullableOutRefType ) )! );
-            n.ReadState.Should().Be( NullabilityState.Nullable );
-            n.WriteState.Should().Be( NullabilityState.NotNull );
-            n.Type.Should().Be( typeof( string ) );
+            n.ReadState.ShouldBe( NullabilityState.Nullable );
+            n.WriteState.ShouldBe( NullabilityState.NotNull );
+            n.Type.ShouldBe( typeof( string ) );
         }
         {
             var n = c.Create( typeof( NullabilityInfoTests ).GetProperty( nameof( NullableInRefType ) )! );
-            n.ReadState.Should().Be( NullabilityState.NotNull );
-            n.WriteState.Should().Be( NullabilityState.Nullable );
-            n.Type.Should().Be( typeof( string ) );
+            n.ReadState.ShouldBe( NullabilityState.NotNull );
+            n.WriteState.ShouldBe( NullabilityState.Nullable );
+            n.Type.ShouldBe( typeof( string ) );
         }
     }
 
@@ -57,11 +57,11 @@ public class NullabilityInfoTests
         var c = new NullabilityInfoContext();
         var n = c.Create( typeof( NullabilityInfoTests ).GetProperty( nameof( Dictionary ) )! );
 
-        n.GenericTypeArguments[0].ReadState.Should().Be( NullabilityState.NotNull );
-        n.GenericTypeArguments[0].WriteState.Should().Be( NullabilityState.NotNull );
+        n.GenericTypeArguments[0].ReadState.ShouldBe( NullabilityState.NotNull );
+        n.GenericTypeArguments[0].WriteState.ShouldBe( NullabilityState.NotNull );
 
-        n.GenericTypeArguments[1].ReadState.Should().Be( NullabilityState.Nullable );
-        n.GenericTypeArguments[1].WriteState.Should().Be( NullabilityState.Nullable );
+        n.GenericTypeArguments[1].ReadState.ShouldBe( NullabilityState.Nullable );
+        n.GenericTypeArguments[1].WriteState.ShouldBe( NullabilityState.Nullable );
     }
 
 

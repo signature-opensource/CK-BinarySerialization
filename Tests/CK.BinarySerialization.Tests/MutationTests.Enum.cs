@@ -1,5 +1,5 @@
 using CK.Core;
-using FluentAssertions;
+using Shouldly;
 using NUnit.Framework;
 using System;
 using System.Diagnostics;
@@ -34,8 +34,8 @@ public partial class MutationTests
         dC.Shared.AddDeserializationHook( SetNewLocalType );
 
         object back = TestHelper.SaveAndLoadAny( o, deserializerContext: dC );
-        back.Should().BeOfType<NewGranteLevel>();
-        back.Should().Be( NewGranteLevel.NewNameOfAdmin );
+        back.ShouldBeOfType<NewGranteLevel>();
+        back.ShouldBe( NewGranteLevel.NewNameOfAdmin );
     }
 
     enum NewGranteLevelIsNowAnInt : int
@@ -59,8 +59,8 @@ public partial class MutationTests
         dC.Shared.AddDeserializationHook( SetNewLocalType );
 
         object back = TestHelper.SaveAndLoadAny( o, deserializerContext: dC );
-        back.Should().BeOfType<NewGranteLevelIsNowAnInt>();
-        back.Should().Be( NewGranteLevelIsNowAnInt.NewNameOfAdmin );
+        back.ShouldBeOfType<NewGranteLevelIsNowAnInt>();
+        back.ShouldBe( NewGranteLevelIsNowAnInt.NewNameOfAdmin );
     }
 
     enum BeforeItWasALong : long
@@ -91,47 +91,47 @@ public partial class MutationTests
 
         var noWay = BeforeItWasALong.FitInLongOnly;
 
-        FluentActions.Invoking( () => TestHelper.SaveAndLoadAny( noWay, deserializerContext: dC ) )
-            .Should().Throw<DeserializationException>()
-                     .WithInnerException<OverflowException>();
+        Util.Invokable( () => TestHelper.SaveAndLoadAny( noWay, deserializerContext: dC ) )
+            .ShouldThrow<DeserializationException>()
+                     .InnerException.ShouldBeOfType<OverflowException>();
 
 
         var canDoIt = BeforeItWasALong.FitInInt;
         var canAlsoDoIt = BeforeItWasALong.FitInByte;
 
         object back = TestHelper.SaveAndLoadAny( canDoIt, deserializerContext: dC );
-        back.Should().BeOfType<NowItsAInt>();
-        back.Should().Be( NowItsAInt.FitInInt );
+        back.ShouldBeOfType<NowItsAInt>();
+        back.ShouldBe( NowItsAInt.FitInInt );
 
         back = TestHelper.SaveAndLoadAny( canAlsoDoIt, deserializerContext: dC );
-        back.Should().BeOfType<NowItsAInt>();
-        back.Should().Be( NowItsAInt.FitInByte );
+        back.ShouldBeOfType<NowItsAInt>();
+        back.ShouldBe( NowItsAInt.FitInByte );
     }
 
     [Test]
     public void enum_type_mutation_when_reading_value_is_possible_even_if_underlying_type_differ()
     {
-        TestHelper.SaveAndLoad( s => s.WriteValue( GrantLevel.SuperEditor ), d => d.ReadValue<NewGranteLevel>().Should().Be( NewGranteLevel.SuperEditor ) );
-        TestHelper.SaveAndLoad( s => s.WriteValue( BeforeItWasALong.FitInInt ), d => d.ReadValue<NowItsAInt>().Should().Be( NowItsAInt.FitInInt ) );
+        TestHelper.SaveAndLoad( s => s.WriteValue( GrantLevel.SuperEditor ), d => d.ReadValue<NewGranteLevel>().ShouldBe( NewGranteLevel.SuperEditor ) );
+        TestHelper.SaveAndLoad( s => s.WriteValue( BeforeItWasALong.FitInInt ), d => d.ReadValue<NowItsAInt>().ShouldBe( NowItsAInt.FitInInt ) );
     }
 
     [Test]
     public void enum_type_and_numeric_type_can_mutate_as_long_as_there_is_no_overflow()
     {
-        TestHelper.SaveAndLoad( s => s.WriteValue<long>( 80 ), d => d.ReadValue<GrantLevel>().Should().Be( GrantLevel.SuperEditor ) );
-        TestHelper.SaveAndLoad( s => s.WriteValue( GrantLevel.SuperEditor ), d => d.ReadValue<byte>().Should().Be( 80 ) );
+        TestHelper.SaveAndLoad( s => s.WriteValue<long>( 80 ), d => d.ReadValue<GrantLevel>().ShouldBe( GrantLevel.SuperEditor ) );
+        TestHelper.SaveAndLoad( s => s.WriteValue( GrantLevel.SuperEditor ), d => d.ReadValue<byte>().ShouldBe( 80 ) );
     }
 
     //[Test]
     //public void from_value_tuple_to_tuple()
     //{
-    //    TestHelper.SaveAndLoad( s => s.WriteValue( (3712, "Hop") ), d => d.ReadObject<Tuple<int,string>>().Should().BeEquivalentTo( Tuple.Create( 3712, "Hop" ) ) );
+    //    TestHelper.SaveAndLoad( s => s.WriteValue( (3712, "Hop") ), d => d.ReadObject<Tuple<int,string>>().ShouldBe( Tuple.Create( 3712, "Hop" ) ) );
     //}
 
     //[Test]
     //public void from_tuple_to_value_tuple()
     //{
-    //    TestHelper.SaveAndLoad( s => s.WriteAny( Tuple.Create( 3712, "Hop" ) ), d => d.ReadValue < (int,string)> ().Should().BeEquivalentTo( (3712,"Hop") ) );
+    //    TestHelper.SaveAndLoad( s => s.WriteAny( Tuple.Create( 3712, "Hop" ) ), d => d.ReadValue < (int,string)> ().ShouldBe( (3712,"Hop") ) );
     //}
 
 }

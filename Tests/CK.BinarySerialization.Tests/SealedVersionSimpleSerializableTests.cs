@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using CK.Core;
 using static CK.Testing.MonitorTestHelper;
-using FluentAssertions;
+using Shouldly;
 
 namespace CK.BinarySerialization.Tests;
 
@@ -51,7 +51,7 @@ public class SealedVersionSimpleSerializableTests
     {
         ValueType v = new ValueType( 31, "Albert", 12 );
         object? backO = TestHelper.SaveAndLoadAny( v );
-        backO.Should().Be( v );
+        backO.ShouldBe( v );
     }
 
     [SerializationVersion( 0 )]
@@ -79,7 +79,7 @@ public class SealedVersionSimpleSerializableTests
     {
         var b = new SimpleSealed() { Power = 3712 };
         object? backB = TestHelper.SaveAndLoadObject( b );
-        backB.Should().BeEquivalentTo( b );
+        backB.ShouldBeEquivalentTo( b );
     }
 
     struct MissingVersionValueType : ICKVersionedBinarySerializable
@@ -100,14 +100,14 @@ public class SealedVersionSimpleSerializableTests
     public void version_attribute_is_required()
     {
         var v = new MissingVersionValueType();
-        FluentActions.Invoking( () => TestHelper.SaveAndLoadAny( v ) )
-            .Should().Throw<InvalidOperationException>()
-            .WithMessage( "*must be decorated with a [SerializationVersion()]*" );
+        Util.Invokable( () => TestHelper.SaveAndLoadAny( v ) )
+            .ShouldThrow<InvalidOperationException>()
+            .Message.ShouldMatch( @".*must be decorated with a \[SerializationVersion().*" );
 
         var o = new MissingVersionReferenceType();
-        FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( o ) )
-            .Should().Throw<InvalidOperationException>()
-            .WithMessage( "*must be decorated with a [SerializationVersion()]*" );
+        Util.Invokable( () => TestHelper.SaveAndLoadObject( o ) )
+            .ShouldThrow<InvalidOperationException>()
+            .Message.ShouldMatch( @".*must be decorated with a \[SerializationVersion().*" );
     }
 
     class MissingSealedReferenceType : ICKVersionedBinarySerializable
@@ -121,9 +121,9 @@ public class SealedVersionSimpleSerializableTests
     public void reference_type_MUST_be_sealed()
     {
         var o = new MissingSealedReferenceType();
-        FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( o ) )
-            .Should().Throw<InvalidOperationException>()
-            .WithMessage( "*It must be a sealed class or a value type*" );
+        Util.Invokable( () => TestHelper.SaveAndLoadObject( o ) )
+            .ShouldThrow<InvalidOperationException>()
+            .Message.ShouldMatch( ".*It must be a sealed class or a value type.*" );
     }
 
 
@@ -147,12 +147,12 @@ public class SealedVersionSimpleSerializableTests
     public void constructor_with_IBinaryReader_and_int_version_is_required()
     {
         var v = new MissingCtorValueType();
-        FluentActions.Invoking( () => TestHelper.SaveAndLoadAny( v ) )
-            .Should().Throw<InvalidOperationException>();
+        Util.Invokable( () => TestHelper.SaveAndLoadAny( v ) )
+            .ShouldThrow<InvalidOperationException>();
 
         var o = new MissingCtorReferenceType();
-        FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( o ) )
-            .Should().Throw<InvalidOperationException>();
+        Util.Invokable( () => TestHelper.SaveAndLoadObject( o ) )
+            .ShouldThrow<InvalidOperationException>();
     }
 
 

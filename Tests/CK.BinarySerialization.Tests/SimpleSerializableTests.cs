@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using CK.Core;
 using static CK.Testing.MonitorTestHelper;
-using FluentAssertions;
+using Shouldly;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
 
@@ -35,7 +35,7 @@ public partial class SimpleSerializableTests
 
         bOnB( s, oB );
         bOnB( s, oD );
-        s.Count.Should().Be( 2 );
+        s.Count.ShouldBe( 2 );
 
         // - No contravariance.
         // TWriter<SimpleDerived> dOnB = WriteBase;
@@ -46,15 +46,15 @@ public partial class SimpleSerializableTests
 
         TWriter<SimpleDerived> dOnB = Unsafe.As<TWriter<SimpleDerived>>( bOnB );
         dOnB( s, oD );
-        s.Count.Should().Be( 3 );
+        s.Count.ShouldBe( 3 );
 
         TWriter<object> oOnBase = Unsafe.As<TWriter<object>>( bOnB );
         oOnBase( s, oD );
-        s.Count.Should().Be( 4 );
+        s.Count.ShouldBe( 4 );
 
         UWriter uOnBase = Unsafe.As<UWriter>( bOnB );
         uOnBase( s, oD );
-        s.Count.Should().Be( 5 );
+        s.Count.ShouldBe( 5 );
 
         var bug = new object();
         // Safe.
@@ -63,7 +63,7 @@ public partial class SimpleSerializableTests
         // Unsafe means something: this should not work.
         oOnBase( s, bug );
         uOnBase( s, bug );
-        s.Count.Should().Be( 7 );
+        s.Count.ShouldBe( 7 );
 
         static void WriteBase( ILikeSerializer s, in SimpleBase o )
         {
@@ -111,7 +111,7 @@ public partial class SimpleSerializableTests
     {
         Sample v = new Sample( 31, "Albert", 12 );
         object? backO = TestHelper.SaveAndLoadAny( v );
-        backO.Should().Be( v );
+        backO.ShouldBe( v );
     }
 
     [Test]
@@ -119,7 +119,7 @@ public partial class SimpleSerializableTests
     {
         var l = new List<Sample?>() { null, new Sample( 31, "Albert", 12 ) };
         object? backL = TestHelper.SaveAndLoadAny( l );
-        backL.Should().BeEquivalentTo( l, o => o.WithStrictOrdering() );
+        backL.ShouldBe( l );
     }
 
     [Test]
@@ -127,11 +127,11 @@ public partial class SimpleSerializableTests
     {
         var b = new SimpleBase() { Power = 3712 };
         object? backB = TestHelper.SaveAndLoadObject( b );
-        backB.Should().BeEquivalentTo( b );
+        backB.ShouldBeEquivalentTo( b );
 
         var d = new SimpleDerived() { Power = 3712, Name = "Albert" };
         object? backD = TestHelper.SaveAndLoadObject( d );
-        backD.Should().BeEquivalentTo( d );
+        backD.ShouldBeEquivalentTo( d );
     }
 
     struct MissingCtorValueType : ICKSimpleBinarySerializable
@@ -152,12 +152,12 @@ public partial class SimpleSerializableTests
     public void constructor_with_IBinaryReader_is_required()
     {
         var v = new MissingCtorValueType();
-        FluentActions.Invoking( () => TestHelper.SaveAndLoadAny( v ) )
-            .Should().Throw<InvalidOperationException>();
+        Util.Invokable( () => TestHelper.SaveAndLoadAny( v ) )
+            .ShouldThrow<InvalidOperationException>();
 
         var o = new MissingCtorReferenceType();
-        FluentActions.Invoking( () => TestHelper.SaveAndLoadObject( o ) )
-            .Should().Throw<InvalidOperationException>();
+        Util.Invokable( () => TestHelper.SaveAndLoadObject( o ) )
+            .ShouldThrow<InvalidOperationException>();
     }
 
     class XA<T1, T2> : ICKSimpleBinarySerializable
@@ -225,7 +225,7 @@ public partial class SimpleSerializableTests
     {
         var c = new XC( "Albert", "Berth", "Clio" );
         object? backC = TestHelper.SaveAndLoadObject( c );
-        backC.Should().BeEquivalentTo( c );
+        backC.ShouldBeEquivalentTo( c );
     }
 
     /// <summary>
@@ -265,7 +265,7 @@ public partial class SimpleSerializableTests
         /// <param name="version">The saved version number.</param>
         public CanSupportBothSimpleSerialization( ICKBinaryReader r, int version )
         {
-            version.Should().Be( 3712 );
+            version.ShouldBe( 3712 );
             // Use the version as usual.
             Data = r.ReadNullableString();
             VersionedDeserializationConstructorCalled = true;
@@ -294,13 +294,13 @@ public partial class SimpleSerializableTests
     {
         var c = new CanSupportBothSimpleSerialization( "yep" );
         var backC = TestHelper.SaveAndLoadObject( c );
-        backC.Data.Should().Be( c.Data );
+        backC.Data.ShouldBe( c.Data );
 
-        c.SimpleWriteCalled.Should().BeFalse();
-        c.VersionedWriteCalled.Should().BeTrue();
+        c.SimpleWriteCalled.ShouldBeFalse();
+        c.VersionedWriteCalled.ShouldBeTrue();
 
-        backC.SimpleDeserializationConstructorCalled.Should().BeFalse();
-        backC.VersionedDeserializationConstructorCalled.Should().BeTrue();
+        backC.SimpleDeserializationConstructorCalled.ShouldBeFalse();
+        backC.VersionedDeserializationConstructorCalled.ShouldBeTrue();
     }
 
 }

@@ -1,6 +1,6 @@
 using NUnit.Framework;
 using CK.Core;
-using FluentAssertions;
+using Shouldly;
 using static CK.Testing.MonitorTestHelper;
 
 namespace CK.BinarySerialization.Tests;
@@ -16,7 +16,7 @@ public class ValueTypeSupportTests
 
         public Simple( IBinaryDeserializer d, ITypeReadInfo info )
         {
-            info.Version.Should().Be( 3712 );
+            info.Version.ShouldBe( 3712 );
             One = d.Reader.ReadInt32();
             Two = d.Reader.ReadInt32();
         }
@@ -33,6 +33,6 @@ public class ValueTypeSupportTests
     {
         var o = new Simple() { One = 3712, Two = 42 };
         object? backO = TestHelper.SaveAndLoadAny( o );
-        backO.Should().Be( o );
+        backO.ShouldBe( o );
     }
 }
