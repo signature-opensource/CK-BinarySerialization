@@ -140,7 +140,7 @@ public class SimpleTests
         var sC = new BinarySerializerContext( BinarySerializer.DefaultSharedContext, auto.Services );
 
         TestHelper.SaveAndLoad( s => s.WriteObject( o1 ),
-                                d => d.ReadObject<IOtherSimple>().ShouldBe( x => x.Thing == "Hop" ),
+                                d => d.ReadObject<IOtherSimple>().ShouldMatch( x => x.Thing == "Hop" ),
                                 sC, dC );
     }
 

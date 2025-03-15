@@ -162,7 +162,7 @@ public partial class MutationTests
             s => s.WriteObject( dic ),
             d => d.ReadObject<Dictionary<int, double>>()
                     .ShouldBeOfType<Dictionary<int, double>>()
-                             .ShouldBe( x => x[1] == 2.0 && x[127] == -3.0 && x[-53] == 500.0 ) );
+                             .ShouldMatch( x => x[1] == 2.0 && x[127] == -3.0 && x[-53] == 500.0 ) );
     }
 
     [Test]

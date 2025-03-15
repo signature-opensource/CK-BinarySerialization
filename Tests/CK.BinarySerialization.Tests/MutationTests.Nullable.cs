@@ -25,9 +25,9 @@ public partial class MutationTests
             d =>
             {
                 byte? v = d.ReadNullableValue<byte>();
-                v.ShouldBe( 5 );
+                v.ShouldNotBeNull().ShouldBe( 5 );
                 v = d.ReadNullableValue<byte>();
-                v.ShouldBe( 5 );
+                v.ShouldNotBeNull().ShouldBe( 5 );
                 v = d.ReadNullableValue<byte>();
                 Util.Invokable( () => v!.GetType() ).ShouldThrow<NullReferenceException>();
             } );
