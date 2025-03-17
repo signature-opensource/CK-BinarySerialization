@@ -181,7 +181,7 @@ public class BinarySerializerContext
         {
             Debug.Assert( t.IsClass || t.IsInterface, "Non sealed is a class or an interface." );
             _stats._driverNeverCached++;
-            return Serialization.DAbstract.Instance.ToNullable;
+            return Serialization.DAbstract.Instance.Nullable;
         }
         return TryFindDriver( t );
     }

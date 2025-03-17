@@ -1,6 +1,6 @@
 using CK.Core;
 using CK.Testing;
-using FluentAssertions;
+using Shouldly;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using System.Collections.Generic;
@@ -42,12 +42,12 @@ public class SimpleTests
         var sC = new BinarySerializerContext( BinarySerializer.DefaultSharedContext, auto.Services );
 
         object? backO1 = TestHelper.SaveAndLoadAny( o1, sC, dC );
-        backO1.Should().NotBeSameAs( o1 );
-        backO1.Should().BeEquivalentTo( o1 );
+        backO1.ShouldNotBeSameAs( o1 );
+        backO1.ShouldBeEquivalentTo( o1 );
 
         object? backO2 = TestHelper.SaveAndLoadAny( o2, sC, dC );
-        backO2.Should().NotBeSameAs( o2 );
-        backO2.Should().BeEquivalentTo( o2 );
+        backO2.ShouldNotBeSameAs( o2 );
+        backO2.ShouldBeEquivalentTo( o2 );
 
         BinarySerializer.IdempotenceCheck( o1, sC, dC );
         BinarySerializer.IdempotenceCheck( o2, sC, dC );
@@ -71,7 +71,7 @@ public class SimpleTests
         var sC = new BinarySerializerContext( BinarySerializer.DefaultSharedContext, auto.Services );
 
         object? backList = TestHelper.SaveAndLoadAny( list, sC, dC );
-        backList.Should().NotBeSameAs( list );
+        backList.ShouldNotBeSameAs( list );
 
         BinarySerializer.IdempotenceCheck( list, sC, dC );
     }
@@ -100,12 +100,12 @@ public class SimpleTests
         var sC = new BinarySerializerContext( BinarySerializer.DefaultSharedContext, auto.Services );
 
         object? backO1 = TestHelper.SaveAndLoadAny( o1, sC, dC );
-        backO1.Should().NotBeSameAs( o1 );
-        backO1.Should().BeEquivalentTo( o1 );
+        backO1.ShouldNotBeSameAs( o1 );
+        backO1.ShouldBeEquivalentTo( o1 );
 
         object? backO2 = TestHelper.SaveAndLoadAny( o2, sC, dC );
-        backO2.Should().NotBeSameAs( o2 );
-        backO2.Should().BeEquivalentTo( o2 );
+        backO2.ShouldNotBeSameAs( o2 );
+        backO2.ShouldBeEquivalentTo( o2 );
 
         ViaType<ISimple>( o1, dC, sC );
         ViaType<IPoco>( o1, dC, sC );
@@ -116,10 +116,10 @@ public class SimpleTests
         static void ViaType<T>( T o1, BinaryDeserializerContext dC, BinarySerializerContext sC ) where T : class
         {
             var b = TestHelper.SaveAndLoadObject<T>( o1, sC, dC );
-            b.Should().NotBeSameAs( o1 );
-            ((ISimpleMore)b).Thing.Should().Be( "Hello!" );
-            ((ISimpleMore)b).AnotherThing.Should().Be( "World!" );
-            b.ToString().Should().Be( o1.ToString() );
+            b.ShouldNotBeSameAs( o1 );
+            ((ISimpleMore)b).Thing.ShouldBe( "Hello!" );
+            ((ISimpleMore)b).AnotherThing.ShouldBe( "World!" );
+            b.ToString().ShouldBe( o1.ToString() );
         }
     }
 
@@ -139,7 +139,9 @@ public class SimpleTests
         var dC = new BinaryDeserializerContext( BinaryDeserializer.DefaultSharedContext, auto.Services );
         var sC = new BinarySerializerContext( BinarySerializer.DefaultSharedContext, auto.Services );
 
-        TestHelper.SaveAndLoad( s => s.WriteObject( o1 ), d => d.ReadObject<IOtherSimple>().Should().Match( x => ((IOtherSimple)x).Thing == "Hop" ), sC, dC );
+        TestHelper.SaveAndLoad( s => s.WriteObject( o1 ),
+                                d => d.ReadObject<IOtherSimple>().ShouldMatch( x => x.Thing == "Hop" ),
+                                sC, dC );
     }
 
 }

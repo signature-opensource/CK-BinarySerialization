@@ -4,7 +4,6 @@ using System.Reflection;
 
 namespace CK.BinarySerialization;
 
-
 /// <summary>
 /// Serializer for value type <typeparamref name="T"/> that must expose a static writer method:
 /// <para>
@@ -18,7 +17,7 @@ namespace CK.BinarySerialization;
 /// <typeparam name="T">The type to deserialize.</typeparam>
 public abstract class StaticValueTypeSerializer<T> : ISerializationDriverInternal where T : struct
 {
-    class ValueTypeNullable : ISerializationDriver
+    sealed class ValueTypeNullable : ISerializationDriver
     {
         readonly StaticValueTypeSerializer<T> _serializer;
         readonly UntypedWriter _uWriter;
@@ -39,9 +38,9 @@ public abstract class StaticValueTypeSerializer<T> : ISerializationDriverInterna
 
         public int SerializationVersion => _serializer.SerializationVersion;
 
-        public ISerializationDriver ToNullable => this;
+        public ISerializationDriver Nullable => this;
 
-        public ISerializationDriver ToNonNullable => _serializer;
+        public ISerializationDriver NonNullable => _serializer;
 
         public SerializationDriverCacheLevel CacheLevel => _serializer.CacheLevel;
 
@@ -105,10 +104,10 @@ public abstract class StaticValueTypeSerializer<T> : ISerializationDriverInterna
     void ISerializationDriverInternal.WriteObjectData( IBinarySerializer s, in object o ) => _tWriter( s, (T)o );
 
     /// <inheritdoc />
-    public ISerializationDriver ToNullable => _nullable;
+    public ISerializationDriver Nullable => _nullable;
 
     /// <inheritdoc />
-    public ISerializationDriver ToNonNullable => this;
+    public ISerializationDriver NonNullable => this;
 
     /// <inheritdoc />
     public abstract string DriverName { get; }

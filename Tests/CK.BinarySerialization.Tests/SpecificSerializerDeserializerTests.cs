@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using CK.Core;
 using static CK.Testing.MonitorTestHelper;
-using FluentAssertions;
+using Shouldly;
 using System.Diagnostics;
 
 namespace CK.BinarySerialization.Tests;
@@ -46,7 +46,7 @@ public class SpecificSerializerDeserializerTests
     {
         protected override void ReadInstance( ref RefReader r )
         {
-            r.ReadInfo.Version.Should().Be( 3712 );
+            r.ReadInfo.Version.ShouldBe( 3712 );
             var n = new Node();
             var d = r.SetInstance( n );
             n.Name = r.Reader.ReadNullableString();
@@ -70,7 +70,7 @@ public class SpecificSerializerDeserializerTests
         dC.Shared.AddDeserializerDriver( new NodeDeserializer() );
 
         Node back = TestHelper.SaveAndLoadObject( n1, sC, dC );
-        back.Should().BeEquivalentTo( n1, options => options.IgnoringCyclicReferences() );
+        back.ShouldBeEquivalentTo( n1 );
     }
 
     class NodeRoot
@@ -98,7 +98,7 @@ public class SpecificSerializerDeserializerTests
     {
         protected override void ReadInstance( ref RefReader r )
         {
-            r.ReadInfo.Version.Should().Be( 0 );
+            r.ReadInfo.Version.ShouldBe( 0 );
             var n = new NodeRoot();
             var d = r.SetInstance( n );
             n.FirstRoot = d.ReadNullableObject<Node>();
@@ -124,9 +124,9 @@ public class SpecificSerializerDeserializerTests
         dC.Shared.AddDeserializerDriver( new NodeRootDeserializer() );
 
         NodeRoot back = TestHelper.SaveAndLoadObject( root, sC, dC );
-        back.Should().BeEquivalentTo( root );
+        back.ShouldBeEquivalentTo( root );
         Debug.Assert( back.Nodes != null && back.Nodes.Count == 2 );
-        back.Nodes[0].Should().BeSameAs( back.FirstRoot );
-        back.Nodes[1].Should().BeSameAs( back.SecondRoot );
+        back.Nodes[0].ShouldBeSameAs( back.FirstRoot );
+        back.Nodes[1].ShouldBeSameAs( back.SecondRoot );
     }
 }

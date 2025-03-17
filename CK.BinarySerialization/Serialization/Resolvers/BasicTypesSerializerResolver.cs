@@ -55,12 +55,12 @@ public sealed class BasicTypesSerializerResolver : ISerializerResolver
     static void Register<T>( StaticValueTypeSerializer<T> driver ) where T : struct
     {
         _byType.Add( typeof( T ), driver );
-        _byType.Add( typeof( Nullable<> ).MakeGenericType( typeof( T ) ), driver.ToNullable );
+        _byType.Add( typeof( Nullable<> ).MakeGenericType( typeof( T ) ), driver.Nullable );
     }
 
     static void Register<T>( ReferenceTypeSerializer<T> driver ) where T : class
     {
-        _byType.Add( typeof( T ), driver.ToNullable );
+        _byType.Add( typeof( T ), driver.Nullable );
     }
 
     /// <inheritdoc />

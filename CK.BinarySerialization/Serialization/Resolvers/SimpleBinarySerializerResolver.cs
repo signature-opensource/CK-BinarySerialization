@@ -79,7 +79,7 @@ public sealed class SimpleBinarySerializerResolver : ISerializerResolver
             return (ISerializationDriver)Activator.CreateInstance( tV )!;
         }
         var tR = typeof( SimpleBinarySerializableDriverR<> ).MakeGenericType( t );
-        return ((ISerializationDriver)Activator.CreateInstance( tR )!).ToNullable;
+        return ((ISerializationDriver)Activator.CreateInstance( tR )!).Nullable;
     }
 
     sealed class SealedBinarySerializableDriverR<T> : ReferenceTypeSerializer<T> where T : class, ICKVersionedBinarySerializable
@@ -113,6 +113,6 @@ public sealed class SimpleBinarySerializerResolver : ISerializerResolver
             return (ISerializationDriver)Activator.CreateInstance( tV, v )!;
         }
         var tR = typeof( SealedBinarySerializableDriverR<> ).MakeGenericType( t );
-        return ((ISerializationDriver)Activator.CreateInstance( tR, v )!).ToNullable;
+        return ((ISerializationDriver)Activator.CreateInstance( tR, v )!).Nullable;
     }
 }

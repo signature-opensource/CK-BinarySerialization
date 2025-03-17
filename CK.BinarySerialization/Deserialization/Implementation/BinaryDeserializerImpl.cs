@@ -9,7 +9,7 @@ using System.Xml;
 
 namespace CK.BinarySerialization;
 
-class BinaryDeserializerImpl : IBinaryDeserializer, IDisposable
+sealed class BinaryDeserializerImpl : IBinaryDeserializer, IDisposable
 {
     ICKBinaryReader _reader;
     readonly RewindableStream _rewindableStream;
@@ -164,7 +164,7 @@ class BinaryDeserializerImpl : IBinaryDeserializer, IDisposable
             ThrowInvalidDataException( $"Expecting marker ObjectData or DeferredObject. Got '{b}'." );
         }
         var info = ReadTypeInfo();
-        return ReadObjectCore( b, info, (IDeserializationDriverInternal)info.GetConcreteDriver( expected ).ToNonNullable );
+        return ReadObjectCore( b, info, (IDeserializationDriverInternal)info.GetConcreteDriver( expected ).NonNullable );
     }
 
     internal object ReadObjectCore( SerializationMarker b, ITypeReadInfo info, IDeserializationDriverInternal d )
@@ -408,7 +408,7 @@ class BinaryDeserializerImpl : IBinaryDeserializer, IDisposable
             if( b == SerializationMarker.DeferredObject )
             {
                 var deferredInfo = ReadTypeInfo();
-                return (T)ReadObjectCore( b, deferredInfo, (IDeserializationDriverInternal)deferredInfo.GetConcreteDriver( typeof( T ) ).ToNonNullable );
+                return (T)ReadObjectCore( b, deferredInfo, (IDeserializationDriverInternal)deferredInfo.GetConcreteDriver( typeof( T ) ).NonNullable );
             }
             ThrowInvalidDataException( $"Unexpected '{b}' marker while reading non nullable '{typeof( T )}'." );
         }

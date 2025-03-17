@@ -1,5 +1,5 @@
 using CK.Core;
-using FluentAssertions;
+using Shouldly;
 using NUnit.Framework;
 using System;
 using System.Diagnostics;
@@ -54,7 +54,7 @@ public partial class MutationTests
 
         public ThingSealedClass( ICKBinaryReader r, int version )
         {
-            version.Should().Be( 42 );
+            version.ShouldBe( 42 );
             Name = r.ReadString();
         }
 
@@ -63,7 +63,6 @@ public partial class MutationTests
             w.Write( Name );
         }
     }
-
 
     [Test]
     public void from_struct_to_sealed_class_using_ICKVersionedBinarySerializable()
@@ -81,14 +80,14 @@ public partial class MutationTests
         var t = new ThingStruct( "Spi" );
         object backT = TestHelper.SaveAndLoadAny( t, deserializerContext: dC );
         var tC = (ThingSealedClass)backT;
-        tC.Name.Should().Be( t.Name );
+        tC.Name.ShouldBe( t.Name );
 
         var tA = new ThingStruct[] { new ThingStruct( "n°1" ), new ThingStruct( "n°2" ) };
         object backA = TestHelper.SaveAndLoadAny( tA, deserializerContext: dC );
         var tAC = (ThingSealedClass[])backA;
-        tAC.Length.Should().Be( 2 );
-        tAC[0].Name.Should().Be( tA[0].Name );
-        tAC[1].Name.Should().Be( tA[1].Name );
+        tAC.Length.ShouldBe( 2 );
+        tAC[0].Name.ShouldBe( tA[0].Name );
+        tAC[1].Name.ShouldBe( tA[1].Name );
     }
 
     [Test]
@@ -107,14 +106,14 @@ public partial class MutationTests
         var t = new ThingSealedClass( "Spi" );
         object backT = TestHelper.SaveAndLoadAny( t, deserializerContext: dC );
         var tC = (ThingStruct)backT;
-        tC.Name.Should().Be( t.Name );
+        tC.Name.ShouldBe( t.Name );
 
         var tA = new ThingSealedClass[] { new ThingSealedClass( "n°1" ), new ThingSealedClass( "n°2" ) };
         object backA = TestHelper.SaveAndLoadAny( tA, deserializerContext: dC );
         var tAC = (ThingStruct?[])backA;
-        tAC.Length.Should().Be( 2 );
-        tAC[0]!.Value.Name.Should().Be( tA[0].Name );
-        tAC[1]!.Value.Name.Should().Be( tA[1].Name );
+        tAC.Length.ShouldBe( 2 );
+        tAC[0]!.Value.Name.ShouldBe( tA[0].Name );
+        tAC[1]!.Value.Name.ShouldBe( tA[1].Name );
     }
 
 
@@ -172,7 +171,7 @@ public partial class MutationTests
                 actualVersion = version;
             }
             // (Handle the different versions as needed.)
-            actualVersion.Should().BeInRange( 0, 5 );
+            actualVersion.ShouldBeInRange( 0, 5 );
             if( version >= 5 )
             {
                 V5HasANewProp = r.ReadString();
@@ -210,7 +209,7 @@ public partial class MutationTests
 
         object backT = TestHelper.SaveAndLoadAny( t, deserializerContext: dC );
         var tC = (AnotherThingButClassAndVersioned)backT;
-        tC.Name.Should().Be( t.Name );
+        tC.Name.ShouldBe( t.Name );
         BinarySerializer.IdempotenceCheck( tC );
 
         var tA = new AnotherThingStructSimple[] { new AnotherThingStructSimple( "n°1" ), new AnotherThingStructSimple( "n°2" ) };
@@ -218,9 +217,9 @@ public partial class MutationTests
 
         object backA = TestHelper.SaveAndLoadAny( tA, deserializerContext: dC );
         var tAC = (AnotherThingButClassAndVersioned?[])backA;
-        tAC.Length.Should().Be( 2 );
-        tAC[0]!.Name.Should().Be( tA[0].Name );
-        tAC[1]!.Name.Should().Be( tA[1].Name );
+        tAC.Length.ShouldBe( 2 );
+        tAC[0]!.Name.ShouldBe( tA[0].Name );
+        tAC[1]!.Name.ShouldBe( tA[1].Name );
         BinarySerializer.IdempotenceCheck( tAC );
     }
 
@@ -257,13 +256,13 @@ public partial class MutationTests
                 else
                 {
                     // The current version, the one ready to be muted into Simple: it has its version byte.
-                    version.Should().Be( 6 );
+                    version.ShouldBe( 6 );
                     // We can read (or simply skip) the future simple version byte (that is 6).
                     actualVersion = r.ReadByte(); // Or r.ReadByte(); only to skip it.
                 }
             }
             // (Handle the different versions as needed.)
-            actualVersion.Should().BeInRange( 0, 6 );
+            actualVersion.ShouldBeInRange( 0, 6 );
             if( version == 5 )
             {
                 // Skip the property that has disappeared.
@@ -333,9 +332,9 @@ public partial class MutationTests
         dC.Shared.AddDeserializationHook( SetNewLocalType );
 
         var backA = TestHelper.SaveAndLoadObject( tA, deserializerContext: dC );
-        backA.Length.Should().Be( 3 );
-        backA.Should().AllBeOfType<AnotherThingVersionedThatWantsToGoBackToSimple>();
-        backA.Cast<AnotherThingVersionedThatWantsToGoBackToSimple>().Select( s => s.Name ).Should().BeEquivalentTo( new[] { "n°1", "n°2", "n°3" } );
+        backA.Length.ShouldBe( 3 );
+        backA.ShouldAllBe(c => c is AnotherThingVersionedThatWantsToGoBackToSimple);
+        backA.Cast<AnotherThingVersionedThatWantsToGoBackToSimple>().Select( s => s.Name ).ShouldBe( new[] { "n°1", "n°2", "n°3" } );
 
         BinarySerializer.IdempotenceCheck( backA );
 
@@ -351,8 +350,8 @@ public partial class MutationTests
         dC.Shared.AddDeserializationHook( SetLastSimple );
 
         object[] backFinalObjects = TestHelper.SaveAndLoadObject( backA, deserializerContext: dC );
-        backFinalObjects.Should().AllBeOfType<AnotherThingBackToSimple>();
-        backFinalObjects.Cast<AnotherThingBackToSimple>().Select( s => s.Name ).Should().BeEquivalentTo( new[] { "n°1", "n°2", "n°3" } );
+        backFinalObjects.ShouldAllBe(c => c is AnotherThingBackToSimple);
+        backFinalObjects.Cast<AnotherThingBackToSimple>().Select( s => s.Name ).ShouldBe( new[] { "n°1", "n°2", "n°3" } );
     }
 
 

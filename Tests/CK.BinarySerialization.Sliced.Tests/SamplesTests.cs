@@ -1,5 +1,5 @@
 using CK.Core;
-using FluentAssertions;
+using Shouldly;
 using NUnit.Framework;
 using System.Linq;
 using static CK.Testing.MonitorTestHelper;
@@ -15,7 +15,7 @@ public class SamplesTests
     {
         var o = new Samples.Town( "Paris" );
         object? backO = TestHelper.SaveAndLoadAny( o );
-        backO.Should().BeEquivalentTo( o );
+        backO.ShouldBeEquivalentTo( o );
 
         BinarySerializer.IdempotenceCheck( o );
     }
@@ -27,12 +27,12 @@ public class SamplesTests
         var p = new Samples.Person( t ) { Name = "Albert" };
 
         object? backP = TestHelper.SaveAndLoadAny( p );
-        backP.Should().BeEquivalentTo( p, o => o.IgnoringCyclicReferences() );
+        backP.ShouldBeEquivalentTo( p );
 
         BinarySerializer.IdempotenceCheck( p );
 
         object? backT = TestHelper.SaveAndLoadAny( t );
-        backT.Should().BeEquivalentTo( t, o => o.IgnoringCyclicReferences() );
+        backT.ShouldBeEquivalentTo(t);
 
         BinarySerializer.IdempotenceCheck( t );
     }
@@ -54,9 +54,9 @@ public class SamplesTests
             }
         }
         var backG = TestHelper.SaveAndLoadObject( town );
-        // This enters an infinite loop: backG.Should().BeEquivalentTo( town, o => o.IgnoringCyclicReferences() );
+        // This enters an infinite loop: backG.ShouldBe( town, o => o.IgnoringCyclicReferences() );
         // Using the Statistics.
-        backG.Stats.Should().Be( town.Stats );
+        backG.Stats.ShouldBe( town.Stats );
         BinarySerializer.IdempotenceCheck( town );
     }
 
@@ -71,9 +71,9 @@ public class SamplesTests
 
         {
             var backT = TestHelper.SaveAndLoadObject( t );
-            backT.Should().BeEquivalentTo( t, o => o.IgnoringCyclicReferences() );
+            backT.ShouldBeEquivalentTo(t);
             var eBack = backT.Persons.OfType<Samples.Employee>().Single( p => p.Name == "Albert" );
-            ((Samples.Manager)eBack.BestFriend!).Rank.Should().Be( 42 );
+            ((Samples.Manager)eBack.BestFriend!).Rank.ShouldBe( 42 );
         }
 
         BinarySerializer.IdempotenceCheck( t );
@@ -90,11 +90,11 @@ public class SamplesTests
             // Albert is alone in the list.
             var eBack = backT.Persons.Cast<Samples.Employee>().Single( p => p.Name == "Albert" );
             // And its BestFriend is destroyed.
-            eBack.BestFriend!.IsDestroyed.Should().BeTrue();
+            eBack.BestFriend!.IsDestroyed.ShouldBeTrue();
             // Specialized data of destroyed object is not written (and not read back).
             // We, here, serialize the Person's Name (Person is the root of the hierarchy) to be able to identify them.
-            eBack.BestFriend!.Name.Should().Be( "Alice" );
-            ((Samples.Manager)eBack.BestFriend!).Rank.Should().Be( 0, "Rank has NOT been read back." );
+            eBack.BestFriend!.Name.ShouldBe( "Alice" );
+            ((Samples.Manager)eBack.BestFriend!).Rank.ShouldBe( 0, "Rank has NOT been read back." );
         }
 
         BinarySerializer.IdempotenceCheck( t );
@@ -109,15 +109,15 @@ public class SamplesTests
         BinarySerializer.IdempotenceCheck( town );
 
         var duplicate = BinarySerializer.DeepClone( town );
-        duplicate.Stats.Should().Be( town.Stats );
+        duplicate.Stats.ShouldBe( town.Stats );
 
         var town2 = SamplesV2.Town.CreateTown( seed );
-        if( seed != null ) town2.Stats.Should().Be( town.Stats );
+        if( seed != null ) town2.Stats.Equals( town.Stats ).ShouldBeTrue();
 
         BinarySerializer.IdempotenceCheck( town2 );
 
         var duplicate2 = BinarySerializer.DeepClone( town2 );
-        duplicate2.Stats.Should().Be( town2.Stats );
+        duplicate2.Stats.Equals(town2.Stats).ShouldBeTrue();
     }
 
 }

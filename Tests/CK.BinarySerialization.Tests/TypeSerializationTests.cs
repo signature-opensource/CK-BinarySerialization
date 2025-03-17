@@ -1,5 +1,5 @@
 using CK.Core;
-using FluentAssertions;
+using Shouldly;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -60,18 +60,18 @@ public class TypeSerializationTests
     public void Type_serialization( Type t )
     {
         Type backRW = TestHelper.SaveAndLoad( t, ( type, w ) => w.WriteTypeInfo( type ), r => r.ReadTypeInfo().ResolveLocalType() );
-        backRW.Should().BeSameAs( t );
+        backRW.ShouldBeSameAs( t );
 
         Type backO = (Type)TestHelper.SaveAndLoadObject( t );
-        backO.Should().BeSameAs( t );
+        backO.ShouldBeSameAs( t );
 
         Type tRef = t.MakeByRefType();
         Type backRef = (Type)TestHelper.SaveAndLoadObject( tRef );
-        backRef.Should().BeSameAs( tRef );
+        backRef.ShouldBeSameAs( tRef );
 
         Type tPointer = t.MakePointerType();
         Type backPointer = (Type)TestHelper.SaveAndLoadObject( tPointer );
-        backPointer.Should().BeSameAs( tPointer );
+        backPointer.ShouldBeSameAs( tPointer );
     }
 
     [Test]
@@ -79,7 +79,7 @@ public class TypeSerializationTests
     {
         var gT = typeof( OpenArrayHolder<> ).GetField( "A" )!.FieldType;
         Type backRW = TestHelper.SaveAndLoad( gT, ( type, w ) => w.WriteTypeInfo( type ), r => r.ReadTypeInfo().ResolveLocalType() );
-        backRW.Should().BeSameAs( typeof( Array ) );
+        backRW.ShouldBeSameAs( typeof( Array ) );
     }
 
     class L : List<List<L>>
@@ -91,7 +91,7 @@ public class TypeSerializationTests
     {
         var t = typeof( L );
         Type backT = TestHelper.SaveAndLoad( t, ( type, w ) => w.WriteTypeInfo( type ), r => r.ReadTypeInfo().ResolveLocalType() );
-        backT.Should().BeSameAs( typeof( L ) );
+        backT.ShouldBeSameAs( typeof( L ) );
     }
 
 
@@ -114,28 +114,28 @@ public class TypeSerializationTests
                 ITypeReadInfo info;
                 // int
                 info = r.ReadTypeInfo();
-                info.IsNullable.Should().BeFalse();
-                info.ResolveLocalType().Should().BeSameAs( typeof( int ) );
+                info.IsNullable.ShouldBeFalse();
+                info.ResolveLocalType().ShouldBeSameAs( typeof( int ) );
                 // int, nullable = true
                 info = r.ReadTypeInfo();
-                info.IsNullable.Should().BeTrue();
-                info.ResolveLocalType().Should().BeSameAs( typeof( int? ) );
+                info.IsNullable.ShouldBeTrue();
+                info.ResolveLocalType().ShouldBeSameAs( typeof( int? ) );
                 // int?, nullable = false
                 info = r.ReadTypeInfo();
-                info.IsNullable.Should().BeFalse();
-                info.ResolveLocalType().Should().BeSameAs( typeof( int ) );
+                info.IsNullable.ShouldBeFalse();
+                info.ResolveLocalType().ShouldBeSameAs( typeof( int ) );
                 // string
                 info = r.ReadTypeInfo();
-                info.IsNullable.Should().BeTrue();
-                info.ResolveLocalType().Should().BeSameAs( typeof( string ) );
+                info.IsNullable.ShouldBeTrue();
+                info.ResolveLocalType().ShouldBeSameAs( typeof( string ) );
                 // string, nullable = true (no change since we work in oblivious nullable context)
                 info = r.ReadTypeInfo();
-                info.IsNullable.Should().BeTrue();
-                info.ResolveLocalType().Should().BeSameAs( typeof( string ) );
+                info.IsNullable.ShouldBeTrue();
+                info.ResolveLocalType().ShouldBeSameAs( typeof( string ) );
                 // string, nullable = false
                 info = r.ReadTypeInfo();
-                info.IsNullable.Should().BeFalse();
-                info.ResolveLocalType().Should().BeSameAs( typeof( string ) );
+                info.IsNullable.ShouldBeFalse();
+                info.ResolveLocalType().ShouldBeSameAs( typeof( string ) );
             } );
 
     }
@@ -147,7 +147,7 @@ public class TypeSerializationTests
         Delegate d = (Action<int>)l.Add;
         var type = d.GetType();
         Type backT = TestHelper.SaveAndLoad( type, ( type, w ) => w.WriteTypeInfo( type ), r => r.ReadTypeInfo().ResolveLocalType() );
-        backT.Should().BeSameAs( type );
+        backT.ShouldBeSameAs( type );
     }
 
     class A { }
@@ -160,7 +160,7 @@ public class TypeSerializationTests
     public void generic_base_with_interface()
     {
         Type backT = TestHelper.SaveAndLoad( typeof( CS ), ( type, w ) => w.WriteTypeInfo( type ), r => r.ReadTypeInfo().ResolveLocalType() );
-        backT.Should().BeSameAs( typeof( CS ) );
+        backT.ShouldBeSameAs( typeof( CS ) );
     }
 
 }

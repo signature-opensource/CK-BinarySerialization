@@ -21,7 +21,7 @@ sealed class NullableTypeReadInfo : ITypeReadInfo
 
     public bool IsSealed => _nonNull.IsSealed;
 
-    public ITypeReadInfo ToNonNullable => _nonNull;
+    public ITypeReadInfo NonNullable => _nonNull;
 
     public TypeReadInfoKind Kind => _nonNull.Kind;
 
@@ -100,10 +100,10 @@ sealed class NullableTypeReadInfo : ITypeReadInfo
         return _localType;
     }
 
-    public IDeserializationDriver GetConcreteDriver( Type? expected ) => _nonNull.GetConcreteDriver( expected ).ToNullable;
+    public IDeserializationDriver GetConcreteDriver( Type? expected ) => _nonNull.GetConcreteDriver( expected ).Nullable;
 
     public override string ToString() => '?' + _nonNull.ToString();
 
-    public IDeserializationDriver GetPotentiallyAbstractDriver( Type? expected ) => _nonNull.GetPotentiallyAbstractDriver( expected ).ToNullable;
+    public IDeserializationDriver GetPotentiallyAbstractDriver( Type? expected ) => _nonNull.GetPotentiallyAbstractDriver( expected ).Nullable;
 
 }

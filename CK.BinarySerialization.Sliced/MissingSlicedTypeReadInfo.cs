@@ -50,7 +50,7 @@ public class MissingSlicedTypeReadInfo : ITypeReadInfo
     /// <summary>
     /// Always this information.
     /// </summary>
-    public ITypeReadInfo ToNonNullable => this;
+    public ITypeReadInfo NonNullable => this;
 
     /// <summary>
     /// Always <see cref="TypeReadInfoKind.None"/>.

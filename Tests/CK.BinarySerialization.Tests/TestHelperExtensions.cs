@@ -1,6 +1,6 @@
 using CK.BinarySerialization;
 using CK.Testing;
-using FluentAssertions;
+using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -166,30 +166,30 @@ static class TestHelperExtensions
         }
     }
 
-    static object BeforeWrite( IDisposableBinarySerializer writer )
+    static object BeforeWrite( IBinarySerializer s )
     {
-        writer.DebugWriteMode( true );
+        s.DebugWriteMode( true );
 
         var o1 = new object();
         if( CheckObjectReferences )
         {
-            writer.WriteAny( o1 );
+            s.WriteAny( o1 );
         }
 
-        writer.DebugWriteSentinel();
+        s.DebugWriteSentinel();
         return o1;
     }
 
-    static void AfterWrite( IDisposableBinarySerializer writer, object o1 )
+    static void AfterWrite( IBinarySerializer s, object o1 )
     {
-        writer.DebugWriteSentinel();
+        s.DebugWriteSentinel();
 
         if( CheckObjectReferences )
         {
-            writer.WriteAny( o1 );
+            s.WriteAny( o1 );
             var o2 = new object();
-            writer.WriteAny( o2 );
-            writer.WriteAny( o2 );
+            s.WriteAny( o2 );
+            s.WriteAny( o2 );
         }
     }
 
@@ -212,10 +212,10 @@ static class TestHelperExtensions
 
         if( CheckObjectReferences )
         {
-            d.ReadAny().Should().BeSameAs( r1 );
+            d.ReadAny().ShouldBeSameAs( r1 );
             var r2 = d.ReadAny();
-            r2.Should().BeOfType<object>();
-            d.ReadAny().Should().BeSameAs( r2 );
+            r2.ShouldBeOfType<object>();
+            d.ReadAny().ShouldBeSameAs( r2 );
         }
     }
 

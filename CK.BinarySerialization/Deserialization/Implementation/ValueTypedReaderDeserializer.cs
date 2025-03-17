@@ -39,16 +39,16 @@ public sealed class ValueTypedReaderDeserializer<T> : IDeserializationDriverInte
 
         public bool IsCached => _deserializer.IsCached;
 
-        IDeserializationDriver IDeserializationDriver.ToNullable => this;
+        IDeserializationDriver IDeserializationDriver.Nullable => this;
 
-        IDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
+        IDeserializationDriver IDeserializationDriver.NonNullable => _deserializer;
 
         public T? ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
         {
             Debug.Assert( readInfo.IsNullable );
             if( d.Reader.ReadBoolean() )
             {
-                return _deserializer._reader( d, readInfo.ToNonNullable );
+                return _deserializer._reader( d, readInfo.NonNullable );
             }
             return default;
         }
@@ -72,8 +72,8 @@ public sealed class ValueTypedReaderDeserializer<T> : IDeserializationDriverInte
     }
 
     /// <summary>
-    /// Initializes a new <see cref="ValueTypedReaderDeserializer{T}"/> from a constructor 
-    /// from which a reader function that calls the constructor is derived.
+    /// Initializes a new <see cref="ValueTypedReaderDeserializer{T}"/> thanks to the constructor(IBinaryDeserializer, ITypeReadInfo)
+    /// from which the reader function that invokes the constructor is created.
     /// </summary>
     /// <param name="ctor">Deserialization constructor. See <see cref="BinaryDeserializer.Helper.GetTypedReaderConstructor(Type)"/>.</param>
     /// <param name="isCached">Whether this deserializer is cached.</param>
@@ -97,9 +97,9 @@ public sealed class ValueTypedReaderDeserializer<T> : IDeserializationDriverInte
     /// <inheritdoc />
     public IValueTypeNonNullableDeserializationDriver<T> ToNonNullable => this;
 
-    IDeserializationDriver IDeserializationDriver.ToNullable => _null;
+    IDeserializationDriver IDeserializationDriver.Nullable => _null;
 
-    IDeserializationDriver IDeserializationDriver.ToNonNullable => this;
+    IDeserializationDriver IDeserializationDriver.NonNullable => this;
 
     T IValueTypeNonNullableDeserializationDriver<T>.ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo ) => _reader( d, readInfo );
 

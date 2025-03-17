@@ -2,7 +2,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using CK.Core;
-using FluentAssertions;
+using Shouldly;
 using static CK.Testing.MonitorTestHelper;
 using CSemVer;
 using System.Linq;
@@ -21,11 +21,11 @@ public class CSemVerSerializationTests
     public void valid_SVersion( string text )
     {
         var v = SVersion.Parse( text, handleCSVersion: false, checkBuildMetaDataSyntax: false );
-        v.ParsedText.Should().Be( text );
+        v.ParsedText.ShouldBe( text );
 
         var backV = TestHelper.SaveAndLoadObject( v );
-        backV.Should().Be( v );
-        backV.ParsedText.Should().Be( text );
+        backV.ShouldBe( v );
+        backV.ParsedText.ShouldBe( text );
     }
 
     [TestCase( "0.0.a-0" )]
@@ -37,22 +37,22 @@ public class CSemVerSerializationTests
     public void invalid_SVersion( string text )
     {
         var v = SVersion.TryParse( text, handleCSVersion: false, checkBuildMetaDataSyntax: false );
-        v.ParsedText.Should().Be( text );
-        v.IsValid.Should().BeFalse();
+        v.ParsedText.ShouldBe( text );
+        v.IsValid.ShouldBeFalse();
 
         var backV = TestHelper.SaveAndLoadObject( v );
-        backV.Should().Be( v );
-        backV.ParsedText.Should().Be( text );
-        backV.ErrorMessage.Should().Be( v.ErrorMessage );
+        backV.ShouldBe( v );
+        backV.ParsedText.ShouldBe( text );
+        backV.ErrorMessage.ShouldBe( v.ErrorMessage );
     }
 
     [Test]
     public void zero_and_last_singletons_SVersion()
     {
         var backZ = TestHelper.SaveAndLoadObject( SVersion.ZeroVersion );
-        backZ.Should().BeSameAs( SVersion.ZeroVersion );
+        backZ.ShouldBeSameAs( SVersion.ZeroVersion );
         var backL = TestHelper.SaveAndLoadObject( SVersion.LastVersion );
-        backL.Should().BeSameAs( SVersion.LastVersion );
+        backL.ShouldBeSameAs( SVersion.LastVersion );
     }
 
     [TestCase( "0.0.0-alpha" )]
@@ -63,10 +63,10 @@ public class CSemVerSerializationTests
     public void valid_CSVersion( string text )
     {
         var v = CSVersion.Parse( text, checkBuildMetaDataSyntax: false );
-        v.ParsedText.Should().Be( text );
+        v.ParsedText.ShouldBe( text );
         var backV = TestHelper.SaveAndLoadObject( v );
-        backV.Should().Be( v );
-        backV.ParsedText.Should().Be( text );
+        backV.ShouldBe( v );
+        backV.ParsedText.ShouldBe( text );
     }
 
     [TestCase( "1.2.3", SVersionLock.LockPatch, PackageQuality.Exploratory )]
@@ -75,7 +75,7 @@ public class CSemVerSerializationTests
     {
         var b = new SVersionBound( SVersion.Parse( v ), l, q );
         var backB = TestHelper.SaveAndLoadValue( b );
-        backB.Should().Be( b );
+        backB.ShouldBe( b );
     }
 
     [TestCase( "1.0.0" )]
@@ -85,7 +85,7 @@ public class CSemVerSerializationTests
     {
         var q = new PackageQualityVector( versions.Split( ',' ).Select( v => SVersion.Parse( v.Trim() ) ) );
         var backQ = TestHelper.SaveAndLoadValue( q );
-        backQ.Should().BeEquivalentTo( q );
+        backQ.ShouldBe( q );
     }
 
     [Test]
@@ -93,7 +93,7 @@ public class CSemVerSerializationTests
     {
         var q = new PackageQualityVector();
         var backQ = TestHelper.SaveAndLoadValue( q );
-        backQ.Should().BeEquivalentTo( q );
+        backQ.ShouldBe( q );
     }
 
     [TestCase( "" )]
@@ -104,7 +104,7 @@ public class CSemVerSerializationTests
     {
         var q = f.Length > 0 ? new PackageQualityFilter( f ) : new PackageQualityFilter();
         var backQ = TestHelper.SaveAndLoadValue( q );
-        backQ.Should().BeEquivalentTo( q );
+        backQ.ShouldBe( q );
     }
 
     [Test]
@@ -113,22 +113,22 @@ public class CSemVerSerializationTests
         {
             var v = new Version();
             var backV = TestHelper.SaveAndLoadObject( v );
-            backV.Should().BeEquivalentTo( v );
+            backV.ShouldBe( v );
         }
         {
             var v = new Version( 1, 2 );
             var backV = TestHelper.SaveAndLoadObject( v );
-            backV.Should().BeEquivalentTo( v );
+            backV.ShouldBe( v );
         }
         {
             var v = new Version( 1, 2, 3 );
             var backV = TestHelper.SaveAndLoadObject( v );
-            backV.Should().BeEquivalentTo( v );
+            backV.ShouldBe( v );
         }
         {
             var v = new Version( 1, 2, 3, 4 );
             var backV = TestHelper.SaveAndLoadObject( v );
-            backV.Should().BeEquivalentTo( v );
+            backV.ShouldBe( v );
         }
     }
 }

@@ -1,5 +1,5 @@
 using CK.Core;
-using FluentAssertions;
+using Shouldly;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -25,11 +25,11 @@ public partial class MutationTests
             d =>
             {
                 byte? v = d.ReadNullableValue<byte>();
-                v.Should().BeOfType( typeof( byte ) ).And.Be( 5 );
+                v.ShouldNotBeNull().ShouldBe( 5 );
                 v = d.ReadNullableValue<byte>();
-                v.Should().BeOfType( typeof( byte ) ).And.Be( 5 );
+                v.ShouldNotBeNull().ShouldBe( 5 );
                 v = d.ReadNullableValue<byte>();
-                FluentActions.Invoking( () => v!.GetType() ).Should().Throw<NullReferenceException>();
+                Util.Invokable( () => v!.GetType() ).ShouldThrow<NullReferenceException>();
             } );
     }
 
@@ -39,7 +39,7 @@ public partial class MutationTests
     //    var a = new int[] { 1, 2, 3 };
     //    TestHelper.SaveAndLoad(
     //        s => s.WriteObject( a ),
-    //        d => d.ReadObject<int?[]>().Should().BeOfType<int?[]>().And.BeEquivalentTo( a ) );
+    //        d => d.ReadObject<int?[]>().ShouldBeOfType<int?[]>().And.BeEquivalentTo( a ) );
     //}
 
 

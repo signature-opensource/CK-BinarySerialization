@@ -2,7 +2,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using CK.Core;
-using FluentAssertions;
+using Shouldly;
 using static CK.Testing.MonitorTestHelper;
 
 namespace CK.BinarySerialization.Tests;
@@ -38,7 +38,7 @@ public class BasicSerializationTests
             if( s == "DateTime.Now" ) o = DateTime.Now;
         }
         object? backO = TestHelper.SaveAndLoadAny( o );
-        backO.Should().Be( o );
+        backO.ShouldBe( o );
     }
 
     static int a = 3712;
@@ -71,7 +71,7 @@ public class BasicSerializationTests
         static void Check<T>( in T x ) where T : struct
         {
             T back = TestHelper.SaveAndLoadValue( x );
-            back.Should().Be( x );
+            back.ShouldBe( x );
         }
     }
 
@@ -108,7 +108,7 @@ public class BasicSerializationTests
         static void Check<T>( in T? x ) where T : struct
         {
             T? back = TestHelper.SaveAndLoadNullableValue( x );
-            back.Should().Be( x );
+            back.ShouldBe( x );
         }
     }
 
@@ -120,23 +120,23 @@ public class BasicSerializationTests
         GrantLevel? oNN = default;
         {
             GrantLevel b = TestHelper.SaveAndLoadValue( o );
-            b.Should().Be( o );
+            b.ShouldBe( o );
         }
         {
             GrantLevel? b = TestHelper.SaveAndLoadNullableValue( oN );
-            b.Should().Be( oN );
+            b.ShouldBe( oN );
         }
         {
             GrantLevel? b = TestHelper.SaveAndLoadNullableValue( oNN );
-            b.Should().Be( oNN );
+            b.ShouldBe( oNN );
         }
         {
             object? b = TestHelper.SaveAndLoadAny( oN );
-            b.Should().Be( oN );
+            b.ShouldBe( oN );
         }
         {
             object? b = TestHelper.SaveAndLoadAny( oNN );
-            b.Should().Be( oNN );
+            b.ShouldBe( oNN );
         }
     }
 

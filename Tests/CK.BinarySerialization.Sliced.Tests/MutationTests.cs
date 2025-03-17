@@ -1,5 +1,5 @@
 using CK.Core;
-using FluentAssertions;
+using Shouldly;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -31,12 +31,12 @@ public class MutationTests
         dC.Shared.AddDeserializationHook( SetNewLocalType );
 
         var v2Car = (SamplesV2.Car)TestHelper.SaveAndLoadAny( car, deserializerContext: dC );
-        v2Car.Model.Should().Be( "Model" );
+        v2Car.Model.ShouldBe( "Model" );
 
         var listOfCars = Enumerable.Range( 0, 20 ).Select( i => new Samples.Car( $"Model n°{i}", DateTime.UtcNow ) ).ToList();
 
         var v2CarList = (List<SamplesV2.Car?>)TestHelper.SaveAndLoadAny( listOfCars, deserializerContext: dC );
-        v2CarList[0]!.Value.Model.Should().Be( "Model n°0" );
+        v2CarList[0]!.Value.Model.ShouldBe( "Model n°0" );
 
     }
 
@@ -51,7 +51,7 @@ public class MutationTests
         c.Car = car;
 
         var t2 = RunV1ToV2( t, 0 );
-        t2.Persons.OfType<SamplesV2.Customer>().Single().Car.Should().BeEquivalentTo( t2.Cars[0] );
+        t2.Persons.OfType<SamplesV2.Customer>().Single().Car.ShouldBe( t2.Cars[0] );
     }
 
     [TestCase( 0 )]
@@ -78,11 +78,10 @@ public class MutationTests
         dC.Shared.AddDeserializationHook( SwitchToV2 );
 
         var v2Town = (SamplesV2.Town)TestHelper.SaveAndLoadAny( t, new BinarySerializerContext() { MaxRecursionDepth = maxRecursionDepth }, deserializerContext: dC );
-        v2Town.Cars.Should().AllBeOfType<SamplesV2.Car>();
-        v2Town.Stats.Should().Be( t.Stats );
+        v2Town.Cars.ShouldAllBe( c => c is SamplesV2.Car );
+        v2Town.Stats.Equals( t.Stats ).ShouldBeTrue();
         return v2Town;
     }
-
 
     public sealed class DeviceEvent : ICKSimpleBinarySerializable
     {
@@ -198,7 +197,7 @@ public class MutationTests
         var dC = new BinaryDeserializerContext( new SharedBinaryDeserializerContext(), null );
         dC.Shared.AddDeserializationHook( SwitchToHolderV2 );
         var t2 = TestHelper.SaveAnyAndLoad<HolderV2>( t, new BinarySerializerContext(), deserializerContext: dC );
-        t.Events.Last.Should().NotBeNull();
+        t.Events.Last.ShouldNotBeNull();
     }
 
 }

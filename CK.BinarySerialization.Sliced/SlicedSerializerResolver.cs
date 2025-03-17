@@ -102,7 +102,7 @@ public sealed class SlicedSerializerResolver : ISerializerResolver
         List<MethodInfo> writers = new();
         GetWritersTopDown( t, writers, typeof( IDestroyable ).IsAssignableFrom( t ) );
         var tR = typeof( SlicedReferenceTypeSerializableDriver<> ).MakeGenericType( t );
-        return ((ISerializationDriver)Activator.CreateInstance( tR, version, writers, typeof( IDestroyable ).IsAssignableFrom( t ) )!).ToNullable;
+        return ((ISerializationDriver)Activator.CreateInstance( tR, version, writers, typeof( IDestroyable ).IsAssignableFrom( t ) )!).Nullable;
     }
 
     static void GetWritersTopDown( Type t, List<MethodInfo> w, bool mustBeDestroyable )

@@ -10,7 +10,7 @@ namespace CK.BinarySerialization;
 /// <typeparam name="T">The type to deserialize.</typeparam>
 public abstract class ReferenceTypeDeserializerBase<T> : IDeserializationDriverInternal where T : class
 {
-    class NullableAdapter : IDeserializationDriver
+    sealed class NullableAdapter : IDeserializationDriver
     {
         readonly ReferenceTypeDeserializerBase<T> _deserializer;
         readonly TypedReader<T?> _reader;
@@ -27,9 +27,9 @@ public abstract class ReferenceTypeDeserializerBase<T> : IDeserializationDriverI
 
         public bool IsCached => _deserializer.IsCached;
 
-        IDeserializationDriver IDeserializationDriver.ToNullable => this;
+        IDeserializationDriver IDeserializationDriver.Nullable => this;
 
-        IDeserializationDriver IDeserializationDriver.ToNonNullable => _deserializer;
+        IDeserializationDriver IDeserializationDriver.NonNullable => _deserializer;
 
         public T? ReadInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
         {
@@ -45,12 +45,13 @@ public abstract class ReferenceTypeDeserializerBase<T> : IDeserializationDriverI
 
     readonly NullableAdapter _null;
     readonly TypedReader<T> _reader;
+    readonly bool _isCached;
 
     private protected ReferenceTypeDeserializerBase( bool isCached )
     {
         _null = new NullableAdapter( this );
         _reader = ReadRefOrInstance;
-        IsCached = isCached;
+        _isCached = isCached;
     }
 
     T ReadRefOrInstance( IBinaryDeserializer d, ITypeReadInfo readInfo )
@@ -80,11 +81,11 @@ public abstract class ReferenceTypeDeserializerBase<T> : IDeserializationDriverI
     public Delegate TypedReader => _reader;
 
     /// <inheritdoc />
-    public bool IsCached { get; }
+    public bool IsCached => _isCached;
 
-    IDeserializationDriver IDeserializationDriver.ToNullable => _null;
+    IDeserializationDriver IDeserializationDriver.Nullable => _null;
 
-    IDeserializationDriver IDeserializationDriver.ToNonNullable => this;
+    IDeserializationDriver IDeserializationDriver.NonNullable => this;
 
     object IDeserializationDriverInternal.ReadObjectData( IBinaryDeserializer d, ITypeReadInfo readInfo ) => ReadInstance( d, readInfo );
 

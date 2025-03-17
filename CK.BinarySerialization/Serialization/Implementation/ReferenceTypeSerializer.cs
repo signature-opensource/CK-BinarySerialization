@@ -29,9 +29,9 @@ public abstract class ReferenceTypeSerializer<T> : ISerializationDriverInternal 
 
         public int SerializationVersion => _serializer.SerializationVersion;
 
-        public ISerializationDriver ToNullable => this;
+        public ISerializationDriver Nullable => this;
 
-        public ISerializationDriver ToNonNullable => _serializer;
+        public ISerializationDriver NonNullable => _serializer;
 
         public SerializationDriverCacheLevel CacheLevel => _serializer.CacheLevel;
 
@@ -85,10 +85,10 @@ public abstract class ReferenceTypeSerializer<T> : ISerializationDriverInternal 
     public Delegate TypedWriter => _tWriter;
 
     /// <inheritdoc />
-    public ISerializationDriver ToNullable => _nullable;
+    public ISerializationDriver Nullable => _nullable;
 
     /// <inheritdoc />
-    public ISerializationDriver ToNonNullable => this;
+    public ISerializationDriver NonNullable => this;
 
     /// <inheritdoc />
     public abstract string DriverName { get; }

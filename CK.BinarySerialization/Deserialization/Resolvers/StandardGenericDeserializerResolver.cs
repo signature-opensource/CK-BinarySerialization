@@ -3,9 +3,11 @@ using CK.Core;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace CK.BinarySerialization;
@@ -32,6 +34,9 @@ public sealed class StandardGenericDeserializerResolver : IDeserializerResolver
     // since the TypeReadInfo ultimately caches the final driver (including unresolved and non cached ones).
     // The object key is:
     //  - The local Type for an enum when the local target enum underlying type is the same as the written one.
+    //  - The local type of any ImmutableArray<T> when the expected type is a ImmutableArray<X> whatever X is because
+    //    ImmutableArray serializes the inner T[] array: the deserializer.ReadNullableObject<T[]>() call will handle
+    //    item type adaptation if any.
     //  - TupleKey (see below) for ValueTuple and Tuple.
     //  - Boxed ValueTuple for other types:
     //     - (IDeserializationDriver Item, int Rank) for array (Rank >= 1).
@@ -39,7 +44,7 @@ public sealed class StandardGenericDeserializerResolver : IDeserializerResolver
     readonly ConcurrentDictionary<object, IDeserializationDriver> _cache;
     readonly SharedBinaryDeserializerContext _context;
 
-    class TupleKey : IEquatable<TupleKey>
+    sealed class TupleKey : IEquatable<TupleKey>
     {
         public readonly IDeserializationDriver[] Drivers;
         public readonly bool IsValueTuple;
@@ -117,6 +122,20 @@ public sealed class StandardGenericDeserializerResolver : IDeserializerResolver
             {
                 return TryGetTuple( ref info, false );
             }
+            case "ImmutableArray":
+            {
+                if( info.ExpectedType.Name == "ImmutableArray`1"
+                    && info.ExpectedType.Namespace == "System.Collections.Immutable" )
+                {
+                    return GetImmutableArrayDriver( ref info );
+                }
+                if( info.ExpectedType.IsSZArray )
+                {
+                    // DArray<> handles the read from ImmutableArray driver.
+                    return GetArrayDriver( ref info );
+                }
+                return null;
+            }
             case "Array":
             {
                 Debug.Assert( info.ReadInfo.Kind == TypeReadInfoKind.Array );
@@ -124,10 +143,7 @@ public sealed class StandardGenericDeserializerResolver : IDeserializerResolver
                 // Fast path
                 if( info.ExpectedType.IsArray )
                 {
-                    var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver( info.ExpectedType.GetElementType() );
-                    return item.IsCached
-                            ? _cache.GetOrAdd( (item, info.ReadInfo.ArrayRank), CreateCachedArray )
-                            : CreateArray( item, info.ReadInfo.ArrayRank );
+                    return GetArrayDriver( ref info );
                 }
                 if( info.ReadInfo.ArrayRank == 1 && info.ExpectedType.IsGenericType )
                 {
@@ -148,7 +164,7 @@ public sealed class StandardGenericDeserializerResolver : IDeserializerResolver
                 {
                     return null;
                 }
-                return TryGetDoubleGenericParameter( ref info, typeof( DDictionary<,> ) );
+                return GetDoubleGenericParameter( ref info, typeof( DDictionary<,> ) );
             case "List":
             case "Stack":
                 return TryGetListOrStack( ref info );
@@ -171,19 +187,59 @@ public sealed class StandardGenericDeserializerResolver : IDeserializerResolver
                 {
                     return null;
                 }
-                return TryGetDoubleGenericParameter( ref info, typeof( DKeyValuePair<,> ) );
+                return GetDoubleGenericParameter( ref info, typeof( DKeyValuePair<,> ) );
         }
         return null;
+    }
+
+    IDeserializationDriver GetArrayDriver( ref DeserializerResolverArg info )
+    {
+        Throw.DebugAssert( "Used by Array, ImmutableArray, List and Stack.",
+                           info.ExpectedType.IsArray
+                           || info.ExpectedType.Name == "ImmutableArray`1"
+                           || info.ExpectedType.Name == "List`1"
+                           || info.ExpectedType.Name == "Stack`1" );
+        var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver( info.ExpectedType.GetElementType() );
+        // We don't handle array rank mutations: this works for the ArrayRank when the written type
+        // is an array but when the expected type is a List, ImmutableArray or Stack, the ArrayRank is 0 (as
+        // the ReadInfo is not an array one), so we adapt this.
+        int arrayRank = info.ReadInfo.ArrayRank;
+        if( arrayRank == 0 ) arrayRank = 1;
+        return item.IsCached
+                ? _cache.GetOrAdd( (item, arrayRank), CreateCachedArray )
+                : CreateArray( item, arrayRank );
+
+        static IDeserializationDriver CreateCachedArray( object key )
+        {
+            var (item, rank) = ((IDeserializationDriver I, int Rank))key;
+            return CreateArray( item, rank );
+        }
+
+        static IDeserializationDriver CreateArray( IDeserializationDriver item, int rank )
+        {
+            if( rank == 1 )
+            {
+                var t1 = typeof( DArray<> ).MakeGenericType( item.ResolvedType );
+                return (IDeserializationDriver)Activator.CreateInstance( t1, item )!;
+            }
+            var tA = item.ResolvedType.MakeArrayType( rank );
+            var tM = typeof( DArrayMD<,> ).MakeGenericType( tA, item.ResolvedType );
+            return (IDeserializationDriver)Activator.CreateInstance( tM, item )!;
+        }
+    }
+
+    IDeserializationDriver GetImmutableArrayDriver( ref DeserializerResolverArg info )
+    {
+        var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver( info.ExpectedType.GetGenericArguments()[0] );
+        var tS = typeof( DImmutableArray<> ).MakeGenericType( item.ResolvedType );
+        return (IDeserializationDriver)Activator.CreateInstance( tS, item )!;
     }
 
     IDeserializationDriver? TryGetListOrStack( ref DeserializerResolverArg info )
     {
         if( info.ExpectedType.IsSZArray )
         {
-            var item = info.ReadInfo.SubTypes[0].GetPotentiallyAbstractDriver( info.ExpectedType.GetElementType() );
-            return item.IsCached
-                    ? _cache.GetOrAdd( (item, 1), CreateCachedArray )
-                    : CreateArray( item, 1 );
+            return GetArrayDriver( ref info );
         }
         if( !info.ExpectedType.IsGenericType ) return null;
         Type tGenTarget = info.ExpectedType.GetGenericTypeDefinition();
@@ -269,7 +325,7 @@ public sealed class StandardGenericDeserializerResolver : IDeserializerResolver
         }
     }
 
-    IDeserializationDriver? TryGetDoubleGenericParameter( ref DeserializerResolverArg info, Type tGenD )
+    IDeserializationDriver GetDoubleGenericParameter( ref DeserializerResolverArg info, Type tGenD )
     {
         Debug.Assert( info.ReadInfo.SubTypes.Count == 2 );
         Debug.Assert( tGenD.IsGenericType );
@@ -294,23 +350,6 @@ public sealed class StandardGenericDeserializerResolver : IDeserializerResolver
         }
     }
 
-    static IDeserializationDriver CreateCachedArray( object key )
-    {
-        var (item, rank) = ((IDeserializationDriver I, int Rank))key;
-        return CreateArray( item, rank );
-    }
-
-    static IDeserializationDriver CreateArray( IDeserializationDriver item, int rank )
-    {
-        if( rank == 1 )
-        {
-            var t1 = typeof( Deserialization.DArray<> ).MakeGenericType( item.ResolvedType );
-            return (IDeserializationDriver)Activator.CreateInstance( t1, item )!;
-        }
-        var tA = item.ResolvedType.MakeArrayType( rank );
-        var tM = typeof( Deserialization.DArrayMD<,> ).MakeGenericType( tA, item.ResolvedType );
-        return (IDeserializationDriver)Activator.CreateInstance( tM, item )!;
-    }
 
     IDeserializationDriver CreateNominalEnum( object keyType, IDeserializationDriver underlying )
     {
