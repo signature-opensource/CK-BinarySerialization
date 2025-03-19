@@ -401,4 +401,6 @@ public class CollectionSerializationTests
         object? backA = TestHelper.SaveAndLoadObject( a );
         backA.ShouldBeEquivalentTo( a );
     }
+
+
 }
