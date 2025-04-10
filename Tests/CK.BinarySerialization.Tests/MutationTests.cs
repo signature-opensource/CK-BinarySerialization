@@ -334,7 +334,7 @@ public partial class MutationTests
         var backA = TestHelper.SaveAndLoadObject( tA, deserializerContext: dC );
         backA.Length.ShouldBe( 3 );
         backA.ShouldAllBe(c => c is AnotherThingVersionedThatWantsToGoBackToSimple);
-        backA.Cast<AnotherThingVersionedThatWantsToGoBackToSimple>().Select( s => s.Name ).ShouldBe( new[] { "n°1", "n°2", "n°3" } );
+        backA.Cast<AnotherThingVersionedThatWantsToGoBackToSimple>().Select( s => s.Name ).ShouldBe( ["n°1", "n°2", "n°3"] );
 
         BinarySerializer.IdempotenceCheck( backA );
 

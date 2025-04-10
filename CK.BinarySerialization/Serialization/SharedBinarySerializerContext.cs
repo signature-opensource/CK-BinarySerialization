@@ -216,7 +216,7 @@ public sealed class SharedBinarySerializerContext : ISerializerResolver
 
     /// <summary>
     /// Registers a driver for a type. The driver will have the priority over any driver that
-    /// could be resolved by the resolvers (see <see cref="AddResolver(ISerializerResolver, bool)"/>.
+    /// could be resolved by the resolvers (see <see cref="AddResolver(ISerializerResolver, bool)"/>).
     /// The driver must be able to handle the type otherwise kitten will be killed.
     /// <para>
     /// The type MUST not already be associated to a driver otherwise an <see cref="InvalidOperationException"/> is raised:

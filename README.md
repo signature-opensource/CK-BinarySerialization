@@ -68,7 +68,7 @@ Debug.Assert( result.Error == null );
 
 var (users,books) = result.GetResult();
 ```
-> We could also have used a closure on local variables and an `Action<IBinaryDeserializer>`
+> We could also have used a closure on local variables with a `Action<IBinaryDeserializer>`
 instead of the `Func<IBinaryDeserializer, T>` deserializer function but using a value tuple here is
 cleaner.
 
@@ -356,6 +356,17 @@ The `IDestroyable` interface is a minimalist interface:
 ```
 As the comment states, a destroyed instance is "optimized" by the serializer since only the root Write/Deserialization
 constructor is called, specialized ones are skipped (this is why `Employee` doesn't need to handle it). 
+
+## When the Type to serialize is not the same as the Type to deserialize
+Before speaking of Type mutations, this scenario covers there is a simple case where you have a complex
+type (a kind of Builder) that cannot (or shouldn't) be deserialized as-is. Once serialized, it must be
+deserialized into another type (typically lighter).
+
+This is supported thanks to the strong distinction between serialization and deserialization.
+The unit test [SwitchingTypesTests.cs](Tests/CK.BinarySerialization.Tests/SwitchingTypesTests.cs)
+demonstrates the 2 possible approaches:
+- By using deserializer hooks, the type switch is done at deserialization time.
+- By registering a `SerializationDriver`, the type can directly be serialized as the target one.
 
 ## Type Mutations
 

@@ -11,10 +11,6 @@ namespace CK.BinarySerialization;
 /// <para>
 /// This deserializer handles the value to reference type mutation natively.
 /// </para>
-/// <para>
-/// The default constructor sets <see cref="ReferenceTypeDeserializerBase{T}.IsCached"/> to true. This is fine for basic drivers but as soon as
-/// the driver depends on others (like generics drivers), the non default constructor should be used. 
-/// </para>
 /// </summary>
 /// <typeparam name="T">The type to deserialize.</typeparam>
 public abstract class SimpleReferenceTypeWithServicesDeserializer<T> : ReferenceTypeDeserializerBase<T> where T : class
