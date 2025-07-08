@@ -293,8 +293,13 @@ sealed class BinarySerializerImpl : IDisposableBinarySerializer
         return DoWriteObject( o );
     }
 
-    internal bool TrackObject<T>( T o ) where T : class
+    internal bool TrackObject<T>( T? o ) where T : class
     {
+        if( o == null )
+        {
+            _writer.Write( (byte)SerializationMarker.Null );
+            return false;
+        }
         if( _seen.TryGetValue( o, out var num ) )
         {
             _writer.Write( (byte)SerializationMarker.ObjectRef );
