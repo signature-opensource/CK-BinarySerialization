@@ -4,9 +4,7 @@ using System.Collections.Generic;
 using CK.Core;
 using static CK.Testing.MonitorTestHelper;
 using Shouldly;
-using System.Diagnostics;
 using System.Linq;
-using System.Collections;
 
 namespace CK.BinarySerialization.Tests;
 

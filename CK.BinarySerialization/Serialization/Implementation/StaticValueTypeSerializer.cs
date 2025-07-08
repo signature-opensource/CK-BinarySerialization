@@ -1,4 +1,3 @@
-using CK.BinarySerialization.Serialization;
 using System;
 using System.Reflection;
 

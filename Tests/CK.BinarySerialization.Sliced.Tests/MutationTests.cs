@@ -3,7 +3,6 @@ using Shouldly;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using static CK.Testing.MonitorTestHelper;
 

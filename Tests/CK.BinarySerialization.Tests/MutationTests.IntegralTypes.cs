@@ -2,8 +2,6 @@ using CK.Core;
 using Shouldly;
 using NUnit.Framework;
 using System;
-using System.Diagnostics;
-using System.Linq;
 using static CK.Testing.MonitorTestHelper;
 
 namespace CK.BinarySerialization.Tests;

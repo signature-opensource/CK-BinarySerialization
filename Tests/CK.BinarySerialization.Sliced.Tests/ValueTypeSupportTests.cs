@@ -1,6 +1,5 @@
 using NUnit.Framework;
 using CK.Core;
-using Shouldly;
 using static CK.Testing.MonitorTestHelper;
 
 namespace CK.BinarySerialization.Tests;
