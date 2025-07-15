@@ -6,8 +6,8 @@
     <ProjectReference Include="..\CK.BinarySerialization\CK.BinarySerialization.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CK.Poco.Exc.Json" Version="30.0.1--0004-develop" />
-    <PackageReference Include="CK.StObj.Model" Version="30.0.1--0004-develop" />
+    <PackageReference Include="CK.Poco.Exc.Json" Version="30.0.1--0007-develop" />
+    <PackageReference Include="CK.StObj.Model" Version="30.0.1--0007-develop" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CK.BinarySerialization\CK.BinarySerialization.csproj" />
