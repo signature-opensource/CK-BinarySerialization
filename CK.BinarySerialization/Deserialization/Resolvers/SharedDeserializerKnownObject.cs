@@ -1,8 +1,6 @@
 using CK.Core;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
 
 // These are fixed in Net6.
 #pragma warning disable CS8601 // Possible null reference assignment.

@@ -1,13 +1,8 @@
-using CK.BinarySerialization.Serialization;
 using CK.Core;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace CK.BinarySerialization;
 

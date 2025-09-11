@@ -1,7 +1,6 @@
 using CK.Core;
 using CK.Poco.Exc.Json;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IO;
 using System;
 
 namespace CK.BinarySerialization;

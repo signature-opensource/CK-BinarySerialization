@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using CK.Core;
 
 namespace CK.BinarySerialization.Deserialization;
 

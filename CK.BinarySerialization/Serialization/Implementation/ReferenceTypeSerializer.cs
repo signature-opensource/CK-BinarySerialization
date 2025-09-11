@@ -1,4 +1,3 @@
-using CK.BinarySerialization.Serialization;
 using System;
 using System.Runtime.CompilerServices;
 
@@ -10,45 +9,6 @@ namespace CK.BinarySerialization;
 /// <typeparam name="T">The type to deserialize.</typeparam>
 public abstract class ReferenceTypeSerializer<T> : ISerializationDriverInternal where T : class
 {
-    sealed class ReferenceTypeNullable : ISerializationDriver
-    {
-        readonly ReferenceTypeSerializer<T> _serializer;
-        readonly TypedWriter<T?> _tWriter;
-
-        public ReferenceTypeNullable( ReferenceTypeSerializer<T> serializer )
-        {
-            _serializer = serializer;
-            _tWriter = WriteNullable;
-        }
-
-        public Delegate UntypedWriter => _tWriter;
-
-        public Delegate TypedWriter => _tWriter;
-
-        public string DriverName => _serializer.DriverName;
-
-        public int SerializationVersion => _serializer.SerializationVersion;
-
-        public ISerializationDriver Nullable => this;
-
-        public ISerializationDriver NonNullable => _serializer;
-
-        public SerializationDriverCacheLevel CacheLevel => _serializer.CacheLevel;
-
-        public void WriteNullable( IBinarySerializer s, in T? o )
-        {
-            if( o != null )
-            {
-                _serializer.WriteRefOrInstance( s, o );
-            }
-            else
-            {
-                s.Writer.Write( (byte)SerializationMarker.Null );
-            }
-        }
-    }
-
-    readonly ReferenceTypeNullable _nullable;
     readonly TypedWriter<T> _tWriter;
 
     /// <summary>
@@ -57,7 +17,6 @@ public abstract class ReferenceTypeSerializer<T> : ISerializationDriverInternal 
     protected ReferenceTypeSerializer()
     {
         _tWriter = WriteRefOrInstance;
-        _nullable = new ReferenceTypeNullable( this );
     }
 
     void WriteRefOrInstance( IBinarySerializer s, in T o )
@@ -85,7 +44,7 @@ public abstract class ReferenceTypeSerializer<T> : ISerializationDriverInternal 
     public Delegate TypedWriter => _tWriter;
 
     /// <inheritdoc />
-    public ISerializationDriver Nullable => _nullable;
+    public ISerializationDriver Nullable => this;
 
     /// <inheritdoc />
     public ISerializationDriver NonNullable => this;

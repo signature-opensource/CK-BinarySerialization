@@ -1,6 +1,5 @@
 using NUnit.Framework;
 using System;
-using System.Collections.Generic;
 using CK.Core;
 using Shouldly;
 using static CK.Testing.MonitorTestHelper;

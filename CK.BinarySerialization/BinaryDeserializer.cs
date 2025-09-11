@@ -1,12 +1,10 @@
 using CK.Core;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
-using System.Text;
 
 namespace CK.BinarySerialization;
 
