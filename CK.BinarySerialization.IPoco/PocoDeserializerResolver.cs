@@ -46,7 +46,16 @@ public sealed class PocoDeserializerResolver : IDeserializerResolver
             var buffer = ArrayPool<byte>.Shared.Rent( len );
             try
             {
-                r.Read( buffer, 0, len );
+                // Must loop because streams like GZipStream may return fewer bytes than requested.
+                // See: https://learn.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/6.0/partial-byte-reads-in-streams
+                int totalRead = 0;
+                while( totalRead < len )
+                {
+                    int bytesRead = r.Read( buffer, totalRead, len - totalRead );
+                    if( bytesRead == 0 )
+                        Throw.EndOfStreamException( $"Unexpected end of stream. Expected {len} bytes, got {totalRead}." );
+                    totalRead += bytesRead;
+                }
                 return _factory.ReadJson( buffer.AsSpan( 0, len ), PocoJsonImportOptions.ToStringDefault )!;
             }
             finally
