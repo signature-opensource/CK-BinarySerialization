@@ -9,7 +9,4 @@
     <PackageReference Include="CK.Poco.Exc.Json" Version="33.0.2--ci.1" />
     <PackageReference Include="CK.StObj.Model" Version="33.0.2--ci.1" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CK.BinarySerialization\CK.BinarySerialization.csproj" />
-  </ItemGroup>
 </Project>

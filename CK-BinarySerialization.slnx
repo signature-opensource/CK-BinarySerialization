@@ -7,10 +7,6 @@
     <File Path="NuGet.config" />
     <File Path="README.md" />
   </Folder>
-  <Folder Name="/Solution Items/Doc/">
-    <File Path="Doc/BinarySerializerInterface.png" />
-    <File Path="Doc/TypeReadInfo.png" />
-  </Folder>
   <Folder Name="/Tests/">
     <Project Path="Tests/CK.BinarySerialization.IPoco.Tests/CK.BinarySerialization.IPoco.Tests.csproj" />
     <Project Path="Tests/CK.BinarySerialization.Sliced.Tests/CK.BinarySerialization.Sliced.Tests.csproj" />
