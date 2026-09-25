@@ -3,7 +3,7 @@
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CK.Core" Version="26.0.0--ci.1" />
+    <PackageReference Include="CK.Core" Version="26.0.0" />
     <PackageReference Include="CSemVer" Version="13.0.0" />
   </ItemGroup>
   <ItemGroup>
