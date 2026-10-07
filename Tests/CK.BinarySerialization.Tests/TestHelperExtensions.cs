@@ -24,55 +24,55 @@ static class TestHelperExtensions
     /// </summary>
     /// <param name="this">This tester.</param>
     /// <param name="check">Check the references.</param>
-    public static void SetCheckObjectReferences( this IBasicTestHelper @this, bool check )
+    public static void SetCheckObjectReferences( this IMonitorTestHelper @this, bool check )
     {
         CheckObjectReferences = check;
     }
 
 
     [return: NotNullIfNotNull( nameof( o ) )]
-    public static T SaveAndLoadObject<T>( this IBasicTestHelper @this, T o,
-                                                                        BinarySerializerContext? serializerContext = null,
-                                                                        BinaryDeserializerContext? deserializerContext = null ) where T : class
+    public static T SaveAndLoadObject<T>( this IMonitorTestHelper @this, T o,
+                                                                         BinarySerializerContext? serializerContext = null,
+                                                                         BinaryDeserializerContext? deserializerContext = null ) where T : class
     {
         return SaveAndLoad( @this, o, ( x, w ) => w.WriteObject( x ), r => r.ReadObject<T>(), serializerContext, deserializerContext );
     }
 
     [return: NotNullIfNotNull( nameof( o ) )]
-    public static object? SaveAndLoadAny( this IBasicTestHelper @this, object? o,
-                                                                       BinarySerializerContext? serializerContext = null,
-                                                                       BinaryDeserializerContext? deserializerContext = null )
+    public static object? SaveAndLoadAny( this IMonitorTestHelper @this, object? o,
+                                                                         BinarySerializerContext? serializerContext = null,
+                                                                         BinaryDeserializerContext? deserializerContext = null )
     {
         return SaveAndLoad( @this, o, ( x, w ) => w.WriteAnyNullable( o ), r => r.ReadAnyNullable(), serializerContext, deserializerContext )!;
     }
 
     [return: NotNullIfNotNull( nameof( o ) )]
-    public static T? SaveAnyAndLoad<T>( this IBasicTestHelper @this, object o,
-                                                                     BinarySerializerContext? serializerContext = null,
-                                                                     BinaryDeserializerContext? deserializerContext = null )
+    public static T? SaveAnyAndLoad<T>( this IMonitorTestHelper @this, object o,
+                                                                       BinarySerializerContext? serializerContext = null,
+                                                                       BinaryDeserializerContext? deserializerContext = null )
     {
         return SaveAnyAndLoad( @this, o, r => r.ReadAnyNullable<T>(), serializerContext, deserializerContext )!;
     }
 
-    public static T SaveAndLoadValue<T>( this IBasicTestHelper @this, in T v,
-                                                                      BinarySerializerContext? serializerContext = null,
-                                                                      BinaryDeserializerContext? deserializerContext = null ) where T : struct
+    public static T SaveAndLoadValue<T>( this IMonitorTestHelper @this, in T v,
+                                                                        BinarySerializerContext? serializerContext = null,
+                                                                        BinaryDeserializerContext? deserializerContext = null ) where T : struct
     {
         return SaveAndLoad<T>( @this, v, ( x, w ) => w.WriteValue( x ), r => r.ReadValue<T>(), serializerContext, deserializerContext );
     }
 
-    public static T? SaveAndLoadNullableValue<T>( this IBasicTestHelper @this, in T? v,
-                                                                               BinarySerializerContext? serializerContext = null,
-                                                                               BinaryDeserializerContext? deserializerContext = null ) where T : struct
+    public static T? SaveAndLoadNullableValue<T>( this IMonitorTestHelper @this, in T? v,
+                                                                                 BinarySerializerContext? serializerContext = null,
+                                                                                 BinaryDeserializerContext? deserializerContext = null ) where T : struct
     {
         return SaveAndLoad<T?>( @this, v, ( x, w ) => w.WriteNullableValue( x ), r => r.ReadNullableValue<T>(), serializerContext, deserializerContext );
     }
 
-    public static T SaveAndLoad<T>( this IBasicTestHelper @this, in T o,
-                                                                 Action<T, IBinarySerializer> w,
-                                                                 Func<IBinaryDeserializer, T> r,
-                                                                 BinarySerializerContext? serializerContext = null,
-                                                                 BinaryDeserializerContext? deserializerContext = null )
+    public static T SaveAndLoad<T>( this IMonitorTestHelper @this, in T o,
+                                                                   Action<T, IBinarySerializer> w,
+                                                                   Func<IBinaryDeserializer, T> r,
+                                                                   BinarySerializerContext? serializerContext = null,
+                                                                   BinaryDeserializerContext? deserializerContext = null )
     {
         try
         {
@@ -101,10 +101,10 @@ static class TestHelperExtensions
         }
     }
 
-    public static T SaveAnyAndLoad<T>( this IBasicTestHelper @this, in object o,
-                                                                    Func<IBinaryDeserializer, T> r,
-                                                                    BinarySerializerContext? serializerContext = null,
-                                                                    BinaryDeserializerContext? deserializerContext = null )
+    public static T SaveAnyAndLoad<T>( this IMonitorTestHelper @this, in object o,
+                                                                      Func<IBinaryDeserializer, T> r,
+                                                                      BinarySerializerContext? serializerContext = null,
+                                                                      BinaryDeserializerContext? deserializerContext = null )
     {
         try
         {
@@ -133,10 +133,10 @@ static class TestHelperExtensions
         }
     }
 
-    public static void SaveAndLoad( this IBasicTestHelper @this, Action<IBinarySerializer> w,
-                                                                 Action<IBinaryDeserializer> r,
-                                                                 BinarySerializerContext? serializerContext = null,
-                                                                 BinaryDeserializerContext? deserializerContext = null )
+    public static void SaveAndLoad( this IMonitorTestHelper @this, Action<IBinarySerializer> w,
+                                                                   Action<IBinaryDeserializer> r,
+                                                                   BinarySerializerContext? serializerContext = null,
+                                                                   BinaryDeserializerContext? deserializerContext = null )
     {
         try
         {
