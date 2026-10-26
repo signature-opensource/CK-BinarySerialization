@@ -61,7 +61,7 @@ public class Person : ICKSlicedSerializable, IDestroyable
     }
 }
 ```
-The base class **must** be marked with `ICKSlicedSerializable`:
+The base class **must** be marked with `ICKSlicedSerializable`.
 
 Below is a non sealed specialization of this base class:
 ```csharp

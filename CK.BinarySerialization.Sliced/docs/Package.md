@@ -1,7 +1,3 @@
-Makes any type binary-serializable through a single marker interface, ICKSlicedSerializable.
-
-Inheritance is the point: each level of a hierarchy writes and reads its own slice, so a base class and
-its specializations evolve their serialized shape independently, each with its own SerializationVersion.
-
-A destroyed instance is written in a shortened form - only the root constructor runs on the way back,
-specialized ones are skipped.
+Makes any type binary-serializable through a single marker interface, ICKSlicedSerializable: each level of a
+class hierarchy writes and reads its own slice, with its own SerializationVersion.
+A non sealed class also exposes an empty constructor taking the Sliced marker, called by its specializations.
