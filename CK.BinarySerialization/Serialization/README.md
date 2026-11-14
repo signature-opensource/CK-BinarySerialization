@@ -78,7 +78,7 @@ A shared context created with its default resolvers (`useDefaultResolvers = true
 - `BasicTypesSerializerResolver` / `BasicTypesDeserializerResolver`;
 - `SimpleBinarySerializerResolver` / `SimpleBinaryDeserializerResolver` (the CK.Core simple serialization contracts);
 - `StandardGenericSerializerResolver` / `StandardGenericDeserializerResolver`;
-- the resolvers of the CK.BinarySerialization.Sliced and CK.BinarySerialization.IPoco assemblies, when they can be
+- the resolvers of the CK.BinarySerialization.Sliced and CK.BinarySerialization.IPoco (in CK-StObj) assemblies, when they can be
   loaded (they are looked up by name, so referencing these packages is enough).
 
 Its known objects are `SharedSerializerKnownObject.Default` / `SharedDeserializerKnownObject.Default` unless other ones
